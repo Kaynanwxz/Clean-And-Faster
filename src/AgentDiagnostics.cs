@@ -9,7 +9,7 @@ public sealed partial class BrowserWindow
     {
         string fixture=Path.Combine(Storage.Root,"agent-fixture");Directory.CreateDirectory(fixture);
         File.WriteAllText(Path.Combine(fixture,"index.html"),"""
-        <!doctype html><html><body><h1>Teste Clean AI</h1><p>Conteúdo autorizado da página.</p>
+        <!doctype html><html><head><meta charset="utf-8"></head><body><h1>Teste Clean AI</h1><p>Conteúdo autorizado da página.</p>
         <input id="ordinary" placeholder="Nome comum" value="FORM_VALUE_DO_NOT_READ">
         <input type="password" id="password" value="PASSWORD_DO_NOT_READ">
         <textarea id="secret-token">TOKEN_DO_NOT_READ</textarea>
@@ -29,7 +29,7 @@ public sealed partial class BrowserWindow
         using var deadline=new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var text=await ReadAiPage(deadline.Token);
         using var extracted=JsonDocument.Parse(text);
-        if(!extracted.RootElement.GetProperty("text").GetString()!.Contains("Conteúdo autorizado")||text.Contains("DO_NOT_READ"))throw new InvalidOperationException("Extração da página expôs campo privado ou perdeu texto visível.");
+        if(!extracted.RootElement.GetProperty("text").GetString()!.Contains("Conteúdo autorizado")||text.Contains("DO_NOT_READ"))throw new InvalidOperationException("Extração da fixture falhou: "+text);
         string field=snapshotElements.Single(e=>e.Value.label=="Nome comum").Key;
         using var fill=JsonDocument.Parse(JsonSerializer.Serialize(new{element=field,text="Kaynan"}));
         // Exercise the real confirmation dialog on this isolated fixture, never on user pages.
