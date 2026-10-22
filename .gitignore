@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+dist*/
+smoke-old/
+release-site/
+*.user
+.vs/
+.env
+.env.*
+layout-*.png
+layout-check.json
+update-receipt.json
+update-failure.json

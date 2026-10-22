@@ -1,0 +1,29 @@
+KAY BROWSER - CLEAN AND FASTER
+
+Windows 10/11 x64, com Microsoft Edge WebView2 Runtime atualizado.
+O .NET ja esta incluido no executavel.
+
+PRIMEIRO USO
+Baixe KayBrowser.exe na secao Releases e abra com dois cliques.
+Guarde em uma pasta em que seu usuario possa escrever.
+
+JA USA KAY 0.3.1 OU ANTERIOR?
+Na versao antiga, abra Menu > Personalizar.
+Em Atualizacoes pelo GitHub, informe:
+Kaynanwxz/Clean-And-Faster
+Salve e clique em Atualizar (ou Menu > Verificar atualizacoes).
+O app baixa e reinicia na versao nova. Nao precisa extrair outro ZIP.
+Se sua versao nao conseguir iniciar, baixe o exe da release e substitua
+apenas o exe antigo com o navegador fechado.
+
+PROXIMAS VERSOES
+Clique no botao Atualizar > Atualizar e reiniciar.
+A partir da 0.4.0, o canal oficial ja vem selecionado.
+
+SEUS DADOS
+Historico, favoritos, configuracoes e perfil de sites permanecem em
+%LOCALAPPDATA%\KayBrowser. Nao apague essa pasta para atualizar.
+
+O login Google exige um OAuth Client Desktop; nao inclui Chrome Sync.
+Extensoes locais dependem das APIs suportadas pelo WebView2.
+Meta de RAM flexivel, sem limite rigido por processo.
