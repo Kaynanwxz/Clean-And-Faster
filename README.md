@@ -53,6 +53,10 @@ Os dados permanecem em `%LOCALAPPDATA%\KayBrowser`. A atualização não apaga h
 - Não há modo anônimo, gerenciador próprio de senhas ou integração como navegador padrão nesta versão.
 - Os testes de layout cobrem cenários definidos; uso diário, múltiplos monitores e escalas variadas continuam exigindo validação adicional.
 
+## Validação desta release
+
+A versão **0.4.0** passou nos 55 testes de lógica, no diagnóstico de encaixe em Windows e no teste de atualização por download público, checksum, substituição do executável e reinício. As capturas de layout foram conferidas. Veja [os resultados e os limites do teste](docs/VALIDACAO.md).
+
 ## Tecnologia e estrutura
 
 C# · .NET 10 · Windows Forms · Microsoft Edge WebView2 `1.0.4258.31`.

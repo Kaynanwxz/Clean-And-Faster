@@ -84,7 +84,10 @@ jobs:
         timeout-minutes: 5
         shell: pwsh
         run: |
-          $expected = (Get-FileHash dist/KayBrowser.exe -Algorithm SHA256).Hash
+          $checksumUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/v$env:APP_VERSION/KayBrowser.exe.sha256"
+          $checksumPath = Join-Path $env:RUNNER_TEMP 'published-release.sha256'
+          Invoke-WebRequest -Uri $checksumUrl -OutFile $checksumPath
+          $expected = ((Get-Content $checksumPath -Raw).Trim() -split '\s+')[0]
           $process = Start-Process -FilePath "$PWD/smoke-old/KayBrowser.exe" -ArgumentList '--update-smoke' -Wait -PassThru
           if ($process.ExitCode -ne 0) {
             if (Test-Path smoke-old/update-failure.json) { Get-Content smoke-old/update-failure.json }
