@@ -1,4 +1,4 @@
-# Clean Browser 0.7.0
+# Clean Browser 0.7.1
 
 - Identidade azul-marinho e prata: ícone aprovado, tipografia editorial e colagem de Apolo, vela e mar na nova aba.
 - 10 visuais combináveis: Egeu Noturno, Mármore Claro, Ágora Vertical, Copiloto Azul, Renascimento Editorial, Horizonte Essencial, Arquipélago de Espaços, Cristal do Egeu, Biblioteca Noturna e Atelier Personalizável.
@@ -7,6 +7,8 @@
 - Temas claro/escuro, barra clara/azul-marinho, cinco cores sugeridas, cor hexadecimal e papel de parede próprio.
 - Biblioteca com lista de leitura, fontes guardadas pelo usuário e notas locais; importar TXT/Markdown e exportar TXT.
 - Clean AI com conversa em cartões, copiar resposta, avaliação local, expansão do painel e compartilhamento limitado ao espaço ativo. Chave própria OpenAI; ações continuam exigindo confirmação.
+- Tarefas de IA canceladas ao mudar de espaço; popups de espaços em segundo plano bloqueados.
+- Papel de parede próprio compartilhado entre abas e limitado a 1600 px; controles iniciais liberados ao abrir um site.
 - Animações curtas e sem loop ocioso. Arte compartilhada em memória e favicon com cache limitado.
 - Comunicação de mensagens web e objetos nativos desativada para páginas; atalhos limitados a HTTP/HTTPS sem credenciais embutidas.
 - Configurações antigas migradas preservando histórico, favoritos, credenciais e perfil. Mantido o atualizador das versões anteriores.

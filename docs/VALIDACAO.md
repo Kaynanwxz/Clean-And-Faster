@@ -1,3 +1,29 @@
+# Validação da família 0.7
+
+[Execução confirmada da 0.7.0](https://github.com/Kaynanwxz/Clean-And-Faster/actions/runs/39867960481) · [Execuções e logs atuais](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml)
+
+## Evidência confirmada em 22/10/2026
+
+- 115 verificações de lógica passaram localmente e na CI Ubuntu: navegação, persistência, JSON danificado, canais e manifestos de atualização, protocolo da IA, dez presets, atalhos e migração de dados antigos para espaços.
+- A 0.7.0 compilou no Windows Server 2025 com .NET SDK 10.0.402 e passou no diagnóstico nativo a 96 DPI: janela 900 × 600, janela maior limitada pelo desktop do executor a 1044 × 788, maximização/restauração, perda/retorno de foco e painel IA.
+- Os dez visuais, abas laterais, painel de aparência, foco, troca de espaços, reordenação de atalhos e persistência da biblioteca passaram no diagnóstico Windows. Capturas do aplicativo foram inspecionadas.
+- Fixture WebView2 isolada confirmou leitura sem valores de formulário, preenchimento/clique com diálogo de aprovação, rejeição de elemento expirado e armazenamento/remoção de chave por DPAPI.
+- Um cliente com versão de assembly 0.3.1 baixou a release pública 0.7.0, verificou SHA-256, preservou `.previous`, substituiu o executável e reiniciou. Recibo: `{"version":"0.7.0","status":"restarted"}`. O hash instalado correspondeu ao arquivo publicado; log `PASS: GitHub API -> release download -> checksum -> replacement -> restart`.
+
+## Cobertura adicional da 0.7.1
+
+O diagnóstico também verifica cancelamento da tarefa ao trocar de espaço, contexto de IA restrito ao espaço ativo, ponte nativa de mensagens/objetos desativada, compartilhamento do papel de parede em memória e limites dos controles da nova aba. Consulte a execução associada à release para o resultado final; a publicação depende do diagnóstico passar e é seguida pelo teste de atualização real.
+
+## Limites
+
+O cliente antigo usado no teste é compilado a partir do código atual com a versão do assembly alterada. Isso valida o mecanismo de troca/reinício, sem cobrir todo binário histórico. As versões anteriores já distribuídas permitem informar o repositório e usar o atualizador existente.
+
+Não foram usados credenciais Google ou chave de API OpenAI reais. O protocolo da IA usa HTTP simulado; o teste de DOM usa WebView2 real com página local. Não houve consumo real de API nem auditoria independente de segurança. Fontes da biblioteca não são automaticamente verificadas.
+
+Não foram validados todos os sites/extensões, monitores múltiplos, escalas de 125/150/200% ou políticas corporativas. Não há benchmark que comprove menor consumo que Chrome/Edge nem garantia de teto rígido de RAM. Os dados de teste são isolados dos dados pessoais.
+
+---
+
 # Validação da versão 0.4.0
 
 Commit do aplicativo: `88a87ec2c7cdfc4135e1a5c905661eabc2a65938`.

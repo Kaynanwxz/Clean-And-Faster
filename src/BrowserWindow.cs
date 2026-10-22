@@ -116,7 +116,7 @@ public sealed partial class BrowserWindow : Form
     async Task CreateViewCore(BrowserTab t, bool navigate)
     {
         var view = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Back };
-        t.View = view; t.Page.Controls.Clear(); t.Page.Controls.Add(view);
+        t.View = view; foreach(Control previous in t.Page.Controls.Cast<Control>().ToArray())previous.Dispose(); t.Page.Controls.Clear(); t.Page.Controls.Add(view);
         try
         {
             await view.EnsureCoreWebView2Async(environment);
@@ -146,10 +146,12 @@ public sealed partial class BrowserWindow : Form
             core.NewWindowRequested += async (_, e) =>
             {
                 e.Handled = true;
+                if(t.Page.WorkspaceId!=WorkspaceId)return;
+                string popupWorkspace=WorkspaceId;
                 using var deferral = e.GetDeferral();
                 if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank") return;
                 await AddTab("kay://new");
-                if (Current is { } child)
+                if (Current is { } child&&child.Page.WorkspaceId==popupWorkspace)
                 {
                     if (child.View == null) await CreateView(child, false);
                     child.Url = e.Uri;
@@ -243,7 +245,7 @@ public sealed partial class BrowserWindow : Form
         Item("Zoom +", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Min(3, v.ZoomFactor + .1); });
         Item("Zoom −", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Max(.3, v.ZoomFactor - .1); });
         Item("Tela cheia  ·  F11", Fullscreen); Item("Verificar atualizações", () => _ = CheckUpdate());
-        Item("Sobre o Clean Browser", () => ShowNotice("Clean Browser 0.7.0 · prévia para Windows x64\nC# / .NET 10 / Microsoft Edge WebView2\n\nExtensões por pasta. Sem Chrome Sync.\nO limite de RAM é uma meta, não um limite rígido.", "Clean Browser"));
+        Item("Sobre o Clean Browser", () => ShowNotice("Clean Browser 0.7.1 · prévia para Windows x64\nC# / .NET 10 / Microsoft Edge WebView2\n\nExtensões por pasta. Sem Chrome Sync.\nO limite de RAM é uma meta, não um limite rígido.", "Clean Browser"));
         menu.Show(Cursor.Position);
     }
     AppDialog Dialog(string title, int w = 820, int h = 570) => new(title, Colors, w, h);
@@ -302,7 +304,7 @@ public sealed partial class BrowserWindow : Form
             case Keys.D: BookmarkCurrent(); break;
             case Keys.F: Find(); break;
             case Keys.R: Current?.View?.Reload(); break;
-            case Keys.Tab: var visible=tabStrip.VisiblePages;if(visible.Length>0){int selected=Array.IndexOf(visible,tabStrip.SelectedTab);tabStrip.SelectedTab=visible[(selected+1)%visible.Length];} break;
+            case Keys.Tab: var visible=tabStrip.VisiblePages;if(visible.Length>0){int selected=Array.IndexOf(visible,tabStrip.SelectedTab);tabStrip.SelectedTab=visible[(selected+(e.Shift?-1:1)+visible.Length)%visible.Length];} break;
             default: return;
         }
         else if(e.KeyCode==Keys.F8)ToggleFocus();

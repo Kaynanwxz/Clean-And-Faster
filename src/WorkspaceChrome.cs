@@ -55,7 +55,7 @@ public sealed partial class BrowserWindow
     async Task SwitchWorkspace(string id)
     {
         if(!store.Settings.Workspaces.Any(w=>w.Id==id))return;
-        SaveSession();ResetSnapshot();store.Settings.ActiveWorkspace=id;
+        SaveSession();aiCancellation?.Cancel();ResetSnapshot();store.Settings.ActiveWorkspace=id;
         var first=WorkspaceTabs.FirstOrDefault();
         if(first==null)
         {

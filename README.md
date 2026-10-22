@@ -65,7 +65,7 @@ Na nova aba, **Adicionar atalho** cria um endereço HTTP/HTTPS. Botão direito p
 
 ## Validação
 
-115 verificações de lógica passaram localmente na preparação da 0.7.0, incluindo migração das configurações e dez presets. A CI também verifica a interface real no Windows e a atualização pela release pública; confira o [workflow da versão](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml). Veja [a cobertura e seus limites](docs/VALIDACAO.md).
+115 verificações de lógica passaram localmente na preparação da família 0.7, incluindo migração das configurações e dez presets. A CI também verifica a interface real no Windows e a atualização pela release pública; confira o [workflow da versão](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml). Veja [a cobertura e seus limites](docs/VALIDACAO.md).
 
 ## Tecnologia e estrutura
 

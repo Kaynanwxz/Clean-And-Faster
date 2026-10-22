@@ -6,7 +6,12 @@ public sealed partial class BrowserWindow
     {
         void Check(bool ok,string message){if(!ok)throw new InvalidOperationException(message);}
         Motion.Enabled=false;
+        string wallpaperFile=Path.Combine(Storage.Root,"diagnostic-wallpaper.png");
+        using(var sample=new Bitmap(80,40))sample.Save(wallpaperFile,System.Drawing.Imaging.ImageFormat.Png);
+        var wallpaper=BrandAssets.Wallpaper(wallpaperFile);Check(wallpaper!=null&&ReferenceEquals(wallpaper,BrandAssets.Wallpaper(wallpaperFile)),"Plano de fundo duplicado na memória.");BrandAssets.Wallpaper("");
+
         if(assistantOpen)ToggleAssistant();
+        Size=new Size(1320,860);Application.DoEvents();
         foreach(var visual in VisualPresets.All)
         {
             VisualPresets.Apply(store.Settings,visual.Name);ApplyPersonalization();Application.DoEvents();VerifyChromeLayout();
@@ -18,7 +23,9 @@ public sealed partial class BrowserWindow
         store.Settings.VerticalTabs=true;ApplyPersonalization();ToggleAssistant();Application.DoEvents();VerifyChromeLayout();SaveChromeScreenshot("layout-vertical-ai.png");ToggleAssistant();
         ToggleFocus();Application.DoEvents();VerifyChromeLayout();Check(chromeLayout.GetRowHeights()[3]==0,"Modo foco não recolheu status.");ToggleFocus();
         var first=Current!;var other=new BrowserTab{Url="kay://new",Title="Outro espaço"};other.Page.WorkspaceId=store.Settings.Workspaces[1].Id;tabs.Add(other);tabStrip.TabPages.Add(other.Page);
-        string initial=WorkspaceId;var switchTask=SwitchWorkspace(other.Page.WorkspaceId);while(!switchTask.IsCompleted)Application.DoEvents();switchTask.GetAwaiter().GetResult();
+        string initial=WorkspaceId;using var workspaceCancel=new CancellationTokenSource();aiCancellation=workspaceCancel;var switchTask=SwitchWorkspace(other.Page.WorkspaceId);while(!switchTask.IsCompleted)Application.DoEvents();switchTask.GetAwaiter().GetResult();
+        Check(workspaceCancel.IsCancellationRequested,"Troca de espaço não cancelou tarefa em curso.");aiCancellation=null;
+        using(var context=System.Text.Json.JsonDocument.Parse(TabsContext()))Check(context.RootElement.GetArrayLength()==1,"Contexto de IA incluiu outro espaço.");
         Check(Current==other&&tabStrip.VisiblePages.Length==1,"Espaço exibiu aba de outro contexto.");
         var back=SwitchWorkspace(initial);while(!back.IsCompleted)Application.DoEvents();back.GetAwaiter().GetResult();Check(Current==first,"Troca de espaço perdeu aba viva.");
         tabs.Remove(other);tabStrip.TabPages.Remove(other.Page);other.Page.Dispose();

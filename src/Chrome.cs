@@ -216,7 +216,7 @@ public sealed class TabRibbon : Control,IThemed
         Glyphs.Draw(g,"plus",new(Plus.X+D(7),Plus.Y+(Plus.Height-D(18))/2,D(18),D(18)),colors.Text);
         if(Vertical&&!Compact){using var f=new Font("Segoe UI",9);TextRenderer.DrawText(g,"Nova aba",f,new Rectangle(Plus.X+D(32),Plus.Y,Math.Max(1,Plus.Width-D(34)),Plus.Height),colors.Text,TextFormatFlags.VerticalCenter);}
     }
-    protected override void OnMouseMove(MouseEventArgs e){int old=hover;hover=-1;for(int i=first;i<Math.Min(Pages.Length,first+Capacity);i++)if(GetTabRect(i).Contains(e.Location))hover=i;overPlus=Plus.Contains(e.Location);if(old!=hover){tips.SetToolTip(this,hover>=0?Pages[hover].Caption+" · botão do meio fecha":"Nova aba");Invalidate();}base.OnMouseMove(e);}
+    protected override void OnMouseMove(MouseEventArgs e){int old=hover;bool oldPlus=overPlus;hover=-1;for(int i=first;i<Math.Min(Pages.Length,first+Capacity);i++)if(GetTabRect(i).Contains(e.Location))hover=i;overPlus=Plus.Contains(e.Location);if(old!=hover||oldPlus!=overPlus){tips.SetToolTip(this,hover>=0?Pages[hover].Caption+" · botão do meio fecha":"Nova aba");Invalidate();}base.OnMouseMove(e);}
     protected override void OnMouseLeave(EventArgs e){hover=-1;overPlus=false;Invalidate();base.OnMouseLeave(e);}
     protected override void OnMouseDown(MouseEventArgs e)
     {

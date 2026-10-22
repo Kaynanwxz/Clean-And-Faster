@@ -13,6 +13,20 @@ public static class BrandAssets
         int width=Math.Min(source.Width,name=="clean-logo.png"?256:1440);int height=source.Height*width/source.Width;
         var bitmap=new Bitmap(width,height);using var g=Graphics.FromImage(bitmap);g.InterpolationMode=System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;g.DrawImage(source,0,0,width,height);return bitmap;
     }
+    static Bitmap? wallpaper;static string wallpaperPath="";
+    public static Image? Wallpaper(string path)
+    {
+        path??="";if(path==wallpaperPath)return wallpaper;
+        wallpaper?.Dispose();wallpaper=null;wallpaperPath=path;
+        if(path.Length==0||!File.Exists(path))return null;
+        try
+        {
+            using var source=Image.FromFile(path);float scale=Math.Min(1f,1600f/Math.Max(source.Width,source.Height));
+            wallpaper=new Bitmap(Math.Max(1,(int)(source.Width*scale)),Math.Max(1,(int)(source.Height*scale)));
+            using var g=Graphics.FromImage(wallpaper);g.DrawImage(source,0,0,wallpaper.Width,wallpaper.Height);return wallpaper;
+        }
+        catch(Exception e)when(e is IOException or ArgumentException or OutOfMemoryException){wallpaper?.Dispose();wallpaper=null;return null;}
+    }
     public static readonly Bitmap Logo=Load("clean-logo.png");
     public static readonly Bitmap Sea=Load("apollo-sea.png");
     public static void DrawArt(Graphics g,Image image,Rectangle bounds,float opacity=1)

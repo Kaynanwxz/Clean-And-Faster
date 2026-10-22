@@ -15,7 +15,6 @@ public sealed class HomeBoard : Panel,IThemed
     readonly FlowLayoutPanel spaces=new(){WrapContents=false,AutoScroll=false};
     readonly SoftButton memory=new(){Text="Memória",Glyph="memory"};
     Palette colors=Palette.Create(true,Color.SteelBlue);
-    Image? wallpaper;string wallpaperFile="";
     int brandY,searchY,contentLeft,contentWidth;
     readonly Action<string> library;
     int D(int n)=>(int)Math.Round(n*DeviceDpi/96f);
@@ -32,14 +31,7 @@ public sealed class HomeBoard : Panel,IThemed
             var b=new SoftButton{Text=w.Name,Glyph="globe",Width=146,Height=48,Margin=new Padding(5),AccessibleName="Espaço "+w.Name};
             b.Click+=(_,_)=>workspace(w.Id);spaces.Controls.Add(b);
         }
-        LoadWallpaper();LayoutContent();
-    }
-    void LoadWallpaper()
-    {
-        string path=store.Settings.Wallpaper;
-        if(path==wallpaperFile)return;wallpaper?.Dispose();wallpaper=null;wallpaperFile=path;
-        if(path.Length==0||!File.Exists(path))return;
-        try{using var source=Image.FromFile(path);wallpaper=new Bitmap(source);}catch(Exception ex)when(ex is IOException or ArgumentException or OutOfMemoryException){wallpaperFile="";}
+        LayoutContent();
     }
     public void SetPalette(Palette unused)
     {
@@ -70,6 +62,11 @@ public sealed class HomeBoard : Panel,IThemed
         foreach(var (b,index) in new[]{(explore,0),(documents,1),(favorites,2)}){b.SetBounds(contentLeft+index*(cardW+D(8)),cardY,cardW,D(56));b.Visible=cardsHeight>0&&b.Bottom<footer-D(8);}
         memory.SetBounds(D(12),footer,D(122),D(34));focus.SetBounds(D(145),footer,D(100),D(34));memory.Visible=!store.Settings.FocusMode;
     }
+    internal void VerifyLayout()
+    {
+        LayoutContent();foreach(Control c in Controls)if(c.Visible&&(c.Left<0||c.Top<0||c.Right>ClientSize.Width||c.Bottom>ClientSize.Height))throw new InvalidOperationException("Controle da nova aba fora da área: "+(c.AccessibleName??c.Text));
+        if(search.Bounds.IntersectsWith(go.Bounds)||!searchBox.ClientRectangle.Contains(search.Bounds)||!searchBox.ClientRectangle.Contains(go.Bounds))throw new InvalidOperationException("Pesquisa da nova aba sobreposta ou cortada.");
+    }
     protected override void OnResize(EventArgs e){base.OnResize(e);LayoutContent();}
     protected override void OnDpiChangedAfterParent(EventArgs e){base.OnDpiChangedAfterParent(e);LayoutContent();}
     protected override void OnPaint(PaintEventArgs e)
@@ -78,7 +75,7 @@ public sealed class HomeBoard : Panel,IThemed
         bool small=Width<D(650),minimal=store.Settings.FocusMode||store.Settings.HomeLayout=="Essencial";
         if(!store.Settings.FocusMode&&store.Settings.Background!="Sem arte")
         {
-            Image art=wallpaper??BrandAssets.Sea;int w=Math.Min(Width,D(1200));int height=w*art.Height/art.Width;
+            Image? wallpaper=BrandAssets.Wallpaper(store.Settings.Wallpaper);Image art=wallpaper??BrandAssets.Sea;int w=Math.Min(Width,D(1200));int height=w*art.Height/art.Width;
             if(wallpaper!=null){BrandAssets.DrawArt(g,art,new(0,Height-height,Width,height),0.18f);}
             else BrandAssets.DrawArt(g,art,new(Width-w,Height-height,w,height),store.Settings.Background=="Suave"?.20f:small?.30f:.53f);
         }
@@ -98,7 +95,6 @@ public sealed class HomeBoard : Panel,IThemed
         if(Height>D(740)&&!minimal)
         {using var quote=new Font("Georgia",14,FontStyle.Italic);TextRenderer.DrawText(g,"Novos horizontes para as suas ideias.",quote,new Rectangle(contentLeft,Height-D(155),contentWidth,D(60)),colors.Muted,TextFormatFlags.HorizontalCenter|TextFormatFlags.EndEllipsis);}
     }
-    protected override void Dispose(bool disposing){if(disposing)wallpaper?.Dispose();base.Dispose(disposing);}
 }
 
 public sealed class ShortcutGrid : Control,IThemed
@@ -114,12 +110,12 @@ public sealed class ShortcutGrid : Control,IThemed
     public ShortcutGrid(Storage data,Action<string> navigate,Action<string,ShortcutLink?> actions)
     {
         store=data;open=navigate;command=actions;TabStop=true;AccessibleRole=AccessibleRole.List;Cursor=Cursors.Hand;
-        SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw|ControlStyles.Selectable,true);
+        SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw|ControlStyles.Selectable|ControlStyles.SupportsTransparentBackColor,true);
     }
-    public void SetPalette(Palette p){colors=p;BackColor=p.Background;ForeColor=p.Text;Invalidate();}
+    public void SetPalette(Palette p){colors=p;BackColor=Color.Transparent;ForeColor=p.Text;Invalidate();}
     protected override void OnPaint(PaintEventArgs e)
     {
-        var g=e.Graphics;g.Clear(colors.Background);g.SmoothingMode=SmoothingMode.AntiAlias;
+        var g=e.Graphics;g.SmoothingMode=SmoothingMode.AntiAlias;
         var links=Links;int count=links.Count+1;
         firstRow=Math.Clamp(firstRow,0,Math.Max(0,(count+Columns-1)/Columns-Rows));
         for(int i=firstRow*Columns;i<Math.Min(count,(firstRow+Rows)*Columns);i++)
@@ -135,8 +131,8 @@ public sealed class ShortcutGrid : Control,IThemed
                 else if(new Uri(links[i].Url).Host.Contains("youtube"))Glyphs.Draw(g,"play",Rectangle.Inflate(circle,-D(11),-D(11)),Color.FromArgb(218,53,75));
                 else {using var f=new Font("Segoe UI",16,FontStyle.Bold);TextRenderer.DrawText(g,links[i].Name[..1].ToUpperInvariant(),f,circle,colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);}
             }
-            using var font=new Font("Segoe UI",9);
-            TextRenderer.DrawText(g,add?"Adicionar atalho":links[i].Name,font,new Rectangle(r.X+D(2),r.Y+D(65),r.Width-D(4),D(26)),colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix);
+            using var font=new Font("Segoe UI",add?8.5f:9);
+            TextRenderer.DrawText(g,add?"Adicionar atalho":links[i].Name,font,new Rectangle(r.X+D(2),r.Y+D(63),r.Width-D(4),D(32)),colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.NoPrefix|(add?TextFormatFlags.WordBreak:TextFormatFlags.EndEllipsis));
         }
         if((count+Columns-1)/Columns>Rows)
         {using var f=new Font("Segoe UI",8);TextRenderer.DrawText(g,"‹  Role para ver mais atalhos  ›",f,new Rectangle(0,Height-D(25),Width,D(22)),colors.Muted,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);}

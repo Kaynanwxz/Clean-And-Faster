@@ -16,6 +16,7 @@ public sealed partial class BrowserWindow
     }
     internal void SaveChromeScreenshot(string name)
     {
+        var screen=Screen.FromControl(this).Bounds;Cursor.Position=new Point(screen.Right-2,screen.Bottom-2);Application.DoEvents();
         using var bitmap=new Bitmap(Width,Height);
         var area=Screen.FromControl(this).Bounds;
         if(area.Contains(Bounds))
@@ -51,6 +52,7 @@ public sealed partial class BrowserWindow
             Check(tabStrip.Width>=Ui(store.Settings.VerticalTabs?380:420),"Painel IA cortou conteúdo web.");
             Check(assistant!.Right<=pageHost.Width,"Painel IA fora da janela.");
         }
+        foreach(var home in tabs.SelectMany(t=>t.Page.Controls.OfType<HomeBoard>()))home.VerifyLayout();
         var page = new BrowserPage { Caption = "YouTube · teste de título" };
         tabStrip.TabPages.Add(page); Check(page.Caption == "YouTube · teste de título", "Título da aba foi perdido.");
         tabStrip.TabPages.Remove(page); page.Dispose();

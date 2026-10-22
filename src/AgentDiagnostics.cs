@@ -21,6 +21,7 @@ public sealed partial class BrowserWindow
         var tab=Current??throw new InvalidOperationException("Aba de diagnóstico ausente.");
         await CreateView(tab,false);
         var core=tab.View?.CoreWebView2??throw new InvalidOperationException("WebView de diagnóstico indisponível.");
+        if(core.Settings.AreHostObjectsAllowed||core.Settings.IsWebMessageEnabled)throw new InvalidOperationException("Ponte nativa desnecessária permaneceu ativa.");
         core.SetVirtualHostNameToFolderMapping("clean-ai.test",fixture,CoreWebView2HostResourceAccessKind.DenyCors);
         var ready=new TaskCompletionSource<bool>();
         void Loaded(object? s,CoreWebView2NavigationCompletedEventArgs e){if(e.IsSuccess)ready.TrySetResult(true);else ready.TrySetException(new IOException("Fixture não carregou: "+e.WebErrorStatus));}
