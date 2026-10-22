@@ -80,6 +80,27 @@ public sealed partial class BrowserWindow
             }
             else{stage=2;ButtonIn(f,"Entendi").PerformClick();}
         });Check(store.Settings.Accent=="#8FBBEF","Configurações rejeitam cor inválida e salvam correção");
-        return checks.ToArray();
+        var background=WorkspaceTabs.First(t=>t!=Current);await CreateView(background,false);stage=0;
+        Script(ShowMemory,f=>{
+            if(f.Text=="Memória e abas")
+            {
+                var list=AppearancePanel.Descendants(f).OfType<ListView>().Single();void Select(){list.Focus();list.Items.Cast<ListViewItem>().Single(i=>ReferenceEquals(i.Tag,background)).Selected=true;}
+                if(stage==0){Select();ButtonIn(f,"Proteger / desproteger").PerformClick();Check(background.Pinned,"Proteger aba pelo botão");stage=1;}
+                else if(stage==1){Select();stage=2;ButtonIn(f,"Descarregar selecionada").PerformClick();}
+                else if(stage==3){Check(background.View!=null,"Proteção impede descarregar aba");Select();ButtonIn(f,"Proteger / desproteger").PerformClick();stage=4;}
+                else if(stage==4){Select();stage=5;ButtonIn(f,"Descarregar selecionada").PerformClick();}
+                else if(stage==6){Check(background.View==null&&!background.Pinned,"Descarregar confirmado libera WebView");f.Close();}
+            }
+            else if(stage==2){stage=3;ButtonIn(f,"Entendi").PerformClick();}
+            else if(stage==5){stage=6;ButtonIn(f,"Sim").PerformClick();}
+        });
+        using(var probe=new BrowserWindow(diagnostics:true))
+        {
+            probe.Show();await Task.Delay(50);
+            Button WindowButton(string name)=>probe.windowButtons!.Controls.OfType<Button>().Single(b=>b.AccessibleName?.StartsWith(name)==true);
+            WindowButton("Minimizar").PerformClick();await Task.Delay(60);Check(probe.WindowState==FormWindowState.Minimized,"Botão minimizar");probe.WindowState=FormWindowState.Normal;
+            WindowButton("Maximizar").PerformClick();await Task.Delay(60);Check(probe.WindowState==FormWindowState.Maximized,"Botão maximizar");WindowButton("Maximizar").PerformClick();await Task.Delay(60);Check(probe.WindowState==FormWindowState.Normal,"Botão restaurar janela");WindowButton("Fechar navegador").PerformClick();Check(probe.IsDisposed,"Botão fechar encerra apenas janela de teste");
+        }
+        Activate();SaveSession();return checks.ToArray();
     }
 }
