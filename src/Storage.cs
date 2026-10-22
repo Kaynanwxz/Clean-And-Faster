@@ -8,7 +8,7 @@ public record DownloadRecord(string Name, string Path, string State);
 public sealed class Preferences
 {
     public bool Animations { get; set; } = true;
-    public string AiModel { get; set; } = "gpt-4.1-mini";
+    public string AiModel { get; set; } = "gpt-5.4-mini";
     public string Theme { get; set; } = "Escuro";
     public string Accent { get; set; } = "#A8E6CF";
     public string Search { get; set; } = "Google";

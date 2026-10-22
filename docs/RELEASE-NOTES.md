@@ -1,4 +1,4 @@
-# Clean Browser 0.6.3
+# Clean Browser 0.6.4
 
 - Moldura própria preservada ao alternar o foco para outro aplicativo.
 - Transições suaves nos botões, atalhos e indicador da aba selecionada.
@@ -11,7 +11,7 @@
 
 ## Como usar
 
-Clique no ícone de brilho na barra ou pressione Ctrl+Shift+I. Em **Configurar IA**, salve sua chave de API e um modelo compatível com Responses e ferramentas (padrão: `gpt-4.1-mini`). A cobrança ocorre na conta da API. Este assistente é separado da conversa no ChatGPT.
+Clique no ícone de brilho na barra ou pressione Ctrl+Shift+I. Em **Configurar IA**, salve sua chave de API e um modelo compatível com Responses e ferramentas (padrão: `gpt-5.4-mini`). A cobrança ocorre na conta da API. Este assistente é separado da conversa no ChatGPT.
 
 Para resumir uma página, marque **Compartilhar página e abas nesta tarefa** e peça: “Leia e resuma esta página em cinco tópicos”. Para navegar, peça: “Abra o GitHub em outra aba”. Aprove as ações que desejar. **Parar** cancela a tarefa; ações já executadas permanecem.
 

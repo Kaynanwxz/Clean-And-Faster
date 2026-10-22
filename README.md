@@ -113,7 +113,7 @@ Veja [CONTRIBUTING.md](CONTRIBUTING.md). Ao relatar um problema visual, informe 
 
 ## Clean AI e visual da versão 0.6.0
 
-O ícone de brilho abre o painel lateral de IA (**Ctrl+Shift+I**). Use **Configurar IA** para informar sua própria chave OpenAI e o modelo. O padrão é `gpt-4.1-mini`, editável conforme o acesso da sua conta; deve suportar a API Responses e chamadas de ferramentas. O uso é cobrado pela API. A chave fica protegida por DPAPI para o usuário atual do Windows, fora de `settings.json` e do repositório.
+O ícone de brilho abre o painel lateral de IA (**Ctrl+Shift+I**). Use **Configurar IA** para informar sua própria chave OpenAI e o modelo. O padrão é `gpt-5.4-mini`, editável conforme o acesso da sua conta; deve suportar a API Responses e chamadas de ferramentas. O uso é cobrado pela API. A chave fica protegida por DPAPI para o usuário atual do Windows, fora de `settings.json` e do repositório.
 
 - Respostas, explicações e resumos; leitura de texto/elementos da aba e listagem de abas quando o compartilhamento estiver marcado.
 - Abrir/selecionar abas, clicar, preencher campos comuns e rolar. Cada ação requer aprovação na interface, com destino ou campo visível. Nenhuma ferramenta de terminal, arquivos ou JavaScript livre é oferecida ao modelo.

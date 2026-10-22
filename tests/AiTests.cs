@@ -27,22 +27,22 @@ static class AiTests
         using(var http=new HttpClient(new Fake(async (r,c)=>{
             requests++;Check(r.RequestUri==AiClient.Endpoint);Check(r.Headers.Authorization?.Parameter=="test-key");
             using var body=JsonDocument.Parse(await r.Content!.ReadAsStringAsync(c));var root=body.RootElement;
-            Check(!root.GetProperty("store").GetBoolean());Check(!root.GetProperty("parallel_tool_calls").GetBoolean());
+            Check(root.GetProperty("include")[0].GetString()=="reasoning.encrypted_content");Check(!root.GetProperty("store").GetBoolean());Check(!root.GetProperty("parallel_tool_calls").GetBoolean());
             Check(root.GetProperty("max_output_tokens").GetInt32()==1800);Check(root.GetProperty("tools").GetArrayLength()==7);
             if(requests==2)Check(root.GetProperty("input").EnumerateArray().Any(e=>e.TryGetProperty("type",out var t)&&t.GetString()=="function_call_output"&&e.GetProperty("output").GetString()=="opened"));
             return Json(requests==1?Call:Done);
         })))
         {
-            await new AiClient(http).Run("test-key","gpt-4.1-mini","Abra example","autorizado",(name,args,c)=>{actions++;Check(name=="open_tab");return Task.FromResult("opened");},messages.Add,CancellationToken.None);
+            await new AiClient(http).Run("test-key","gpt-5.4-mini","Abra example","autorizado",(name,args,c)=>{actions++;Check(name=="open_tab");return Task.FromResult("opened");},messages.Add,CancellationToken.None);
             Check(actions==1&&requests==2&&messages.Single()=="Concluído");
         }
         int repeated=0;
         using(var http=new HttpClient(new Fake((r,c)=>{repeated++;return Task.FromResult(Json(Call));})))
-        {await new AiClient(http).Run("key","gpt-4.1-mini","test","",(n,a,c)=>Task.FromResult("refused"),_=>{},CancellationToken.None);Check(repeated==AiPolicy.MaxRounds);}
+        {await new AiClient(http).Run("key","gpt-5.4-mini","test","",(n,a,c)=>Task.FromResult("refused"),_=>{},CancellationToken.None);Check(repeated==AiPolicy.MaxRounds);}
         using(var http=new HttpClient(new Fake((r,c)=>Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized){Content=new StringContent("SECRET_DO_NOT_DISPLAY")}))))
-        {try{await new AiClient(http).Run("key","gpt-4.1-mini","test","",(n,a,c)=>Task.FromResult(""),_=>{},CancellationToken.None);throw new Exception("Erro HTTP ignorado");}catch(IOException e){Check(!e.Message.Contains("SECRET"));}}
+        {try{await new AiClient(http).Run("key","gpt-5.4-mini","test","",(n,a,c)=>Task.FromResult(""),_=>{},CancellationToken.None);throw new Exception("Erro HTTP ignorado");}catch(IOException e){Check(!e.Message.Contains("SECRET"));}}
         using(var cancel=new CancellationTokenSource())using(var http=new HttpClient(new Fake((r,c)=>throw new Exception("Não deveria chamar rede"))))
-        {cancel.Cancel();try{await new AiClient(http).Run("key","gpt-4.1-mini","test","",(n,a,c)=>Task.FromResult(""),_=>{},cancel.Token);throw new Exception("Cancelamento ignorado");}catch(OperationCanceledException){n++;}}
+        {cancel.Cancel();try{await new AiClient(http).Run("key","gpt-5.4-mini","test","",(n,a,c)=>Task.FromResult(""),_=>{},cancel.Token);throw new Exception("Cancelamento ignorado");}catch(OperationCanceledException){n++;}}
         return n;
     }
 }
