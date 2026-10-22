@@ -29,13 +29,13 @@ public sealed partial class BrowserWindow : Form
     CoreWebView2Environment? environment;
     bool closing, memoryBusy;
     BrowserTab? Current => tabs.FirstOrDefault(x => x.Page == tabStrip.SelectedTab);
-    Color Back => store.Settings.Theme == "Claro" ? Color.FromArgb(244, 247, 249) : Color.FromArgb(15, 20, 25);
-    Color Ink => store.Settings.Theme == "Claro" ? Color.FromArgb(28, 34, 42) : Color.FromArgb(228, 234, 240);
+    Color Back => Palette.Create(store.Settings.Theme=="Claro",Accent).Background;
+    Color Ink => Palette.Create(store.Settings.Theme=="Claro",Accent).Text;
     Color Accent { get { try { return ColorTranslator.FromHtml(store.Settings.Accent); } catch { return Color.MediumAquamarine; } } }
 
     public BrowserWindow(bool diagnostics = false)
     {
-        Text = "Clean Browser"; Width = 1320; Height = 860; MinimumSize = new Size(900, 600);
+        Text = "Clean Browser"; Width = 1440; Height = 920; MinimumSize = new Size(900, 600);
         if (Environment.ProcessPath is { } exe) Icon = Icon.ExtractAssociatedIcon(exe);
         StartPosition = FormStartPosition.CenterScreen; Font = new Font("Segoe UI", 10); KeyPreview = true;
         DoubleBuffered = true;
@@ -52,7 +52,7 @@ public sealed partial class BrowserWindow : Form
         ApplyTheme(this);
     }
 
-    Palette Colors => Palette.Create(store.Settings.Theme == "Claro", Accent);
+    Palette Colors => Palette.Create(!store.Settings.DarkChrome, Accent);
     public Button Button(string text, Action action)
     {
         var b = new SoftButton { Text = text, AutoSize = true, Padding = new Padding(12, 7, 12, 7), AccessibleName = text };
@@ -60,7 +60,8 @@ public sealed partial class BrowserWindow : Form
     }
     void ApplyTheme(Control c)
     {
-        if (c is AssistantPanel ai) { ai.SetPalette(Colors); return; }
+        if (c is AppearancePanel appearancePanel) { appearancePanel.SetPalette(Colors); return; }
+        if (c is AssistantPanel ai) { ai.SetPalette(BrandAssets.Navy(Accent)); return; }
         if (c is HomeBoard home) { home.SetPalette(Colors); return; }
         if (c is IThemed themed) themed.SetPalette(Colors);
         else { c.BackColor = c.Tag as string == "surface" ? Colors.Surface : Colors.Background; c.ForeColor = Colors.Text; }
@@ -78,10 +79,11 @@ public sealed partial class BrowserWindow : Form
         try
         {
             environment = await CoreWebView2Environment.CreateAsync(null, Path.Combine(Storage.Root, "WebView"), new CoreWebView2EnvironmentOptions { AreBrowserExtensionsEnabled = true });
-            var session = store.Settings.RestoreTabs ? store.Settings.Session.Where(Navigation.IsWebUrl).Take(30).ToList() : [];
+            var session = store.Settings.RestoreTabs ? store.Settings.Workspaces.First(w=>w.Id==WorkspaceId).Urls.Where(Navigation.IsWebUrl).Take(30).ToList() : [];
             if (session.Count == 0) await AddTab("kay://new");
             else { foreach (var url in session) await AddTab(url, tabs.Count == 0); }
             memoryTimer.Start();
+            if(store.Settings.Visual=="Copiloto Azul"&&!store.Settings.FocusMode&&!assistantOpen)ToggleAssistant();
         }
         catch (Exception ex)
         {
@@ -93,7 +95,7 @@ public sealed partial class BrowserWindow : Form
     {
         if (environment == null || closing) return;
         var t = new BrowserTab { Url = Navigation.Resolve(url, store.Settings.Search) };
-        tabs.Add(t); tabStrip.TabPages.Add(t.Page);
+        t.Page.WorkspaceId=WorkspaceId;tabs.Add(t); tabStrip.TabPages.Add(t.Page);
         if (activate) { tabStrip.SelectedTab = t.Page; await Activate(t); }
         else { t.Page.Caption = "○ " + new Uri(url).Host; }
         SaveSession();
@@ -122,6 +124,10 @@ public sealed partial class BrowserWindow : Form
             var core = view.CoreWebView2;
             view.KeyDown += Shortcut;
             core.Settings.AreDevToolsEnabled = true;
+            core.Settings.IsStatusBarEnabled=false;
+            core.Settings.AreHostObjectsAllowed=false;
+            core.Settings.IsWebMessageEnabled=false;
+            core.FaviconChanged+=async(_,_)=>{try{string url=core.Source;using var icon=await core.GetFaviconAsync(CoreWebView2FaviconImageFormat.Png);if(icon!=null)SiteIcons.Save(url,icon);}catch(Exception ex)when(ex is IOException or ArgumentException or System.Runtime.InteropServices.COMException or InvalidOperationException or OutOfMemoryException){} };
             core.Profile.PreferredColorScheme = store.Settings.Theme == "Claro" ? CoreWebView2PreferredColorScheme.Light : CoreWebView2PreferredColorScheme.Dark;
             core.NavigationStarting += (_, e) =>
             {
@@ -196,19 +202,21 @@ public sealed partial class BrowserWindow : Form
     {
         if (t == null) return;
         tabs.Remove(t); t.View?.Dispose(); tabStrip.TabPages.Remove(t.Page); t.Page.Dispose();
-        if (tabs.Count == 0) _ = AddTab("kay://new");
+        if (!WorkspaceTabs.Any()&&!closing) _ = AddTab("kay://new");
         SaveSession();
     }
     void SaveSession()
     {
-        store.Settings.Session = tabs.Select(x => x.Url).Where(Navigation.IsWebUrl).ToList(); store.SaveSettings();
+        foreach(var w in store.Settings.Workspaces)
+        {var live=tabs.Where(t=>t.Page.WorkspaceId==w.Id).ToArray();if(live.Length>0)w.Urls=live.Select(t=>t.Url).Where(Navigation.IsWebUrl).Take(30).ToList();}
+        store.Settings.Session=WorkspaceTabs.Select(x=>x.Url).Where(Navigation.IsWebUrl).ToList();store.SaveSettings();
     }
     void ShowHome(BrowserTab t)
     {
         t.Title = "Nova aba";
         foreach (Control control in t.Page.Controls.Cast<Control>().ToArray()) control.Dispose();
         t.Page.Controls.Clear();
-        var home = new HomeBoard(store.Settings.Search, store.Bookmarks, NavigateCurrent, ShowSettings, ShowMemory);
+        var home = new HomeBoard(store,NavigateCurrent,ShowAppearance,ShowMemory,ShortcutCommand,kind=>{if(kind=="favorites")ShowBookmarks();else ShowLibrary(kind);},id=>_ = SwitchWorkspace(id),ToggleFocus);
         home.SetPalette(Colors); t.Page.Controls.Add(home); UpdateChrome(t);
     }
     void BookmarkCurrent()
@@ -229,12 +237,13 @@ public sealed partial class BrowserWindow : Form
         }
         menu.Closed += (_, _) => { foreach (ToolStripItem item in menu.Items) item.Image?.Dispose(); menu.Dispose(); };
         Item("Assistente IA · Ctrl+Shift+I", ToggleAssistant); Item("Histórico  ·  Ctrl+H", ShowHistory); Item("Favoritos", ShowBookmarks); Item("Downloads", ShowDownloads);
-        Item("Memória e abas", ShowMemory); Item("Extensões", () => _ = ShowExtensions()); Item("Personalizar", ShowSettings);
+        Item("Memória e abas", ShowMemory); Item("Extensões", () => _ = ShowExtensions()); Item("Personalizar aparência", ShowAppearance);
+        Item("Espaços de trabalho",ManageWorkspaces);Item("Lista de leitura",()=>ShowLibrary("reading"));Item("Fontes salvas",()=>ShowLibrary("source"));Item("Documentos e notas",()=>ShowLibrary("note"));Item("Modo foco",ToggleFocus);Item("Configurações avançadas",ShowSettings);
         Item("Conta Google", () => _ = LoginGoogle()); Item("Buscar na página  ·  Ctrl+F", Find);
         Item("Zoom +", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Min(3, v.ZoomFactor + .1); });
         Item("Zoom −", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Max(.3, v.ZoomFactor - .1); });
         Item("Tela cheia  ·  F11", Fullscreen); Item("Verificar atualizações", () => _ = CheckUpdate());
-        Item("Sobre o Clean Browser", () => ShowNotice("Clean Browser 0.6.5 · prévia para Windows x64\nC# / .NET 10 / Microsoft Edge WebView2\n\nExtensões por pasta. Sem Chrome Sync.\nO limite de RAM é uma meta, não um limite rígido.", "Clean Browser"));
+        Item("Sobre o Clean Browser", () => ShowNotice("Clean Browser 0.7.0 · prévia para Windows x64\nC# / .NET 10 / Microsoft Edge WebView2\n\nExtensões por pasta. Sem Chrome Sync.\nO limite de RAM é uma meta, não um limite rígido.", "Clean Browser"));
         menu.Show(Cursor.Position);
     }
     AppDialog Dialog(string title, int w = 820, int h = 570) => new(title, Colors, w, h);
@@ -293,9 +302,10 @@ public sealed partial class BrowserWindow : Form
             case Keys.D: BookmarkCurrent(); break;
             case Keys.F: Find(); break;
             case Keys.R: Current?.View?.Reload(); break;
-            case Keys.Tab: if (tabStrip.TabCount > 0) tabStrip.SelectedIndex = (tabStrip.SelectedIndex + 1) % tabStrip.TabCount; break;
+            case Keys.Tab: var visible=tabStrip.VisiblePages;if(visible.Length>0){int selected=Array.IndexOf(visible,tabStrip.SelectedTab);tabStrip.SelectedTab=visible[(selected+1)%visible.Length];} break;
             default: return;
         }
+        else if(e.KeyCode==Keys.F8)ToggleFocus();
         else if (e.KeyCode == Keys.F11) Fullscreen();
         else if (e.Alt && e.KeyCode == Keys.Left) { if (Current?.View?.CanGoBack == true) Current.View.GoBack(); }
         else if (e.Alt && e.KeyCode == Keys.Right) { if (Current?.View?.CanGoForward == true) Current.View.GoForward(); }
@@ -388,7 +398,7 @@ public sealed partial class BrowserWindow : Form
     }
     void ShowSettings()
     {
-        using var f = Dialog("Personalizar o Clean Browser", 720, 650);
+        using var f = Dialog("Configurações avançadas", 720, 650);
         var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Padding = new Padding(20), AutoScroll = true }; grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 240)); grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         void Row(string label, Control c) { int row = grid.RowCount++; grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); grid.Controls.Add(new Label { Text = label, AutoSize = true, Padding = new Padding(0, 7, 0, 0) }, 0, row); c.Dock = DockStyle.Fill; grid.Controls.Add(c, 1, row); }
         ComboBox Choice(string[] options, string value) { var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList }; c.Items.AddRange(options); c.SelectedItem = value; if (c.SelectedIndex < 0) c.SelectedIndex = 0; return c; }
@@ -421,7 +431,7 @@ public sealed partial class BrowserWindow : Form
                 if (ShowNotice($"Conectado como {user.Name}\n{user.Email}\n\nSair da conta local? Isso não encerra sessões dos sites.", "Conta Google", MessageBoxButtons.YesNo) == DialogResult.Yes) GoogleLogin.SignOut();
                 return;
             }
-            if (string.IsNullOrWhiteSpace(store.Settings.GoogleClientId)) { ShowNotice("Cadastre um OAuth Client do tipo Desktop no Google Cloud e informe o ID e o secret em Personalizar.\n\nO login identifica seu perfil local. Não sincroniza senhas, favoritos ou sessões do Chrome.", "Configuração necessária"); ShowSettings(); return; }
+            if (string.IsNullOrWhiteSpace(store.Settings.GoogleClientId)) { ShowNotice("Cadastre um OAuth Client do tipo Desktop no Google Cloud e informe o ID e o secret em Configurações avançadas.\n\nO login identifica seu perfil local. Não sincroniza senhas, favoritos ou sessões do Chrome.", "Configuração necessária"); ShowSettings(); return; }
             status.Text = "Aguardando login no navegador padrão…";
             user = await GoogleLogin.SignIn(store.Settings.GoogleClientId, store.Settings.GoogleClientSecret);
             status.Text = "Olá, " + user.Name; ShowNotice("Conta conectada: " + user.Email, "Clean Browser");

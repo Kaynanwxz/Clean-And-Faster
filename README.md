@@ -3,7 +3,7 @@
 # Clean Browser
 ### Navegador para Windows
 
-Uma interface própria em C# sobre o Microsoft Edge WebView2, com abas, personalização, histórico e atualizações pelo GitHub.
+Uma interface nativa em C# sobre o Microsoft Edge WebView2, com identidade azul-marinho inspirada na Grécia, dez visuais, atalhos editáveis, espaços e Clean AI.
 
 [![Windows build](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml/badge.svg)](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml)
 [![Release](https://img.shields.io/github/v/release/Kaynanwxz/Clean-And-Faster)](https://github.com/Kaynanwxz/Clean-And-Faster/releases/latest)
@@ -26,7 +26,7 @@ O executável inclui o .NET; você não precisa instalar o SDK para usar. O WebV
 
 **Da versão 0.4.0 em diante:** clique em **Atualizar → Atualizar e reiniciar**. O app consulta as releases públicas deste repositório, baixa o executável, verifica o SHA-256, guarda uma cópia da versão anterior e reinicia. Não exige Vercel, token pessoal ou extração de ZIP.
 
-**Se você já usa uma versão anterior:** abra **Menu → Personalizar → Atualizações pelo GitHub**, preencha `Kaynanwxz/Clean-And-Faster`, salve e use o botão **Atualizar** ou o item **Verificar atualizações**. Esse caminho está disponível nas versões anteriores que já têm o atualizador. Se o aplicativo antigo não abrir, substitua apenas o exe com o navegador fechado.
+**Se você já usa uma versão anterior:** abra **Menu → Configurações avançadas → Atualizações pelo GitHub**, preencha `Kaynanwxz/Clean-And-Faster`, salve e use o botão **Atualizar** ou o item **Verificar atualizações**. Esse caminho está disponível nas versões anteriores que já têm o atualizador. Se o aplicativo antigo não abrir, substitua apenas o exe com o navegador fechado.
 
 Se configurou um servidor alternativo, use **Atualizar → Canal de atualização → Usar canal oficial** na nova versão. Salve trabalhos e formulários antes do reinício.
 
@@ -37,8 +37,9 @@ Os dados permanecem em `%LOCALAPPDATA%\KayBrowser`. A atualização não apaga h
 | Área | Incluído |
 |---|---|
 | Navegação | Abas, voltar/avançar, pesquisa, nova aba e restauração dos endereços |
-| Organização | Histórico pesquisável, favoritos e downloads da sessão |
-| Aparência | Tema claro/escuro, cor de destaque, ícones próprios, zoom e tela cheia |
+| Organização | Espaços com abas separadas, histórico, favoritos, lista de leitura, fontes e notas locais |
+| Aparência | 10 visuais, abas superiores/laterais, modo foco, densidade, cores e imagem de fundo própria |
+| Atalhos | Adicionar, editar, remover, arrastar, reordenar; lista própria ou sites mais visitados |
 | Memória | Estimativa de RAM total, meta flexível, suspensão e descarregamento de abas |
 | Extensões | Instalação local por pasta com `manifest.json`, ativação e remoção |
 | Conta | Perfil Google por OAuth Desktop, com autorização no navegador padrão |
@@ -48,15 +49,23 @@ Os dados permanecem em `%LOCALAPPDATA%\KayBrowser`. A atualização não apaga h
 ## Limitações conhecidas
 
 - Compatibilidade de extensões depende do WebView2. Não há instalação direta da Chrome Web Store nem barra de popup de extensões.
-- O login Google exige cadastrar credenciais OAuth Desktop em **Personalizar**. Não inclui Chrome Sync nem sincronização de senhas, histórico ou favoritos na nuvem. Login Google dentro de sites pode ser recusado por ser um WebView.
+- O login Google exige cadastrar credenciais OAuth Desktop em **Menu → Configurações avançadas**. Não inclui Chrome Sync nem sincronização de senhas, histórico ou favoritos na nuvem. Login Google dentro de sites pode ser recusado por ser um WebView.
 - A meta de RAM não é um teto rígido. Abas com áudio ou proteção não são suspensas automaticamente. Descarregar uma aba pode perder formulários não salvos.
 - Restaurar abas recupera endereços, sem garantir estado interno de páginas. A lista de downloads é da sessão atual.
 - Não há modo anônimo, gerenciador próprio de senhas ou integração como navegador padrão nesta versão.
 - Os testes de layout cobrem cenários definidos; uso diário, múltiplos monitores e escalas variadas continuam exigindo validação adicional.
 
-## Validação anterior e atual
+## Personalizar
 
-A versão anterior **0.4.0** passou nos 55 testes de lógica, no diagnóstico de encaixe em Windows e no teste de atualização por download público, checksum, substituição do executável e reinício. As capturas de layout foram conferidas. Veja [os resultados e os limites do teste](docs/VALIDACAO.md).
+Clique em **Personalizar** na nova aba ou em **Menu → Personalizar aparência**. O visual inicial é **Copiloto Azul**, com barras azul-marinho, página clara, colagem de Apolo/mar/vela e painel Clean AI. Selecione um dos dez visuais ou combine tema, barra clara/escura, abas laterais, cores, fundo, atalhos, densidade e animações. Clique em **Aplicar**. A escolha de um visual completo aplica imediatamente seus valores. **F8** alterna modo foco; **Ctrl+Shift+I** abre/fecha IA.
+
+Na nova aba, **Adicionar atalho** cria um endereço HTTP/HTTPS. Botão direito permite editar, remover e mover; arraste para reordenar. Enter abre o selecionado; Delete remove; Ctrl+E edita. Os favicons vêm de páginas já visitadas, sem consultas a serviços externos de ícones.
+
+**Menu → Espaços de trabalho** cria, renomeia, abre e exclui espaços. Os endereços são restaurados por espaço se a restauração estiver ativa. Espaços organizam abas; compartilham o mesmo perfil de sites e cookies. Fontes são links guardados pelo usuário, sem verificação automática. Documentos são notas locais de texto, com importação TXT/Markdown e exportação TXT; não é um editor Office. O aspecto Cristal é uma composição visual sem desfoque contínuo.
+
+## Validação
+
+115 verificações de lógica passaram localmente na preparação da 0.7.0, incluindo migração das configurações e dez presets. A CI também verifica a interface real no Windows e a atualização pela release pública; confira o [workflow da versão](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml). Veja [a cobertura e seus limites](docs/VALIDACAO.md).
 
 ## Tecnologia e estrutura
 
@@ -96,7 +105,7 @@ Start-Process dist/CleanBrowser.exe -ArgumentList '--layout-check' -Wait
 Get-Content dist/layout-check.json
 ```
 
-O diagnóstico abre uma janela isolada, verifica encaixe em três tamanhos, maximização/restauração, e salva capturas sem dados de usuário. O teste de atualização da CI compila um cliente com versão anterior, baixa a release pública real, verifica o checksum, substitui o executável, confirma a cópia anterior e valida o reinício na versão nova.
+O diagnóstico abre uma janela isolada, verifica encaixe em três tamanhos, maximização/restauração, perda de foco, dez presets, abas laterais, IA, personalização, modo foco, troca de espaços, reordenação de atalhos e persistência de notas. Salva capturas sem dados de usuário. O teste de atualização da CI compila um cliente com versão anterior, baixa a release pública real, verifica o checksum, substitui o executável, confirma a cópia anterior e valida o reinício na versão nova.
 
 ## Publicar uma versão
 
@@ -111,13 +120,13 @@ Mudanças sem incremento da versão não sobrescrevem releases existentes. Pull 
 
 Veja [CONTRIBUTING.md](CONTRIBUTING.md). Ao relatar um problema visual, informe a versão do Clean Browser, versão do Windows, escala do monitor, tamanho da janela e passos para reproduzir. Evite incluir credenciais ou dados pessoais.
 
-## Clean AI e visual da versão 0.6.0
+## Clean AI
 
 O ícone de brilho abre o painel lateral de IA (**Ctrl+Shift+I**). Use **Configurar IA** para informar sua própria chave OpenAI e o modelo. O padrão é `gpt-5.4-mini`, editável conforme o acesso da sua conta; deve suportar a API Responses e chamadas de ferramentas. O uso é cobrado pela API. A chave fica protegida por DPAPI para o usuário atual do Windows, fora de `settings.json` e do repositório.
 
 - Respostas, explicações e resumos; leitura de texto/elementos da aba e listagem de abas quando o compartilhamento estiver marcado.
 - Abrir/selecionar abas, clicar, preencher campos comuns e rolar. Cada ação requer aprovação na interface, com destino ou campo visível. Nenhuma ferramenta de terminal, arquivos ou JavaScript livre é oferecida ao modelo.
-- Contexto limitado: até 12 mil caracteres da página, 60 elementos e 30 abas; até 6 rodadas de ferramentas e 1.800 tokens de saída por chamada. Botão **Parar** e prazo de 4 minutos por tarefa.
+- Contexto limitado: até 12 mil caracteres da página, 60 elementos e 30 abas do espaço ativo; até 6 rodadas de ferramentas e 1.800 tokens de saída por chamada. Botão **Parar** e prazo de 4 minutos por tarefa.
 - Sem modelo embarcado ou WebView extra. O HTTP é usado somente ao enviar pedidos. As animações param quando terminam e respeitam animações reduzidas do Windows, sessão remota e a opção em **Personalizar**.
 - O compartilhamento é desativado por padrão. Nenhum valor de formulário é extraído; campos sensíveis conhecidos são excluídos. Texto publicado no corpo de uma página ainda pode conter informações pessoais: compartilhe somente páginas que deseja enviar à OpenAI. O corpo de mensagens e o contexto são enviados à API com `store: false`; isso não equivale a garantia de retenção zero do provedor.
 - O histórico do painel fica apenas na memória desta sessão; cada pedido começa uma tarefa nova. Não conecta automaticamente esta conversa do ChatGPT nem permite acesso remoto deste chat ao seu PC.
@@ -125,3 +134,9 @@ O ícone de brilho abre o painel lateral de IA (**Ctrl+Shift+I**). Use **Configu
 Limites: extração somente do documento principal, sem iframe/shadow DOM. Algumas páginas dinâmicas podem exigir nova leitura ou ação manual. A IA não é autorizada pelo prompt a fazer pagamentos, excluir dados ou enviar mensagens; confirme cuidadosamente cada clique proposto. A chave não foi disponibilizada no ambiente de desenvolvimento: os testes do protocolo usam uma API simulada, sem consumo de saldo real.
 
 A versão também corrige o redesenho nativo da moldura ao perder foco, anima os botões/abas e serializa a inicialização de cada WebView para evitar corridas ao abrir abas.
+
+## Leveza e segurança
+
+Os controles são Windows Forms: a interface e a IA não criam outro processo Chromium. Arte compartilhada decodificada uma vez, cache de favicons limitado em memória, transições curtas que param ao concluir e respeito à preferência de reduzir animações do Windows. O peso maior depende das páginas WebView2 abertas; não há promessa de teto rígido de RAM nem benchmark comparativo.
+
+Os sites ficam com `AreHostObjectsAllowed=false` e `IsWebMessageEnabled=false`, pois não precisam da ponte de objetos/mensagens nativa. Os atalhos aceitam HTTP/HTTPS sem credenciais na URL. A chave de IA continua protegida por DPAPI; ações da IA exigem confirmação e contexto compartilhado é opcional. SHA-256 detecta corrupção do download, mas não substitui assinatura de código ou auditoria de segurança.

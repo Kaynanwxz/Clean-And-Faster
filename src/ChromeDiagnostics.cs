@@ -6,7 +6,7 @@ public sealed partial class BrowserWindow
 {
     internal void PrepareDiagnosticPage()
     {
-        var tab = new BrowserTab(); tabs.Add(tab); tabStrip.TabPages.Add(tab.Page);
+        var tab = new BrowserTab();tab.Page.WorkspaceId=WorkspaceId; tabs.Add(tab); tabStrip.TabPages.Add(tab.Page);
     }
     internal void SetDiagnosticAssistant(bool open)
     {
@@ -42,13 +42,13 @@ public sealed partial class BrowserWindow
         Check(locationBox!.ClientRectangle.Contains(address.Bounds), "Campo de endereço fora da barra.");
         Check(locationBox.ClientRectangle.Contains(connectionIcon!.Bounds), "Ícone de conexão fora da barra.");
         Check(!address.Bounds.IntersectsWith(connectionIcon.Bounds), "Texto do endereço sobreposto ao ícone.");
-        Check(chromeLayout.GetRowHeights()[0] >= Ui(46), "Linha de abas insuficiente.");
-        Check(navigationRow!.Height >= Ui(58), "Linha de navegação insuficiente.");
+        Check(chromeLayout.GetRowHeights()[0] >= Ui(store.Settings.Compact||store.Settings.FocusMode?40:46), "Linha de abas insuficiente.");
+        Check(navigationRow!.Height >= Ui(store.Settings.Compact||store.Settings.FocusMode?50:58), "Linha de navegação insuficiente.");
         Check(pageHost.Top >= navigationRow.Bottom, "Conteúdo web sobreposto ao topo.");
         if(assistantOpen)
         {
             Check(assistant!=null&&assistant.Width>=Ui(340),"Painel IA estreito demais.");
-            Check(tabStrip.Width>=Ui(430),"Painel IA cortou conteúdo web.");
+            Check(tabStrip.Width>=Ui(store.Settings.VerticalTabs?380:420),"Painel IA cortou conteúdo web.");
             Check(assistant!.Right<=pageHost.Width,"Painel IA fora da janela.");
         }
         var page = new BrowserPage { Caption = "YouTube · teste de título" };
@@ -98,6 +98,8 @@ public static class ChromeDiagnostics
             if(!agentCheck.IsCompleted)throw new TimeoutException("Diagnóstico de agente excedeu tempo.");
             agentCheck.GetAwaiter().GetResult();
             result.Add(new{mode="agent-dom-read-fill-click-stale-and-dpapi",status="PASS"});
+            window.VerifyPersonalization();
+            result.Add(new{mode="presets-10-vertical-focus-shortcuts-library-workspaces",status="PASS"});
             window.Close();
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "layout-check.json"), JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
             return 0;

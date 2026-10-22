@@ -9,8 +9,23 @@ public sealed class Preferences
 {
     public bool Animations { get; set; } = true;
     public string AiModel { get; set; } = "gpt-5.4-mini";
-    public string Theme { get; set; } = "Escuro";
-    public string Accent { get; set; } = "#A8E6CF";
+    public int AppearanceRevision { get; set; }
+    public string Visual { get; set; } = "Copiloto Azul";
+    public string HomeLayout { get; set; } = "Clássico";
+    public string Background { get; set; } = "Arte";
+    public string Wallpaper { get; set; } = "";
+    public bool DarkChrome { get; set; } = true;
+    public bool VerticalTabs { get; set; }
+    public bool Compact { get; set; }
+    public bool FocusMode { get; set; }
+    public bool ShowShortcuts { get; set; } = true;
+    public bool FrequentShortcuts { get; set; }
+    public string ActiveWorkspace { get; set; } = "";
+    public List<Workspace> Workspaces { get; set; } = [];
+    public List<ShortcutLink> Shortcuts { get; set; } = [
+        new("google","Google","https://www.google.com/"),new("youtube","YouTube","https://www.youtube.com/"),new("github","GitHub","https://github.com/")];
+    public string Theme { get; set; } = "Claro";
+    public string Accent { get; set; } = "#8FBBEF";
     public string Search { get; set; } = "Google";
     public int IdleMinutes { get; set; } = 5;
     public int MemoryBudgetMb { get; set; } = 1500;
@@ -28,14 +43,24 @@ public sealed class Storage
     public Preferences Settings { get; }
     public List<Visit> History { get; }
     public List<Bookmark> Bookmarks { get; }
+    public List<LibraryEntry> Library { get; }
     public Storage()
     {
         Directory.CreateDirectory(Root);
         Settings = Read("settings.json", new Preferences());
+        if(Settings.AppearanceRevision<1){VisualPresets.Apply(Settings,"Copiloto Azul");Settings.Accent="#8FBBEF";Settings.AppearanceRevision=1;}
+        Settings.Shortcuts ??= [];
+        Settings.Shortcuts=Settings.Shortcuts.Where(s=>s!=null&&Navigation.IsWebUrl(s.Url)&&!string.IsNullOrWhiteSpace(s.Name)).DistinctBy(s=>s.Id).Take(20).ToList();
+        Settings.Workspaces ??= [];
+        Settings.Workspaces=Settings.Workspaces.Where(w=>w!=null&&!string.IsNullOrWhiteSpace(w.Id)).DistinctBy(w=>w.Id).Take(12).ToList();
+        if(Settings.Workspaces.Count==0){Settings.Workspaces=[new(){Name="Pessoal",Urls=Settings.Session??[]},new(){Name="Trabalho"},new(){Name="Estudo"}];}
+        foreach(var w in Settings.Workspaces){w.Name=string.IsNullOrWhiteSpace(w.Name)?"Espaço":w.Name[..Math.Min(w.Name.Length,40)];w.Urls=(w.Urls??[]).Where(Navigation.IsWebUrl).Take(30).ToList();}
+        if(!Settings.Workspaces.Any(w=>w.Id==Settings.ActiveWorkspace))Settings.ActiveWorkspace=Settings.Workspaces[0].Id;
         Settings.IdleMinutes = Math.Clamp(Settings.IdleMinutes, 1, 60);
         Settings.MemoryBudgetMb = Math.Clamp(Settings.MemoryBudgetMb, 256, 32768);
         History = Read<List<Visit>>("history.json", []);
         Bookmarks = Read<List<Bookmark>>("bookmarks.json", []);
+        Library = Read<List<LibraryEntry>>("library.json", []).Where(e=>e!=null&&e.Kind is "reading" or "source" or "note").Take(500).ToList();
     }
     static T Read<T>(string name, T fallback)
     {
@@ -53,6 +78,7 @@ public sealed class Storage
         File.WriteAllText(target + ".tmp", JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true }));
         File.Move(target + ".tmp", target, true);
     }
+    public void SaveLibrary() => Write("library.json", Library);
     public void SaveSettings() => Write("settings.json", Settings);
     public void SaveBookmarks() => Write("bookmarks.json", Bookmarks);
     public void SaveHistory() => Write("history.json", History);

@@ -70,7 +70,7 @@ public sealed partial class BrowserWindow
         updateButton.Text = "Atualizar"; updateButton.TabStop = true;
         bar.Controls.Add(updateButton, 9, 0);
         tabStrip.Margin=Padding.Empty;
-        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Clean Browser 0.6.5   ·   Pronto para explorar";
+        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Clean Browser 0.7.0   ·   Pronto para explorar";
         chromeLayout.Controls.Add(title,0,0);chromeLayout.Controls.Add(bar,0,1);InitializeAssistantHost();
         chromeLayout.Controls.Add(pageHost,0,2);chromeLayout.Controls.Add(status,0,3);
         Controls.Add(chromeLayout);
@@ -84,9 +84,9 @@ public sealed partial class BrowserWindow
         SuspendLayout(); chromeLayout.SuspendLayout();
         try
         {
-            chromeLayout.RowStyles[0].Height = fullscreen ? 0 : Ui(48);
-            chromeLayout.RowStyles[1].Height = fullscreen ? 0 : Ui(62);
-            chromeLayout.RowStyles[3].Height = fullscreen ? 0 : Ui(26);
+            chromeLayout.RowStyles[0].Height = fullscreen ? 0 : Ui(store.Settings.Compact||store.Settings.FocusMode?42:48);
+            chromeLayout.RowStyles[1].Height = fullscreen ? 0 : Ui(store.Settings.Compact||store.Settings.FocusMode?52:60);
+            chromeLayout.RowStyles[3].Height = fullscreen||store.Settings.FocusMode ? 0 : Ui(24);
             titleRow.ColumnStyles[1].Width = Ui(138);
             windowButtons.Padding = new Padding(0, Ui(4), Ui(4), Ui(4));
             navigationRow.Padding = new Padding(Ui(10), Ui(8), Ui(10), Ui(8));
@@ -106,6 +106,7 @@ public sealed partial class BrowserWindow
             locationBox.Resize -= OnLocationResize; locationBox.Resize += OnLocationResize;
             PositionAddress();
             MinimumSize = new Size(Ui(900), Ui(600));
+            ApplyWorkspaceMetrics();
             tabStrip.Header.EnsureSelectedVisible(); tabStrip.Header.Invalidate();
         }
         finally { chromeLayout.ResumeLayout(true); ResumeLayout(true); }
@@ -120,7 +121,7 @@ public sealed partial class BrowserWindow
     void SetNativeTheme()
     {
         if(!IsHandleCreated)return;
-        int dark=store.Settings.Theme=="Claro"?0:1,round=2;
+        int dark=store.Settings.DarkChrome?1:0,round=2;
         try { NativeFrame.DwmSetWindowAttribute(Handle,20,ref dark,sizeof(int));NativeFrame.DwmSetWindowAttribute(Handle,33,ref round,sizeof(int)); } catch(DllNotFoundException) { }
     }
     protected override void OnHandleCreated(EventArgs e){base.OnHandleCreated(e);SetNativeTheme();}

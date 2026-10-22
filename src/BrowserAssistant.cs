@@ -10,27 +10,30 @@ public sealed partial class BrowserWindow
     readonly Tween assistantTween=new();
     CancellationTokenSource? aiCancellation;
     HttpClient? aiHttp;
-    bool assistantOpen;
+    bool assistantOpen,assistantWide;
     string snapshotToken="", snapshotSource="";
     BrowserTab? snapshotTab;
     readonly Dictionary<string,(string label,string kind)> snapshotElements=[];
     void InitializeAssistantHost()
     {
         pageHost.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));pageHost.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,0));pageHost.RowStyles.Add(new RowStyle(SizeType.Percent,100));
-        pageHost.Controls.Add(tabStrip,0,0);
-        pageHost.Resize+=(_,_)=>{if(assistantOpen&&!assistantTween.Running)pageHost.ColumnStyles[1].Width=AssistantWidth;};
+        InitializeWorkspaceChrome();
+        pageHost.Controls.Add(browserSurface,0,0);pageHost.Controls.Add(rightDock,1,0);
+        pageHost.Resize+=(_,_)=>{if(RightOpen&&!assistantTween.Running)pageHost.ColumnStyles[1].Width=AssistantWidth;};
     }
-    int AssistantWidth=>Math.Min(Ui(380),pageHost.ClientSize.Width/2);
+    int AssistantWidth=>Math.Min(Ui(assistantWide?560:390),pageHost.ClientSize.Width/2);
     void ToggleAssistant()
     {
         if(assistant==null)
         {
-            assistant=new();assistant.SetPalette(Colors);pageHost.Controls.Add(assistant,1,0);
-            assistant.SendRequested+=()=>_ = AskAssistant();assistant.StopRequested+=()=>aiCancellation?.Cancel();assistant.SetupRequested+=ConfigureAssistant;assistant.CloseRequested+=ToggleAssistant;
+            assistant=new();assistant.SetPalette(BrandAssets.Navy(Accent));rightDock.Controls.Add(assistant);
+            assistant.SendRequested+=()=>_ = AskAssistant();assistant.StopRequested+=()=>aiCancellation?.Cancel();assistant.SetupRequested+=ConfigureAssistant;assistant.CloseRequested+=ToggleAssistant;assistant.ExpandRequested+=()=>{assistantWide=!assistantWide;pageHost.ColumnStyles[1].Width=AssistantWidth;ApplyWorkspaceMetrics();};
         }
+        if(appearanceOpen){appearanceOpen=false;if(appearance!=null)appearance.Visible=false;}
         assistantOpen=!assistantOpen;
-        if(!assistantOpen)aiCancellation?.Cancel();else assistant.Visible=true;
-        assistantTween.Start(pageHost.ColumnStyles[1].Width,assistantOpen?AssistantWidth:0,width=>pageHost.ColumnStyles[1].Width=width,220,()=>{assistant.Visible=assistantOpen;});
+        if(!assistantOpen)aiCancellation?.Cancel();else {assistant.Visible=true;assistant.BringToFront();}
+        assistantTween.Start(pageHost.ColumnStyles[1].Width,assistantOpen?AssistantWidth:0,width=>pageHost.ColumnStyles[1].Width=width,220,()=>{assistant.Visible=assistantOpen;ApplyWorkspaceMetrics();});
+        ApplyWorkspaceMetrics();
     }
     void DisposeAssistant(){aiCancellation?.Cancel();assistantTween.Dispose();aiHttp?.Dispose();}
     void ConfigureAssistant()
@@ -70,7 +73,7 @@ public sealed partial class BrowserWindow
         {if(!closing)assistant.Add("Clean AI",ex is HttpRequestException?"Não foi possível conectar à API. Confira sua conexão e tente novamente.":ex.Message);}
         finally{aiCancellation=null;key="";if(!closing)assistant.Busy(false);}
     }
-    string TabsContext()=>JsonSerializer.Serialize(tabs.Take(30).Select((t,i)=>new{index=i+1,title=t.Title,url=t.Url,active=t==Current}));
+    string TabsContext()=>JsonSerializer.Serialize(tabs.Select((t,i)=>new{index=i+1,title=t.Title,url=t.Url,active=t==Current,workspace=t.Page.WorkspaceId}).Where(t=>t.workspace==WorkspaceId).Take(30));
     void ResetSnapshot(){snapshotToken="";snapshotTab=null;snapshotSource="";snapshotElements.Clear();}
     async Task<string> ReadAiPage(CancellationToken cancel)
     {
@@ -137,7 +140,7 @@ public sealed partial class BrowserWindow
         {
             int index=args.GetProperty("index").GetInt32()-1;
             if(index<0||index>=tabs.Count)throw new InvalidOperationException("Aba não existe.");
-            ResetSnapshot();tabStrip.SelectedTab=tabs[index].Page;return "Aba selecionada.";
+            ResetSnapshot();if(tabs[index].Page.WorkspaceId!=WorkspaceId)throw new InvalidOperationException("Aba fora do espaço compartilhado.");tabStrip.SelectedTab=tabs[index].Page;return "Aba selecionada.";
         }
         if(core==null||tab!=Current)throw new InvalidOperationException("Aba mudou ou está indisponível.");
         if(name=="scroll"){await core.ExecuteScriptAsync("window.scrollBy({top:"+(Str("direction")=="down"?"1":"-1")+"*window.innerHeight*0.75,behavior:'auto'})").WaitAsync(cancel);return "Página rolada.";}
