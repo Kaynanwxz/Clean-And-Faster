@@ -23,7 +23,7 @@ public sealed partial class BrowserWindow
             for(int i=0;i<20;i++)
             {
                 ShowMenu();await Settle();Check(menuOpen&&browserMenu!.Visible,"Menu abre "+i);
-                ClickAt(PointToScreen(new Point(Ui(30),Ui(120))));await Settle();Check(!menuOpen&&!browserMenu!.Visible,"Clique fora fecha somente menu "+i);
+                ClickAt(PointToScreen(new Point(Ui(30),Ui(120))));await Settle();Check(!menuOpen&&!browserMenu!.Visible,"Clique fora fecha somente menu "+i+"; open="+menuOpen+"; visible="+browserMenu!.Visible+"; "+string.Join(" / ",menuTrace));
             }
             ShowMenu();await Settle();SendKeys.SendWait("{ESC}");await Settle();Check(!menuOpen,"Escape fecha menu");
             ShowMenu();await Settle();using(var other=new Form{Size=new Size(160,90),StartPosition=FormStartPosition.Manual,Location=new Point(20,20)}){other.Show();other.Activate();await Settle(60);Check(!menuOpen,"Perda de foco fecha menu");other.Close();}Activate();
@@ -71,7 +71,7 @@ public sealed partial class BrowserWindow
             foreach(var button in AppearancePanel.Descendants(assistant).OfType<Button>().Where(b=>b.Enabled).ToArray())
             {button.PerformClick();await Settle(40);Check(true,"IA: "+(button.AccessibleName??button.Text));if(!assistantOpen)ToggleAssistant();}
             using(var stopTask=new CancellationTokenSource()){aiCancellation=stopTask;assistant!.Busy(true);AppearancePanel.Descendants(assistant).OfType<Button>().Single(b=>b.Text=="Parar").PerformClick();Check(stopTask.IsCancellationRequested,"Parar IA cancela tarefa");assistant.Busy(false);aiCancellation=null;}
-            if(assistantOpen)ToggleAssistant();closer.Stop();checks.AddRange(await VerifyDialogFlows());
+            if(assistantOpen)ToggleAssistant();closer.Stop();checks.AddRange(await VerifyDialogFlows());checks.AddRange(await VerifyNavigationButtons());
             // Run actual timer frames even on the remote CI desktop, then verify they stop.
             Motion.DiagnosticAnimations=true;Motion.Enabled=true;store.Settings.Animations=true;
             ShowMenu();await Settle(340);Check(!menuMotion.Running&&menuOpen,"Animação do menu termina");CloseBrowserMenu();await Settle(250);Check(!menuMotion.Running&&!browserMenu!.Visible,"Animação de saída termina");

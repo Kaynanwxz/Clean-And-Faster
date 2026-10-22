@@ -159,7 +159,7 @@ public sealed class ShortcutGrid : Control,IThemed
         if(hit==links.Count){command("edit",null);return;}
         var link=links[hit];var menu=new ContextMenuStrip{Renderer=new KayMenuRenderer(colors),BackColor=colors.Surface,ForeColor=colors.Text};
         void Item(string title,string action)=>menu.Items.Add(title,null,(_,_)=>command(action,link));
-        Item("Editar atalho","edit");Item("Remover","remove");Item("Mover para a esquerda","left");Item("Mover para a direita","right");menu.Closed+=(_,_)=>{if(!IsDisposed&&IsHandleCreated)BeginInvoke(()=>menu.Dispose());else menu.Dispose();};menu.Show(this,e.Location);
+        Item("Editar atalho","edit");Item("Remover","remove");Item("Mover para a esquerda","left");Item("Mover para a direita","right");var dispatcher=FindForm();menu.Closed+=(_,_)=>{if(dispatcher is {IsDisposed:false,IsHandleCreated:true})dispatcher.BeginInvoke(()=>menu.Dispose());else SynchronizationContext.Current?.Post(_=>menu.Dispose(),null);};menu.Show(this,e.Location);
     }
     protected override void OnMouseWheel(MouseEventArgs e){firstRow=Math.Clamp(firstRow+(e.Delta<0?1:-1),0,Math.Max(0,(Links.Count+1+Columns-1)/Columns-Rows));Invalidate();base.OnMouseWheel(e);}
     protected override void OnKeyDown(KeyEventArgs e)
