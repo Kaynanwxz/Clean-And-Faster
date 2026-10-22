@@ -38,7 +38,7 @@ public sealed class AssistantPanel : Panel, IThemed
     public void Add(string who,string text)
     {
         if(transcript.TextLength>28000)transcript.Clear();
-        transcript.SelectionStart=transcript.TextLength;transcript.AppendText(who+"\n"+text[..Math.Min(text.Length,20000)]+"\n\n");transcript.ScrollToCaret();
+        transcript.SelectionStart=transcript.TextLength;transcript.AppendText(who+Environment.NewLine+text[..Math.Min(text.Length,20000)].ReplaceLineEndings(Environment.NewLine)+Environment.NewLine+Environment.NewLine);transcript.ScrollToCaret();
     }
     public void Busy(bool busy){send.Enabled=!busy;setup.Enabled=!busy;clear.Enabled=!busy;share.Enabled=!busy;stop.Enabled=busy;state.Text=busy?"Trabalhando… · você pode parar":"Pronto · conecta somente ao enviar";}
     public void SetPalette(Palette p)
