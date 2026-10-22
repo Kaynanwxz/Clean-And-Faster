@@ -49,7 +49,17 @@ jobs:
         timeout-minutes: 5
         shell: pwsh
         run: |
-          $process = Start-Process -FilePath "$PWD/dist/CleanBrowser.exe" -ArgumentList '--layout-check' -Wait -PassThru
+          $process = Start-Process -FilePath "$PWD/dist/CleanBrowser.exe" -ArgumentList '--layout-check' -PassThru
+          $deadline = (Get-Date).AddSeconds(240)
+          $printed = 0
+          while (!$process.HasExited -and (Get-Date) -lt $deadline) {
+            Start-Sleep -Seconds 2
+            if (Test-Path dist/interaction-progress.log) {
+              $lines = @(Get-Content dist/interaction-progress.log)
+              if ($lines.Count -gt $printed) { $lines[$printed..($lines.Count - 1)] | Select-Object -Last 8; $printed = $lines.Count }
+            }
+          }
+          if (!$process.HasExited) { Stop-Process -Id $process.Id -Force; throw 'Interface excedeu prazo; veja interaction-progress.log.' }
           Get-Content dist/layout-check.json
           if ($process.ExitCode -ne 0) { exit 1 }
       - uses: actions/upload-artifact@v4
@@ -62,6 +72,7 @@ jobs:
             dist/CleanBrowser-Windows-x64.zip
             dist/layout-check.json
             dist/interaction-check.json
+            dist/interaction-progress.log
             dist/layout-*.png
       - name: Publish release for a new app version
         if: github.event_name != 'pull_request'

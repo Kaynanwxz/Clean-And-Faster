@@ -6,17 +6,21 @@ public sealed partial class BrowserWindow
 {
     internal async Task<string[]> VerifyNavigationButtons()
     {
-        var checks=new List<string>();void Check(bool ok,string text){if(!ok)throw new InvalidOperationException(text);checks.Add(text);}
+        var checks=new List<string>();void Check(bool ok,string text){File.AppendAllText(Path.Combine(AppContext.BaseDirectory,"interaction-progress.log"),(ok?"PASS ":"FAIL ")+text+Environment.NewLine);if(!ok)throw new InvalidOperationException(text);checks.Add(text);}
         Button Toolbar(string name)=>AppearancePanel.Descendants(navigationRow!).OfType<Button>().Single(b=>b.AccessibleName?.StartsWith(name)==true);
         var tab=Current!;await CreateView(tab,false);var core=tab.View!.CoreWebView2;
         string fixture=Path.Combine(Storage.Root,"agent-fixture");File.WriteAllText(Path.Combine(fixture,"next.html"),"<!doctype html><html><head><title>Segunda página</title></head><body>Segunda página local</body></html>");core.SetVirtualHostNameToFolderMapping("clean-ai.test",fixture,CoreWebView2HostResourceAccessKind.DenyCors);
         async Task Navigate(Action trigger)
         {
-            var ready=new TaskCompletionSource<bool>();void Loaded(object? s,CoreWebView2NavigationCompletedEventArgs e){if(e.IsSuccess)ready.TrySetResult(true);else ready.TrySetException(new IOException("Fixture: "+e.WebErrorStatus));}
+            var ready=new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);void Loaded(object? s,CoreWebView2NavigationCompletedEventArgs e){if(e.IsSuccess)ready.TrySetResult(true);else ready.TrySetException(new IOException("Fixture: "+e.WebErrorStatus));}
             core.NavigationCompleted+=Loaded;try{trigger();await ready.Task.WaitAsync(TimeSpan.FromSeconds(12));}finally{core.NavigationCompleted-=Loaded;}
         }
         await Navigate(()=>core.Navigate("https://clean-ai.test/index.html"));await Navigate(()=>core.Navigate("https://clean-ai.test/next.html"));
         await Navigate(()=>Toolbar("Voltar").PerformClick());Check(core.Source.EndsWith("index.html"),"Botão voltar navega na fixture");await Navigate(()=>Toolbar("Avançar").PerformClick());Check(core.Source.EndsWith("next.html"),"Botão avançar navega na fixture");await Navigate(()=>Toolbar("Recarregar").PerformClick());Check(core.DocumentTitle=="Segunda página","Botão recarregar conclui navegação");
+        for(int i=0;i<4;i++)
+        {
+            ShowMenu();await Task.Delay(80);var point=tab.View.PointToScreen(new Point(30,100));Cursor.Position=point;mouse_event(2,0,0,0,UIntPtr.Zero);mouse_event(4,0,0,0,UIntPtr.Zero);await Task.Delay(120);Check(!menuOpen&&!closing,"Clique no WebView fecha menu sem encerrar app "+i);
+        }
         ShowMenu();browserMenu!.ClickCommand("zoom-in");Check(tab.View.ZoomFactor>1,"Botão zoom mais altera WebView");browserMenu.ClickCommand("zoom-out");Check(Math.Abs(tab.View.ZoomFactor-1)<.01,"Botão zoom menos restaura WebView");CloseBrowserMenu(false);
         int bookmarks=store.Bookmarks.Count;Toolbar("Salvar ou remover favorito").PerformClick();Check(store.Bookmarks.Count==bookmarks+1,"Estrela da barra salva favorito");Toolbar("Salvar ou remover favorito").PerformClick();Check(store.Bookmarks.Count==bookmarks,"Estrela da barra remove favorito");
         // Install an isolated extension, then operate the real toggle/remove UI against it.

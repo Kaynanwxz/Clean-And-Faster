@@ -5,7 +5,7 @@ public sealed partial class BrowserWindow
     internal async Task<string[]> VerifyDialogFlows()
     {
         var checks=new List<string>();
-        void Check(bool ok,string text){if(!ok)throw new InvalidOperationException(text);checks.Add(text);}
+        void Check(bool ok,string text){File.AppendAllText(Path.Combine(AppContext.BaseDirectory,"interaction-progress.log"),(ok?"PASS ":"FAIL ")+text+Environment.NewLine);if(!ok)throw new InvalidOperationException(text);checks.Add(text);}
         Button ButtonIn(AppDialog f,string text)=>AppearancePanel.Descendants(f).OfType<Button>().Single(b=>b.Text==text);
         TextBox Input(AppDialog f)=>AppearancePanel.Descendants(f).OfType<TextBox>().First(t=>!t.ReadOnly);
         void Script(Action open,Action<AppDialog> step)
@@ -13,7 +13,7 @@ public sealed partial class BrowserWindow
             Exception? error=null;var deadline=DateTime.UtcNow.AddSeconds(12);
             using var driver=new System.Windows.Forms.Timer{Interval=25};
             driver.Tick+=(_,_)=>{
-                try{if(DateTime.UtcNow>deadline)throw new TimeoutException("Diálogo não completou o cenário.");var top=Application.OpenForms.Cast<Form>().OfType<AppDialog>().LastOrDefault();if(top!=null)step(top);}
+                try{if(DateTime.UtcNow>deadline)throw new TimeoutException("Diálogo não completou o cenário.");var top=Application.OpenForms.Cast<Form>().OfType<AppDialog>().LastOrDefault();if(top!=null){File.AppendAllText(Path.Combine(AppContext.BaseDirectory,"interaction-progress.log"),"DIALOG "+top.Text+Environment.NewLine);step(top);}}
                 catch(Exception e){error=e;driver.Stop();foreach(var f in Application.OpenForms.Cast<Form>().OfType<AppDialog>().Reverse().ToArray())f.Close();}
             };
             driver.Start();open();driver.Stop();if(error!=null)throw new InvalidOperationException("Teste de botões do diálogo",error);

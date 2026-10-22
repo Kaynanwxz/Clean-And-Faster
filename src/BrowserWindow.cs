@@ -123,6 +123,7 @@ public sealed partial class BrowserWindow : Form
             if (closing || !tabs.Contains(t)) return;
             var core = view.CoreWebView2;
             view.KeyDown += Shortcut;
+            view.GotFocus+=(_,_)=>CloseBrowserMenu();
             core.Settings.AreDevToolsEnabled = true;
             core.Settings.IsStatusBarEnabled=false;
             core.Settings.AreHostObjectsAllowed=false;
@@ -219,7 +220,7 @@ public sealed partial class BrowserWindow : Form
         foreach (Control control in t.Page.Controls.Cast<Control>().ToArray()) control.Dispose();
         t.Page.Controls.Clear();
         var home = new HomeBoard(store,NavigateCurrent,ShowAppearance,ShowMemory,ShortcutCommand,kind=>{if(kind=="favorites")ShowBookmarks();else ShowLibrary(kind);},id=>_ = SwitchWorkspace(id),ToggleFocus);
-        home.SetPalette(Colors); t.Page.Controls.Add(home);home.AnimateIn(); UpdateChrome(t);
+        home.SetPalette(Colors); t.Page.Controls.Add(home);home.AnimateIn(); UpdateChrome(t);if(Current==t)status.Text="Clean Browser · Pronto para explorar";
     }
     void BookmarkCurrent()
     {
@@ -343,7 +344,7 @@ public sealed partial class BrowserWindow : Form
         if (Current == null||environment==null) return;
         using var temporary=new WebView2{Size=new Size(1,1),Location=new Point(-100,-100),Visible=false};
         var core=Current.View?.CoreWebView2;
-        if(core==null){Controls.Add(temporary);try{await temporary.EnsureCoreWebView2Async(environment);core=temporary.CoreWebView2;}catch(Exception ex){ShowNotice("Não foi possível carregar extensões: "+ex.Message);return;}}
+        if(core==null){Controls.Add(temporary);try{await temporary.EnsureCoreWebView2Async(environment);core=temporary.CoreWebView2;}catch(Exception ex){await Task.Yield();ShowNotice("Não foi possível carregar extensões: "+ex.Message);return;}}
         var profile = core?.Profile;
         if (profile == null) return;
         using var f = Dialog("Extensões · por pasta"); var list = List("Nome", "ID", "Estado");
@@ -371,7 +372,7 @@ public sealed partial class BrowserWindow : Form
         var toggle = Button("Ativar / desativar", () => { }); toggle.Click += async (_, _) => { try { if (list.SelectedItems.Count > 0) { var x = (CoreWebView2BrowserExtension)list.SelectedItems[0].Tag!; await x.EnableAsync(!x.IsEnabled); await Render(); } } catch (Exception ex) { ShowNotice(ex.Message); } };
         var remove = Button("Remover", () => { }); remove.Click += async (_, _) => { try { if (list.SelectedItems.Count > 0) { var x = (CoreWebView2BrowserExtension)list.SelectedItems[0].Tag!; await x.RemoveAsync(); await Render(); } } catch (Exception ex) { ShowNotice(ex.Message); } };
         actions.Controls.AddRange([add, toggle, remove]); f.Controls.Add(list); f.Controls.Add(help); f.Controls.Add(actions);
-        try { await Render(); f.ShowDialog(this); } catch (Exception ex) { ShowNotice(ex.Message); }
+        try { await Render(); await Task.Yield();f.ShowDialog(this); } catch (Exception ex) { await Task.Yield();ShowNotice(ex.Message); }
     }
     static void CopyExtension(string source, string destination)
     {

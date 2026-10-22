@@ -30,6 +30,7 @@ public sealed class BrowserMenuPanel : Panel,IThemed
         {int row=rows.RowCount++;rows.RowStyles.Add(new RowStyle(SizeType.Absolute,42));var b=new SoftButton{Text=c.Title,Glyph=c.Glyph,Dock=DockStyle.Fill,AccessibleName=c.Id,Margin=new Padding(0,2,0,2)};b.Click+=(_,_)=>invoke(c.Id);rows.Controls.Add(b,0,row);}
         for(int i=0;i<categories.Count;i++){categories[i].Selected=i==group;categories[i].Invalidate();}rows.ResumeLayout(true);SetPalette(palette);
     }
+    internal void FocusMenu()=>categories[group].Focus();
     internal void RefreshZoom(double factor){zoom.Text=$"{factor*100:0}%";}
     internal void ClickCommand(string id)
     {
@@ -63,7 +64,7 @@ public sealed partial class BrowserWindow
             Deactivate+=(_,_)=>CloseBrowserMenu();FormClosed+=(_,_)=>{CloseBrowserMenu(false);if(menuFilter!=null)Application.RemoveMessageFilter(menuFilter);menuMotion.Dispose();};
             menuFilter=new MenuDismissFilter(this);Application.AddMessageFilter(menuFilter);
         }
-        menuOpen=true;browserMenu.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));browserMenu.RefreshZoom(Current?.View?.ZoomFactor??1);PositionBrowserMenu();browserMenu.Visible=true;browserMenu.BringToFront();
+        menuOpen=true;browserMenu.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));browserMenu.RefreshZoom(Current?.View?.ZoomFactor??1);PositionBrowserMenu();browserMenu.Visible=true;browserMenu.BringToFront();browserMenu.FocusMenu();
         int target=browserMenu.Left;menuMotion.Start(ClientSize.Width+2,target,x=>{if(!browserMenu.IsDisposed)browserMenu.Left=(int)x;},230);
     }
     void PositionBrowserMenu()

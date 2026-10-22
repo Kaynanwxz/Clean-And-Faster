@@ -11,10 +11,11 @@ public sealed partial class BrowserWindow
     [DllImport("user32.dll")]static extern IntPtr SendMessage(IntPtr window,uint message,IntPtr w,IntPtr l);
     internal async Task<string[]> VerifyInteractions()
     {
+        File.AppendAllText(Path.Combine(AppContext.BaseDirectory,"interaction-progress.log"),"BEGIN interactions; thread="+Environment.CurrentManagedThreadId+"; context="+SynchronizationContext.Current?.GetType().Name+Environment.NewLine);
         var checks=new List<string>();var errors=new List<Exception>();
         void UiError(object sender,System.Threading.ThreadExceptionEventArgs e)=>errors.Add(e.Exception);
         Application.ThreadException+=UiError;
-        void Check(bool valid,string label){if(!valid)throw new InvalidOperationException(label);checks.Add(label);}
+        void Check(bool valid,string label){File.AppendAllText(Path.Combine(AppContext.BaseDirectory,"interaction-progress.log"),(valid?"PASS ":"FAIL ")+label+Environment.NewLine);if(!valid)throw new InvalidOperationException(label);checks.Add(label);}
         async Task Settle(int ms=30){await Task.Delay(ms);if(errors.Count>0)throw new InvalidOperationException("Falha de interface",errors[0]);Check(!IsDisposed&&!closing,"Janela continua aberta");}
         void ClickAt(Point screen){Cursor.Position=screen;mouse_event(2,0,0,0,UIntPtr.Zero);mouse_event(4,0,0,0,UIntPtr.Zero);}
         try
@@ -25,7 +26,7 @@ public sealed partial class BrowserWindow
                 ShowMenu();await Settle();Check(menuOpen&&browserMenu!.Visible,"Menu abre "+i);
                 ClickAt(PointToScreen(new Point(Ui(30),Ui(120))));await Settle();Check(!menuOpen&&!browserMenu!.Visible,"Clique fora fecha somente menu "+i+"; open="+menuOpen+"; visible="+browserMenu!.Visible+"; "+string.Join(" / ",menuTrace));
             }
-            ShowMenu();await Settle();SendKeys.SendWait("{ESC}");await Settle();Check(!menuOpen,"Escape fecha menu");
+            ShowMenu();await Settle();File.AppendAllText(Path.Combine(AppContext.BaseDirectory,"interaction-progress.log"),"ESCAPE"+Environment.NewLine);SendKeys.SendWait("{ESC}");await Settle();Check(!menuOpen,"Escape fecha menu");
             ShowMenu();await Settle();using(var other=new Form{Size=new Size(160,90),StartPosition=FormStartPosition.Manual,Location=new Point(20,20)}){other.Show();other.Activate();await Settle(60);Check(!menuOpen,"Perda de foco fecha menu");other.Close();}Activate();
             foreach(int group in new[]{0,1,2}){if(!menuOpen)ShowMenu();browserMenu!.SelectGroup(group);await Settle();SaveChromeScreenshot("layout-menu-"+group+".png");}CloseBrowserMenu(false);
             var dialogs=new HashSet<string>();bool cancelPickers=false;
