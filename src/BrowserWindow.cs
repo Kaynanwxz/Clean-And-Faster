@@ -334,7 +334,7 @@ public sealed partial class BrowserWindow : Form
             var t = (BrowserTab)list.SelectedItems[0].Tag!;
             if (t == Current || t.Pinned) { ShowNotice("Selecione uma aba em segundo plano e sem proteção."); return; }
             if (ShowNotice("A página será recarregada ao voltar. Descartar formulários e estado não salvos?", "Clean Browser", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
-            t.View?.Dispose(); t.View = null; t.Suspended = false; t.Page.Controls.Clear(); Render();
+            t.View?.Dispose(); t.View = null; t.Suspended = false; foreach(Control c in t.Page.Controls.Cast<Control>().ToArray())c.Dispose();t.Page.Controls.Clear(); Render();
         }));
         f.Controls.Add(list); f.Controls.Add(note); f.Controls.Add(actions); Render(); f.ShowDialog(this);
     }

@@ -71,7 +71,7 @@ public sealed partial class BrowserWindow
             foreach(var button in AppearancePanel.Descendants(assistant).OfType<Button>().Where(b=>b.Enabled).ToArray())
             {button.PerformClick();await Settle(40);Check(true,"IA: "+(button.AccessibleName??button.Text));if(!assistantOpen)ToggleAssistant();}
             using(var stopTask=new CancellationTokenSource()){aiCancellation=stopTask;assistant!.Busy(true);AppearancePanel.Descendants(assistant).OfType<Button>().Single(b=>b.Text=="Parar").PerformClick();Check(stopTask.IsCancellationRequested,"Parar IA cancela tarefa");assistant.Busy(false);aiCancellation=null;}
-            if(assistantOpen)ToggleAssistant();closer.Stop();
+            if(assistantOpen)ToggleAssistant();closer.Stop();checks.AddRange(await VerifyDialogFlows());
             // Run actual timer frames even on the remote CI desktop, then verify they stop.
             Motion.DiagnosticAnimations=true;Motion.Enabled=true;store.Settings.Animations=true;
             ShowMenu();await Settle(340);Check(!menuMotion.Running&&menuOpen,"Animação do menu termina");CloseBrowserMenu();await Settle(250);Check(!menuMotion.Running&&!browserMenu!.Visible,"Animação de saída termina");

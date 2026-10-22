@@ -91,7 +91,7 @@ public sealed partial class BrowserWindow
         {
             if(!owner.menuOpen)return false;
             if(m.Msg==0x100&&(Keys)m.WParam==Keys.Escape){owner.CloseBrowserMenu();return true;}
-            if(m.Msg is not (0x201 or 0x204 or 0x207 or 0xA1))return false;
+            if(m.Msg is not (0x201 or 0x203 or 0x204 or 0x206 or 0x207 or 0x209 or 0xA1 or 0xA3))return false;
             if(owner.browserMenu?.RectangleToScreen(owner.browserMenu.ClientRectangle).Contains(Cursor.Position)==true)return false;
             owner.CloseBrowserMenu();return true;
         }
