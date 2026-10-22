@@ -234,7 +234,7 @@ public sealed partial class BrowserWindow : Form
         Item("Zoom +", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Min(3, v.ZoomFactor + .1); });
         Item("Zoom −", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Max(.3, v.ZoomFactor - .1); });
         Item("Tela cheia  ·  F11", Fullscreen); Item("Verificar atualizações", () => _ = CheckUpdate());
-        Item("Sobre o Clean Browser", () => ShowNotice("Clean Browser 0.6.1 · prévia para Windows x64\nC# / .NET 10 / Microsoft Edge WebView2\n\nExtensões por pasta. Sem Chrome Sync.\nO limite de RAM é uma meta, não um limite rígido.", "Clean Browser"));
+        Item("Sobre o Clean Browser", () => ShowNotice("Clean Browser 0.6.2 · prévia para Windows x64\nC# / .NET 10 / Microsoft Edge WebView2\n\nExtensões por pasta. Sem Chrome Sync.\nO limite de RAM é uma meta, não um limite rígido.", "Clean Browser"));
         menu.Show(Cursor.Position);
     }
     AppDialog Dialog(string title, int w = 820, int h = 570) => new(title, Colors, w, h);

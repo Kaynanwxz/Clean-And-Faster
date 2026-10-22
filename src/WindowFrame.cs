@@ -70,7 +70,7 @@ public sealed partial class BrowserWindow
         updateButton.Text = "Atualizar"; updateButton.TabStop = true;
         bar.Controls.Add(updateButton, 9, 0);
         tabStrip.Margin=Padding.Empty;
-        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Clean Browser 0.6.1   ·   Pronto para explorar";
+        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Clean Browser 0.6.2   ·   Pronto para explorar";
         chromeLayout.Controls.Add(title,0,0);chromeLayout.Controls.Add(bar,0,1);InitializeAssistantHost();
         chromeLayout.Controls.Add(pageHost,0,2);chromeLayout.Controls.Add(status,0,3);
         Controls.Add(chromeLayout);

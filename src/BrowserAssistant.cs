@@ -91,7 +91,9 @@ public sealed partial class BrowserWindow
             if(elements.length>=60)break;if(!visible(e)||e.disabled)continue;
             if(e.matches('input,textarea')&&(/pass|pwd|token|secret|otp|card|credit|cvv|senha|cpf|payment|auth/i.test([e.name,e.id,e.autocomplete,e.getAttribute('aria-label')].join(' '))))continue;
             const id=String(elements.length+1);e.setAttribute('data-clean-ai',TOKEN+':'+id);
-            elements.push({id,label:(e.getAttribute('aria-label')||e.innerText||e.getAttribute('placeholder')||e.name||e.tagName).slice(0,140),kind:e.tagName.toLowerCase()});
+            const field=e.matches('input,textarea,select');
+            const label=e.getAttribute('aria-label')||(field?(e.getAttribute('placeholder')||e.name||e.tagName):(e.innerText||e.tagName));
+            elements.push({id,label:label.slice(0,140),kind:e.tagName.toLowerCase()});
           }
           return {title:document.title,url:location.href,text:text.slice(0,12000),elements};
         })()

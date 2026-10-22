@@ -13,6 +13,7 @@ public sealed partial class BrowserWindow
         <input id="ordinary" placeholder="Nome comum" value="FORM_VALUE_DO_NOT_READ">
         <input type="password" id="password" value="PASSWORD_DO_NOT_READ">
         <textarea id="secret-token">TOKEN_DO_NOT_READ</textarea>
+        <textarea id="notes" placeholder="Anotações">TEXTAREA_VALUE_DO_NOT_READ</textarea>
         <button id="increment" onclick="document.querySelector('h1').textContent='Clique confirmado'">Contar</button>
         <p hidden>HIDDEN_DO_NOT_READ</p></body></html>
         """);
