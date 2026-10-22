@@ -43,7 +43,7 @@ public sealed class AssistantPanel : Panel, IThemed
     public void Busy(bool busy){send.Enabled=!busy;setup.Enabled=!busy;clear.Enabled=!busy;share.Enabled=!busy;stop.Enabled=busy;state.Text=busy?"Trabalhando… · você pode parar":"Pronto · conecta somente ao enviar";}
     public void SetPalette(Palette p)
     {
-        void Theme(Control c){c.BackColor=p.Surface;c.ForeColor=p.Text;if(c is IThemed themed)themed.SetPalette(p);foreach(Control child in c.Controls)Theme(child);}
+        void Theme(Control c){c.BackColor=p.Surface;c.ForeColor=p.Text;if(c!=this && c is IThemed themed)themed.SetPalette(p);foreach(Control child in c.Controls)Theme(child);}
         Theme(this);note.ForeColor=p.Muted;state.ForeColor=p.Muted;prompt.BackColor=p.Surface;
     }
 }
