@@ -31,7 +31,7 @@ public sealed class HomeBoard : Panel,IThemed
     readonly SoftButton searchIcon=new(){Glyph="search",TabStop=false,Enabled=false};
     readonly SoftButton go=new(){Glyph="forward",AccessibleName="Pesquisar"};
     readonly FlowLayoutPanel shortcuts=new(){WrapContents=true};
-    readonly SoftButton customize=new(){Text="Personalizar",AccessibleName="Personalizar o Kay"};
+    readonly SoftButton customize=new(){Text="Personalizar",AccessibleName="Personalizar o Clean Browser"};
     readonly SoftButton memory=new(){Text="Economia de memória",AccessibleName="Controle de memória"};
     readonly string engine;
     int left,top,contentWidth;
@@ -88,7 +88,7 @@ public sealed class HomeBoard : Panel,IThemed
             using var brush=new PathGradientBrush(glow){CenterColor=Color.FromArgb(14,colors.Accent),SurroundColors=[Color.FromArgb(0,colors.Accent)]};g.FillPath(brush,glow);
         }
         using var small=new Font("Segoe UI",9,FontStyle.Bold);using var large=new Font("Segoe UI",31,FontStyle.Bold);using var normal=new Font("Segoe UI",11);
-        TextRenderer.DrawText(g,"K A Y   B R O W S E R",small,new Rectangle(left,top,contentWidth,D(25)),colors.Accent,TextFormatFlags.HorizontalCenter|TextFormatFlags.NoPadding);
+        TextRenderer.DrawText(g,"C L E A N   B R O W S E R",small,new Rectangle(left,top,contentWidth,D(25)),colors.Accent,TextFormatFlags.HorizontalCenter|TextFormatFlags.NoPadding);
         TextRenderer.DrawText(g,"Explore com mais leveza.",large,new Rectangle(left,top+D(36),contentWidth,D(62)),colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter|TextFormatFlags.NoPadding);
         TextRenderer.DrawText(g,"Seu próximo destino começa aqui.",normal,new Rectangle(left,top+D(101),contentWidth,D(28)),colors.Muted,TextFormatFlags.HorizontalCenter|TextFormatFlags.NoPadding);
         TextRenderer.DrawText(g,"Pesquisar com "+engine,small,new Rectangle(left,top+D(214),contentWidth,D(20)),colors.Muted,TextFormatFlags.HorizontalCenter|TextFormatFlags.NoPadding);

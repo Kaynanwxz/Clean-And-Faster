@@ -187,7 +187,7 @@ public sealed class TabRibbon : Control, IThemed
         using (var path = Shapes.Round(new Rectangle(D(13), centerY - D(13), D(26), D(26)), D(8)))
         using (var fill = new SolidBrush(colors.Accent)) g.FillPath(fill, path);
         using (var pen = new Pen(colors.Background, D(2)) { StartCap = LineCap.Round, EndCap = LineCap.Round })
-        { g.DrawLine(pen, D(21), centerY - D(7), D(21), centerY + D(7)); g.DrawLines(pen, new PointF[] { new(D(30), centerY - D(7)), new(D(23), centerY), new(D(31), centerY + D(7)) }); }
+            g.DrawArc(pen, D(19), centerY - D(7), D(14), D(14), 45, 270);
         for (int i = first; i < Math.Min(owner.TabCount, first + Capacity); i++)
         {
             var r = GetTabRect(i); bool active = i == owner.SelectedIndex;

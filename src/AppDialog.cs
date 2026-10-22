@@ -43,7 +43,7 @@ public class AppDialog : Form
 
 public static class UiMessage
 {
-    public static DialogResult Show(IWin32Window? owner, Palette colors, string message, string title = "Kay Browser", MessageBoxButtons buttons = MessageBoxButtons.OK)
+    public static DialogResult Show(IWin32Window? owner, Palette colors, string message, string title = "Clean Browser", MessageBoxButtons buttons = MessageBoxButtons.OK)
     {
         using var f = new AppDialog(title, colors, 590, 310);
         var body = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Padding = new Padding(22) };

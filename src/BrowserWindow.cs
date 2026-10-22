@@ -34,7 +34,7 @@ public sealed partial class BrowserWindow : Form
 
     public BrowserWindow(bool diagnostics = false)
     {
-        Text = "Kay Browser"; Width = 1320; Height = 860; MinimumSize = new Size(900, 600);
+        Text = "Clean Browser"; Width = 1320; Height = 860; MinimumSize = new Size(900, 600);
         if (Environment.ProcessPath is { } exe) Icon = Icon.ExtractAssociatedIcon(exe);
         StartPosition = FormStartPosition.CenterScreen; Font = new Font("Segoe UI", 10); KeyPreview = true;
         DoubleBuffered = true;
@@ -82,7 +82,7 @@ public sealed partial class BrowserWindow : Form
         }
         catch (Exception ex)
         {
-            ShowNotice("Não foi possível iniciar o motor WebView2. Instale ou atualize o Microsoft Edge WebView2 Runtime.\n\n" + ex.Message, "Kay Browser");
+            ShowNotice("Não foi possível iniciar o motor WebView2. Instale ou atualize o Microsoft Edge WebView2 Runtime.\n\n" + ex.Message, "Clean Browser");
             Process.Start(new ProcessStartInfo("https://developer.microsoft.com/microsoft-edge/webview2/") { UseShellExecute = true });
         }
     }
@@ -117,7 +117,7 @@ public sealed partial class BrowserWindow : Form
             core.Profile.PreferredColorScheme = store.Settings.Theme == "Claro" ? CoreWebView2PreferredColorScheme.Light : CoreWebView2PreferredColorScheme.Dark;
             core.NavigationStarting += (_, e) =>
             {
-                if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank") { e.Cancel = true; ShowNotice("Link externo bloqueado: " + e.Uri[..Math.Min(e.Uri.Length, 180)], "Kay"); return; }
+                if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank") { e.Cancel = true; ShowNotice("Link externo bloqueado: " + e.Uri[..Math.Min(e.Uri.Length, 180)], "Clean Browser"); return; }
                 status.Text = "Carregando… " + new Uri(e.Uri).Host;
             };
             core.SourceChanged += (_, _) => { if (Navigation.IsWebUrl(core.Source)) t.Url = core.Source; UpdateChrome(t); };
@@ -173,7 +173,7 @@ public sealed partial class BrowserWindow : Form
         t.Page.Caption = (t.Pinned ? "◆ " : t.Suspended ? "◌ " : "") + (t.Title.Length > 24 ? t.Title[..24] + "…" : t.Title);
         if (Current != t) return;
         address.Text = t.Url == "kay://new" ? "" : t.Url;
-        Text = t.Title + " · Kay Browser";
+        Text = t.Title + " · Clean Browser";
     }
     void NavigateCurrent(string input)
     {
@@ -225,11 +225,11 @@ public sealed partial class BrowserWindow : Form
         Item("Zoom +", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Min(3, v.ZoomFactor + .1); });
         Item("Zoom −", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Max(.3, v.ZoomFactor - .1); });
         Item("Tela cheia  ·  F11", Fullscreen); Item("Verificar atualizações", () => _ = CheckUpdate());
-        Item("Sobre o Kay", () => ShowNotice("Kay Browser 0.4.0 · prévia para Windows x64\nC# / .NET 10 / Microsoft Edge WebView2\n\nExtensões por pasta. Sem Chrome Sync.\nO limite de RAM é uma meta, não um limite rígido.", "Kay"));
+        Item("Sobre o Clean Browser", () => ShowNotice("Clean Browser 0.5.0 · prévia para Windows x64\nC# / .NET 10 / Microsoft Edge WebView2\n\nExtensões por pasta. Sem Chrome Sync.\nO limite de RAM é uma meta, não um limite rígido.", "Clean Browser"));
         menu.Show(Cursor.Position);
     }
     AppDialog Dialog(string title, int w = 820, int h = 570) => new(title, Colors, w, h);
-    DialogResult ShowNotice(string text, string title = "Kay Browser", MessageBoxButtons buttons = MessageBoxButtons.OK, MessageBoxIcon icon = MessageBoxIcon.None) => UiMessage.Show(this, Colors, text, title, buttons);
+    DialogResult ShowNotice(string text, string title = "Clean Browser", MessageBoxButtons buttons = MessageBoxButtons.OK, MessageBoxIcon icon = MessageBoxIcon.None) => UiMessage.Show(this, Colors, text, title, buttons);
     ListView List(params string[] columns)
     {
         var list = new ListView { Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true, BackColor = Back, ForeColor = Ink };
@@ -240,7 +240,7 @@ public sealed partial class BrowserWindow : Form
         using var f = Dialog("Histórico"); var list = List("Página", "Endereço", "Data"); var filter = new TextBox { Dock = DockStyle.Top, PlaceholderText = "Filtrar histórico…" };
         void Render() { list.Items.Clear(); foreach (var v in store.History.Where(v => (v.Title + v.Url).Contains(filter.Text, StringComparison.OrdinalIgnoreCase)).Take(1000)) list.Items.Add(new ListViewItem([v.Title, v.Url, v.At.ToString("g")]) { Tag = v.Url }); }
         filter.TextChanged += (_, _) => Render(); list.DoubleClick += (_, _) => { if (list.SelectedItems.Count > 0) { NavigateCurrent((string)list.SelectedItems[0].Tag!); f.Close(); } };
-        var clear = Button("Apagar histórico", () => { if (ShowNotice("Apagar todo o histórico?", "Kay", MessageBoxButtons.YesNo) == DialogResult.Yes) { store.History.Clear(); store.SaveHistory(); Render(); } }); clear.Dock = DockStyle.Bottom;
+        var clear = Button("Apagar histórico", () => { if (ShowNotice("Apagar todo o histórico?", "Clean Browser", MessageBoxButtons.YesNo) == DialogResult.Yes) { store.History.Clear(); store.SaveHistory(); Render(); } }); clear.Dock = DockStyle.Bottom;
         f.Controls.Add(list); f.Controls.Add(filter); f.Controls.Add(clear); Render(); f.ShowDialog(this);
     }
     void ShowBookmarks()
@@ -330,7 +330,7 @@ public sealed partial class BrowserWindow : Form
             if (list.SelectedItems.Count == 0) return;
             var t = (BrowserTab)list.SelectedItems[0].Tag!;
             if (t == Current || t.Pinned) { ShowNotice("Selecione uma aba em segundo plano e sem proteção."); return; }
-            if (ShowNotice("A página será recarregada ao voltar. Descartar formulários e estado não salvos?", "Kay", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+            if (ShowNotice("A página será recarregada ao voltar. Descartar formulários e estado não salvos?", "Clean Browser", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
             t.View?.Dispose(); t.View = null; t.Suspended = false; t.Page.Controls.Clear(); Render();
         }));
         f.Controls.Add(list); f.Controls.Add(note); f.Controls.Add(actions); Render(); f.ShowDialog(this);
@@ -355,7 +355,7 @@ public sealed partial class BrowserWindow : Form
             try
             {
                 if (!File.Exists(Path.Combine(picker.SelectedPath, "manifest.json"))) throw new IOException("A pasta não contém manifest.json.");
-                if (ShowNotice("Extensões podem acessar os sites visitados. Instalar esta extensão?", "Kay", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+                if (ShowNotice("Extensões podem acessar os sites visitados. Instalar esta extensão?", "Clean Browser", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
                 // Keep a durable app-owned copy: WebView2 references the installed folder.
                 var target = Path.Combine(Storage.Root, "Extensions", Guid.NewGuid().ToString("N"));
                 CopyExtension(picker.SelectedPath, target);
@@ -371,14 +371,14 @@ public sealed partial class BrowserWindow : Form
     static void CopyExtension(string source, string destination)
     {
         if (Path.GetFullPath(destination).StartsWith(Path.TrimEndingDirectorySeparator(Path.GetFullPath(source)) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-            throw new IOException("Escolha somente a pasta específica da extensão, fora da pasta de dados do Kay.");
+            throw new IOException("Escolha somente a pasta específica da extensão, fora da pasta de dados do Clean Browser.");
         Directory.CreateDirectory(destination);
         foreach (var file in Directory.EnumerateFiles(source)) if ((File.GetAttributes(file) & FileAttributes.ReparsePoint) == 0) File.Copy(file, Path.Combine(destination, Path.GetFileName(file)));
         foreach (var dir in Directory.EnumerateDirectories(source)) if ((File.GetAttributes(dir) & FileAttributes.ReparsePoint) == 0) CopyExtension(dir, Path.Combine(destination, Path.GetFileName(dir)));
     }
     void ShowSettings()
     {
-        using var f = Dialog("Personalizar o Kay", 720, 650);
+        using var f = Dialog("Personalizar o Clean Browser", 720, 650);
         var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Padding = new Padding(20), AutoScroll = true }; grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 240)); grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         void Row(string label, Control c) { int row = grid.RowCount++; grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); grid.Controls.Add(new Label { Text = label, AutoSize = true, Padding = new Padding(0, 7, 0, 0) }, 0, row); c.Dock = DockStyle.Fill; grid.Controls.Add(c, 1, row); }
         ComboBox Choice(string[] options, string value) { var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList }; c.Items.AddRange(options); c.SelectedItem = value; if (c.SelectedIndex < 0) c.SelectedIndex = 0; return c; }
@@ -413,7 +413,7 @@ public sealed partial class BrowserWindow : Form
             if (string.IsNullOrWhiteSpace(store.Settings.GoogleClientId)) { ShowNotice("Cadastre um OAuth Client do tipo Desktop no Google Cloud e informe o ID e o secret em Personalizar.\n\nO login identifica seu perfil local. Não sincroniza senhas, favoritos ou sessões do Chrome.", "Configuração necessária"); ShowSettings(); return; }
             status.Text = "Aguardando login no navegador padrão…";
             user = await GoogleLogin.SignIn(store.Settings.GoogleClientId, store.Settings.GoogleClientSecret);
-            status.Text = "Olá, " + user.Name; ShowNotice("Conta conectada: " + user.Email, "Kay");
+            status.Text = "Olá, " + user.Name; ShowNotice("Conta conectada: " + user.Email, "Clean Browser");
         }
         catch (Exception ex) { ShowNotice(ex.Message, "Login Google"); }
     }

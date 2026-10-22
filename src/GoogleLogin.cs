@@ -34,7 +34,7 @@ public static class GoogleLogin
         var context = await listener.GetContextAsync().WaitAsync(timeout.Token);
         var query = context.Request.QueryString;
         var valid = context.Request.HttpMethod == "GET" && query["state"] == state && !string.IsNullOrEmpty(query["code"]) && query["error"] == null;
-        var bytes = Encoding.UTF8.GetBytes(valid ? "Login recebido. Pode voltar ao Kay Browser." : "Login recusado ou resposta invalida.");
+        var bytes = Encoding.UTF8.GetBytes(valid ? "Login recebido. Pode voltar ao Clean Browser." : "Login recusado ou resposta invalida.");
         context.Response.ContentType = "text/plain; charset=utf-8"; context.Response.StatusCode = valid ? 200 : 400;
         await context.Response.OutputStream.WriteAsync(bytes, timeout.Token); context.Response.Close(); listener.Stop();
         if (!valid) throw new InvalidOperationException("Login cancelado ou resposta OAuth inválida.");

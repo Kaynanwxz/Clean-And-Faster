@@ -17,13 +17,13 @@ public sealed class UpdateCenter : AppDialog
     ReleaseUpdate? available;
     bool busy;
 
-    public UpdateCenter(Storage storage, Palette colors) : base("Atualizações do Kay", colors, 620, 405)
+    public UpdateCenter(Storage storage, Palette colors) : base("Atualizações do Clean Browser", colors, 620, 405)
     {
-        palette=colors;store=storage;Text="Atualizações do Kay";ClientSize=new Size(620,405);MinimumSize=new Size(570,390);StartPosition=FormStartPosition.CenterParent;Font=new Font("Segoe UI",10);BackColor=colors.Background;ForeColor=colors.Text;MinimizeBox=false;MaximizeBox=false;
+        palette=colors;store=storage;Text="Atualizações do Clean Browser";ClientSize=new Size(620,405);MinimumSize=new Size(570,390);StartPosition=FormStartPosition.CenterParent;Font=new Font("Segoe UI",10);BackColor=colors.Background;ForeColor=colors.Text;MinimizeBox=false;MaximizeBox=false;
         var body=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=1,RowCount=6,Padding=new Padding(26)};
         foreach(int height in new[]{40,34,74,26,48,48})body.RowStyles.Add(new RowStyle(SizeType.Absolute,height));
         body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));
-        body.Controls.Add(new Label{Text="Mantenha seu Kay atualizado",Dock=DockStyle.Fill,Font=new Font("Segoe UI",17,FontStyle.Bold)},0,0);
+        body.Controls.Add(new Label{Text="Mantenha o Clean Browser atualizado",Dock=DockStyle.Fill,Font=new Font("Segoe UI",17,FontStyle.Bold)},0,0);
         current=new Label{Text="Versão instalada: "+Updater.CurrentVersion.ToString(3),Dock=DockStyle.Fill,ForeColor=colors.Muted};body.Controls.Add(current,0,1);
         description=new Label{Dock=DockStyle.Fill,ForeColor=colors.Muted,Text="Verifique se há uma versão nova. O navegador baixa e substitui o executável, preservando seus dados."};body.Controls.Add(description,0,2);
         progress=new ProgressBar{Dock=DockStyle.Fill,Minimum=0,Maximum=100,Margin=new Padding(0,5,0,5)};body.Controls.Add(progress,0,3);
@@ -66,7 +66,7 @@ public sealed class UpdateCenter : AppDialog
     async Task DownloadAndInstall()
     {
         if(busy||available==null)return;
-        if(UiMessage.Show(this, Colors(),"O navegador será reiniciado após o download. Salve formulários e trabalhos em andamento antes de continuar.","Atualizar o Kay",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;
+        if(UiMessage.Show(this, Colors(),"O navegador será reiniciado após o download. Salve formulários e trabalhos em andamento antes de continuar.","Atualizar o Clean Browser",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;
         using var cts=new CancellationTokenSource(TimeSpan.FromMinutes(10));cancellation=cts;SetBusy(true,"Baixando atualização…");progress.Value=0;
         var report=new Progress<int>(value=>{if(!IsDisposed){progress.Value=Math.Clamp(value,0,100);description.Text=value<99?$"Baixando atualização… {value}%":"Verificando o arquivo e preparando o reinício…";}});
         try

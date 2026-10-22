@@ -57,19 +57,19 @@ public sealed partial class BrowserWindow
         shield.SetPalette(Colors);shield.Click+=(_,_)=>
         {
             string url=Current?.Url??"kay://new";
-            ShowNotice(url.StartsWith("https://",StringComparison.OrdinalIgnoreCase)?"Conexão HTTPS. Confira o domínio na barra antes de informar seus dados.\n\n"+url:url.StartsWith("http://",StringComparison.OrdinalIgnoreCase)?"Conexão HTTP sem criptografia.\n\n"+url:"Página local do Kay Browser.","Conexão");
+            ShowNotice(url.StartsWith("https://",StringComparison.OrdinalIgnoreCase)?"Conexão HTTPS. Confira o domínio na barra antes de informar seus dados.\n\n"+url:url.StartsWith("http://",StringComparison.OrdinalIgnoreCase)?"Conexão HTTP sem criptografia.\n\n"+url:"Página local do Clean Browser.","Conexão");
         };
         addressBox.Controls.Add(address);addressBox.Controls.Add(shield);shield.BringToFront();bar.Controls.Add(addressBox,4,0);
         Add("star",5,"Salvar ou remover favorito · Ctrl+D",BookmarkCurrent);
         Add("memory",6,"Controle de memória",ShowMemory);
         Add("download",7,"Downloads · Ctrl+J",ShowDownloads);
-        Add("menu",8,"Menu do Kay",ShowMenu);
+        Add("menu",8,"Menu do Clean Browser",ShowMenu);
         bar.ColumnStyles[9].Width = 132;
         var updateButton = IconButton("update", "Atualizar o navegador", () => _ = CheckUpdate());
         updateButton.Text = "Atualizar"; updateButton.TabStop = true;
         bar.Controls.Add(updateButton, 9, 0);
         tabStrip.Margin=Padding.Empty;
-        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Kay Browser 0.4.0   ·   Pronto para explorar";
+        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Clean Browser 0.5.0   ·   Pronto para explorar";
         chromeLayout.Controls.Add(title,0,0);chromeLayout.Controls.Add(bar,0,1);chromeLayout.Controls.Add(tabStrip,0,2);chromeLayout.Controls.Add(status,0,3);
         Controls.Add(chromeLayout);
         Shown += (_, _) => ApplyChromeMetrics();

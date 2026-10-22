@@ -38,16 +38,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $version = ([xml](Get-Content src/KayBrowser.csproj)).Project.PropertyGroup.Version | Where-Object { $_ }
           "APP_VERSION=$version" >> $env:GITHUB_ENV
-          $hash = (Get-FileHash dist/KayBrowser.exe -Algorithm SHA256).Hash.ToLower()
+          $hash = (Get-FileHash dist/CleanBrowser.exe -Algorithm SHA256).Hash.ToLower()
+          Set-Content -Path dist/CleanBrowser.exe.sha256 -Value "$hash  CleanBrowser.exe" -Encoding ascii
+          Copy-Item dist/CleanBrowser.exe dist/KayBrowser.exe
           Set-Content -Path dist/KayBrowser.exe.sha256 -Value "$hash  KayBrowser.exe" -Encoding ascii
           Copy-Item docs/USAR-E-ATUALIZAR.txt dist/LEIA-ME.txt
           Copy-Item ThirdParty dist/ThirdParty -Recurse
-          Compress-Archive -Path dist/KayBrowser.exe,dist/KayBrowser.exe.sha256,dist/LEIA-ME.txt,dist/ThirdParty -DestinationPath dist/KayBrowser-Windows-x64.zip
+          Compress-Archive -Path dist/CleanBrowser.exe,dist/CleanBrowser.exe.sha256,dist/LEIA-ME.txt,dist/ThirdParty -DestinationPath dist/CleanBrowser-Windows-x64.zip
       - name: Verify actual Windows layout
         timeout-minutes: 3
         shell: pwsh
         run: |
-          $process = Start-Process -FilePath "$PWD/dist/KayBrowser.exe" -ArgumentList '--layout-check' -Wait -PassThru
+          $process = Start-Process -FilePath "$PWD/dist/CleanBrowser.exe" -ArgumentList '--layout-check' -Wait -PassThru
           Get-Content dist/layout-check.json
           if ($process.ExitCode -ne 0) { exit 1 }
       - uses: actions/upload-artifact@v4
@@ -55,9 +57,9 @@ jobs:
         with:
           name: Windows-build-and-layout
           path: |
-            dist/KayBrowser.exe
-            dist/KayBrowser.exe.sha256
-            dist/KayBrowser-Windows-x64.zip
+            dist/CleanBrowser.exe
+            dist/CleanBrowser.exe.sha256
+            dist/CleanBrowser-Windows-x64.zip
             dist/layout-check.json
             dist/layout-*.png
       - name: Publish release for a new app version
@@ -71,7 +73,7 @@ jobs:
             Write-Host 'This version is already published; existing release preserved.'
             exit 0
           }
-          gh release create "v$env:APP_VERSION" dist/KayBrowser.exe dist/KayBrowser.exe.sha256 dist/KayBrowser-Windows-x64.zip --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "Kay Browser $env:APP_VERSION" --notes-file docs/RELEASE-NOTES.md --latest
+          gh release create "v$env:APP_VERSION" dist/CleanBrowser.exe dist/CleanBrowser.exe.sha256 dist/CleanBrowser-Windows-x64.zip dist/KayBrowser.exe dist/KayBrowser.exe.sha256 --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "Clean Browser $env:APP_VERSION" --notes-file docs/RELEASE-NOTES.md --latest
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build older-version test client
         if: github.event_name != 'pull_request'
@@ -84,11 +86,11 @@ jobs:
         timeout-minutes: 5
         shell: pwsh
         run: |
-          $checksumUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/v$env:APP_VERSION/KayBrowser.exe.sha256"
+          $checksumUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/v$env:APP_VERSION/CleanBrowser.exe.sha256"
           $checksumPath = Join-Path $env:RUNNER_TEMP 'published-release.sha256'
           Invoke-WebRequest -Uri $checksumUrl -OutFile $checksumPath
           $expected = ((Get-Content $checksumPath -Raw).Trim() -split '\s+')[0]
-          $process = Start-Process -FilePath "$PWD/smoke-old/KayBrowser.exe" -ArgumentList '--update-smoke' -Wait -PassThru
+          $process = Start-Process -FilePath "$PWD/smoke-old/CleanBrowser.exe" -ArgumentList '--update-smoke' -Wait -PassThru
           if ($process.ExitCode -ne 0) {
             if (Test-Path smoke-old/update-failure.json) { Get-Content smoke-old/update-failure.json }
             throw 'Update client failed.'
@@ -98,8 +100,8 @@ jobs:
           if (!(Test-Path smoke-old/update-receipt.json)) { throw 'Updated executable did not restart.' }
           $receipt = Get-Content smoke-old/update-receipt.json | ConvertFrom-Json
           if ($receipt.version -ne $env:APP_VERSION) { throw 'Restarted version does not match the release.' }
-          if (!(Test-Path smoke-old/KayBrowser.exe.previous)) { throw 'Previous executable backup missing.' }
-          $actual = (Get-FileHash smoke-old/KayBrowser.exe -Algorithm SHA256).Hash
+          if (!(Test-Path smoke-old/CleanBrowser.exe.previous)) { throw 'Previous executable backup missing.' }
+          $actual = (Get-FileHash smoke-old/CleanBrowser.exe -Algorithm SHA256).Hash
           if ($actual -ne $expected) { throw 'Installed binary does not match the published version.' }
           Get-Content smoke-old/update-receipt.json
           Write-Host 'PASS: GitHub API -> release download -> checksum -> replacement -> restart'

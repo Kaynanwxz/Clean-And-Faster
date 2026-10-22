@@ -17,7 +17,7 @@ public static class Updater
     }
     static HttpClient Client()
     {
-        var c = new HttpClient { Timeout = TimeSpan.FromMinutes(5) }; c.DefaultRequestHeaders.UserAgent.ParseAdd("KayBrowser/" + CurrentVersion.ToString(3)); c.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json"); return c;
+        var c = new HttpClient { Timeout = TimeSpan.FromMinutes(5) }; c.DefaultRequestHeaders.UserAgent.ParseAdd("CleanBrowser/" + CurrentVersion.ToString(3)); c.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json"); return c;
     }
     public static async Task<ReleaseUpdate?> Check(string repo, CancellationToken cancellation = default, Version? installedVersion = null)
     {
@@ -95,7 +95,7 @@ public static class Updater
         } catch {
           if (Test-Path -LiteralPath $backup) { Copy-Item -LiteralPath $backup -Destination $target -Force }
           Add-Type -AssemblyName System.Windows.Forms
-          [System.Windows.Forms.MessageBox]::Show('Atualizacao falhou. A versao anterior foi preservada. ' + $_.Exception.Message, 'Kay Browser')
+          [System.Windows.Forms.MessageBox]::Show('Atualizacao falhou. A versao anterior foi preservada. ' + $_.Exception.Message, 'Clean Browser')
         }
         """;
         var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));

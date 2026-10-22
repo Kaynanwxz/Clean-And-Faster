@@ -1,10 +1,10 @@
-KAY BROWSER - CLEAN AND FASTER
+CLEAN BROWSER
 
 Windows 10/11 x64, com Microsoft Edge WebView2 Runtime atualizado.
 O .NET ja esta incluido no executavel.
 
 PRIMEIRO USO
-Baixe KayBrowser.exe na secao Releases e abra com dois cliques.
+Baixe CleanBrowser.exe na secao Releases e abra com dois cliques.
 Guarde em uma pasta em que seu usuario possa escrever.
 
 JA USA KAY 0.3.1 OU ANTERIOR?

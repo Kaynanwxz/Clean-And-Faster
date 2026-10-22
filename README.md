@@ -1,14 +1,14 @@
 <div align="center">
 
-# Clean And Faster
-### Kay Browser para Windows
+# Clean Browser
+### Navegador para Windows
 
 Uma interface própria em C# sobre o Microsoft Edge WebView2, com abas, personalização, histórico e atualizações pelo GitHub.
 
 [![Windows build](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml/badge.svg)](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml)
 [![Release](https://img.shields.io/github/v/release/Kaynanwxz/Clean-And-Faster)](https://github.com/Kaynanwxz/Clean-And-Faster/releases/latest)
 
-**[Baixar KayBrowser.exe](https://github.com/Kaynanwxz/Clean-And-Faster/releases/latest/download/KayBrowser.exe)** · **[Versões](https://github.com/Kaynanwxz/Clean-And-Faster/releases)** · **[Relatar problema](https://github.com/Kaynanwxz/Clean-And-Faster/issues/new/choose)**
+**[Baixar CleanBrowser.exe](https://github.com/Kaynanwxz/Clean-And-Faster/releases/latest/download/CleanBrowser.exe)** · **[Versões](https://github.com/Kaynanwxz/Clean-And-Faster/releases)** · **[Relatar problema](https://github.com/Kaynanwxz/Clean-And-Faster/issues/new/choose)**
 
 </div>
 
@@ -16,7 +16,7 @@ Uma interface própria em C# sobre o Microsoft Edge WebView2, com abas, personal
 
 ## Instalar e abrir
 
-1. Baixe **KayBrowser.exe** pelo link acima.
+1. Baixe **CleanBrowser.exe** pelo link acima.
 2. Salve em uma pasta na qual seu usuário possa escrever e abra com dois cliques.
 3. Mantenha o [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) instalado e atualizado.
 
@@ -53,9 +53,9 @@ Os dados permanecem em `%LOCALAPPDATA%\KayBrowser`. A atualização não apaga h
 - Não há modo anônimo, gerenciador próprio de senhas ou integração como navegador padrão nesta versão.
 - Os testes de layout cobrem cenários definidos; uso diário, múltiplos monitores e escalas variadas continuam exigindo validação adicional.
 
-## Validação desta release
+## Validação anterior e atual
 
-A versão **0.4.0** passou nos 55 testes de lógica, no diagnóstico de encaixe em Windows e no teste de atualização por download público, checksum, substituição do executável e reinício. As capturas de layout foram conferidas. Veja [os resultados e os limites do teste](docs/VALIDACAO.md).
+A versão anterior **0.4.0** passou nos 55 testes de lógica, no diagnóstico de encaixe em Windows e no teste de atualização por download público, checksum, substituição do executável e reinício. As capturas de layout foram conferidas. Veja [os resultados e os limites do teste](docs/VALIDACAO.md).
 
 ## Tecnologia e estrutura
 
@@ -91,7 +91,7 @@ XDG_DATA_HOME="$(mktemp -d -t kay-test-data-XXXXXXXX)" dotnet run --project test
 No Windows, após publicar localmente:
 
 ```powershell
-Start-Process dist/KayBrowser.exe -ArgumentList '--layout-check' -Wait
+Start-Process dist/CleanBrowser.exe -ArgumentList '--layout-check' -Wait
 Get-Content dist/layout-check.json
 ```
 
@@ -108,4 +108,4 @@ Mudanças sem incremento da versão não sobrescrevem releases existentes. Pull 
 
 ## Contribuir e relatar problemas
 
-Veja [CONTRIBUTING.md](CONTRIBUTING.md). Ao relatar um problema visual, informe a versão do Kay, versão do Windows, escala do monitor, tamanho da janela e passos para reproduzir. Evite incluir credenciais ou dados pessoais.
+Veja [CONTRIBUTING.md](CONTRIBUTING.md). Ao relatar um problema visual, informe a versão do Clean Browser, versão do Windows, escala do monitor, tamanho da janela e passos para reproduzir. Evite incluir credenciais ou dados pessoais.

@@ -8,5 +8,5 @@ if errorlevel 1 (
 )
 dotnet publish src\KayBrowser.csproj -c Release -r win-x64 --self-contained true -p:EnableCompressionInSingleFile=true -o dist
 if errorlevel 1 (pause & exit /b 1)
-echo Pronto: dist\KayBrowser.exe
+echo Pronto: dist\CleanBrowser.exe
 pause

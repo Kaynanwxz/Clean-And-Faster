@@ -6,13 +6,16 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>0.4.0</Version>
+    <Version>0.5.0</Version>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <DebugType>none</DebugType>
-    <AssemblyName>KayBrowser</AssemblyName>
+    <AssemblyName>CleanBrowser</AssemblyName>
+    <Product>Clean Browser</Product>
+    <Title>Clean Browser</Title>
+    <Description>Navegador Clean Browser para Windows</Description>
     <ApplicationIcon>kay.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>

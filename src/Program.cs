@@ -27,9 +27,9 @@ internal static class Program
             AppContext.SetData("KayBrowser.DiagnosticsRoot", Path.Combine(Path.GetTempPath(), "kay-layout-check-" + Guid.NewGuid().ToString("N")));
             Environment.ExitCode = ChromeDiagnostics.Run(); return;
         }
-        Application.ThreadException += (_, e) => UiMessage.Show(Form.ActiveForm, Palette.Create(false, Color.MediumAquamarine), e.Exception.Message, "Kay · ocorreu um erro");
+        Application.ThreadException += (_, e) => UiMessage.Show(Form.ActiveForm, Palette.Create(false, Color.MediumAquamarine), e.Exception.Message, "Clean Browser · ocorreu um erro");
         using var mutex = new Mutex(true, "Local\\KayBrowser.Main", out var first);
-        if (!first) { UiMessage.Show(null, Palette.Create(false, Color.MediumAquamarine), "O Kay já está aberto."); return; }
+        if (!first) { UiMessage.Show(null, Palette.Create(false, Color.MediumAquamarine), "O Clean Browser já está aberto."); return; }
         Application.Run(new BrowserWindow());
     }
 }
