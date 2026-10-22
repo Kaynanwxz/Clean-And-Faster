@@ -11,3 +11,6 @@ layout-*.png
 layout-check.json
 update-receipt.json
 update-failure.json
+
+ai-key.bin
+ai-key.bin.tmp

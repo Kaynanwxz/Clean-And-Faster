@@ -40,9 +40,9 @@ public sealed partial class BrowserWindow
         var close=IconButton("close","Fechar navegador",Close);close.Danger=true;windows.Controls.Add(close,2,0);
         title.Controls.Add(windows,1,0);
         Resize+=(_,_)=>{maximize.Glyph=WindowState==FormWindowState.Maximized?"restore":"max";maximize.Invalidate();};
-        var bar=new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=10, RowCount=1, Margin=Padding.Empty, Padding=new Padding(12,8,12,10), Tag="surface" };
+        var bar=new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=11, RowCount=1, Margin=Padding.Empty, Padding=new Padding(12,8,12,10), Tag="surface" };
         navigationRow = bar; bar.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        for(int i=0;i<10;i++)bar.ColumnStyles.Add(new ColumnStyle(i==4?SizeType.Percent:SizeType.Absolute,i==4?100:42));
+        for(int i=0;i<11;i++)bar.ColumnStyles.Add(new ColumnStyle(i==4?SizeType.Percent:SizeType.Absolute,i==4?100:42));
         void Add(string glyph,int col,string tip,Action action)=>bar.Controls.Add(IconButton(glyph,tip,action),col,0);
         Add("back",0,"Voltar · Alt+←",()=>{if(Current?.View?.CanGoBack==true)Current.View.GoBack();});
         Add("forward",1,"Avançar · Alt+→",()=>{if(Current?.View?.CanGoForward==true)Current.View.GoForward();});
@@ -64,13 +64,15 @@ public sealed partial class BrowserWindow
         Add("memory",6,"Controle de memória",ShowMemory);
         Add("download",7,"Downloads · Ctrl+J",ShowDownloads);
         Add("menu",8,"Menu do Clean Browser",ShowMenu);
-        bar.ColumnStyles[9].Width = 132;
+        Add("spark",10,"Assistente IA · Ctrl+Shift+I",ToggleAssistant);
+        bar.ColumnStyles[9].Width = 112;
         var updateButton = IconButton("update", "Atualizar o navegador", () => _ = CheckUpdate());
         updateButton.Text = "Atualizar"; updateButton.TabStop = true;
         bar.Controls.Add(updateButton, 9, 0);
         tabStrip.Margin=Padding.Empty;
-        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Clean Browser 0.5.0   ·   Pronto para explorar";
-        chromeLayout.Controls.Add(title,0,0);chromeLayout.Controls.Add(bar,0,1);chromeLayout.Controls.Add(tabStrip,0,2);chromeLayout.Controls.Add(status,0,3);
+        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Clean Browser 0.6.0   ·   Pronto para explorar";
+        chromeLayout.Controls.Add(title,0,0);chromeLayout.Controls.Add(bar,0,1);InitializeAssistantHost();
+        chromeLayout.Controls.Add(pageHost,0,2);chromeLayout.Controls.Add(status,0,3);
         Controls.Add(chromeLayout);
         Shown += (_, _) => ApplyChromeMetrics();
         ResizeEnd += (_, _) => ApplyChromeMetrics();
@@ -89,7 +91,7 @@ public sealed partial class BrowserWindow
             windowButtons.Padding = new Padding(0, Ui(4), Ui(4), Ui(4));
             navigationRow.Padding = new Padding(Ui(10), Ui(8), Ui(10), Ui(8));
             for (int i = 0; i < navigationRow.ColumnCount; i++)
-                if (i != 4) navigationRow.ColumnStyles[i].Width = Ui(i == 9 ? 124 : 38);
+                if (i != 4) navigationRow.ColumnStyles[i].Width = Ui(i == 9 ? 108 : 36);
             foreach (Control control in navigationRow.Controls) control.Margin = new Padding(Ui(2));
             locationBox.Margin = new Padding(Ui(8), Ui(2), Ui(8), Ui(2));
             locationBox.Padding = new Padding(Ui(43), 0, Ui(12), 0);
@@ -137,6 +139,12 @@ public sealed partial class BrowserWindow
             int hit=top&&left?13:top&&right?14:bottom&&left?16:bottom&&right?17:left?10:right?11:top?12:bottom?15:0;
             if(hit!=0){m.Result=new IntPtr(hit);return;}
         }
+        // Let Windows update activation without painting its own caption over our chrome.
+        if (m.Msg == 0x86) // WM_NCACTIVATE
+        {
+            m.LParam = new IntPtr(-1); DefWndProc(ref m); Invalidate(); return;
+        }
+        if (m.Msg is 0xAE or 0xAF) { m.Result = IntPtr.Zero; return; }
         base.WndProc(ref m);
     }
     protected override void OnPaint(PaintEventArgs e)

@@ -13,6 +13,7 @@ public sealed class BrowserTab
     public bool Suspended;
     public bool Pinned;
     public WebView2? View;
+    public Task? Loading;
     public BrowserPage Page = new() { Caption = "Nova aba" };
 }
 
@@ -45,8 +46,9 @@ public sealed partial class BrowserWindow : Form
         tabStrip.CloseRequested += page => CloseTab(tabs.FirstOrDefault(t => t.Page == page));
         KeyDown += Shortcut;
         if (!diagnostics) Shown += async (_, _) => await Start();
-        FormClosing += (_, _) => { closing = true; memoryTimer.Stop(); SaveSession(); foreach (var t in tabs) t.View?.Dispose(); };
+        FormClosing += (_, _) => { closing = true; memoryTimer.Stop(); DisposeAssistant(); SaveSession(); foreach (var t in tabs) t.View?.Dispose(); };
         memoryTimer.Tick += async (_, _) => await ManageMemory();
+        Motion.Enabled = store.Settings.Animations;
         ApplyTheme(this);
     }
 
@@ -58,6 +60,7 @@ public sealed partial class BrowserWindow : Form
     }
     void ApplyTheme(Control c)
     {
+        if (c is AssistantPanel ai) { ai.SetPalette(Colors); return; }
         if (c is HomeBoard home) { home.SetPalette(Colors); return; }
         if (c is IThemed themed) themed.SetPalette(Colors);
         else { c.BackColor = c.Tag as string == "surface" ? Colors.Surface : Colors.Background; c.ForeColor = Colors.Text; }
@@ -99,11 +102,16 @@ public sealed partial class BrowserWindow : Form
     {
         t.LastActive = DateTime.UtcNow;
         if (t.Url == "kay://new" && t.View == null) { ShowHome(t); address.Text = ""; return; }
-        if (t.View == null) await CreateView(t);
+        if (t.View == null || t.Loading is { IsCompleted: false }) await CreateView(t);
         else { t.View.Visible = true; t.View.CoreWebView2?.Resume(); t.Suspended = false; }
         UpdateChrome(t);
     }
-    async Task CreateView(BrowserTab t, bool navigate = true)
+    Task CreateView(BrowserTab t, bool navigate = true)
+    {
+        if(t.Loading is { IsCompleted: false })return t.Loading;
+        return t.Loading=CreateViewCore(t,navigate);
+    }
+    async Task CreateViewCore(BrowserTab t, bool navigate)
     {
         var view = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Back };
         t.View = view; t.Page.Controls.Clear(); t.Page.Controls.Add(view);
@@ -117,6 +125,7 @@ public sealed partial class BrowserWindow : Form
             core.Profile.PreferredColorScheme = store.Settings.Theme == "Claro" ? CoreWebView2PreferredColorScheme.Light : CoreWebView2PreferredColorScheme.Dark;
             core.NavigationStarting += (_, e) =>
             {
+                if (t == snapshotTab) ResetSnapshot();
                 if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank") { e.Cancel = true; ShowNotice("Link externo bloqueado: " + e.Uri[..Math.Min(e.Uri.Length, 180)], "Clean Browser"); return; }
                 status.Text = "Carregando… " + new Uri(e.Uri).Host;
             };
@@ -219,13 +228,13 @@ public sealed partial class BrowserWindow : Form
             var item = menu.Items.Add(s, Glyphs.Bitmap(icon, Colors.Accent), (_, _) => a()); item.Padding = new Padding(9, 7, 9, 7);
         }
         menu.Closed += (_, _) => { foreach (ToolStripItem item in menu.Items) item.Image?.Dispose(); menu.Dispose(); };
-        Item("Histórico  ·  Ctrl+H", ShowHistory); Item("Favoritos", ShowBookmarks); Item("Downloads", ShowDownloads);
+        Item("Assistente IA · Ctrl+Shift+I", ToggleAssistant); Item("Histórico  ·  Ctrl+H", ShowHistory); Item("Favoritos", ShowBookmarks); Item("Downloads", ShowDownloads);
         Item("Memória e abas", ShowMemory); Item("Extensões", () => _ = ShowExtensions()); Item("Personalizar", ShowSettings);
         Item("Conta Google", () => _ = LoginGoogle()); Item("Buscar na página  ·  Ctrl+F", Find);
         Item("Zoom +", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Min(3, v.ZoomFactor + .1); });
         Item("Zoom −", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Max(.3, v.ZoomFactor - .1); });
         Item("Tela cheia  ·  F11", Fullscreen); Item("Verificar atualizações", () => _ = CheckUpdate());
-        Item("Sobre o Clean Browser", () => ShowNotice("Clean Browser 0.5.0 · prévia para Windows x64\nC# / .NET 10 / Microsoft Edge WebView2\n\nExtensões por pasta. Sem Chrome Sync.\nO limite de RAM é uma meta, não um limite rígido.", "Clean Browser"));
+        Item("Sobre o Clean Browser", () => ShowNotice("Clean Browser 0.6.0 · prévia para Windows x64\nC# / .NET 10 / Microsoft Edge WebView2\n\nExtensões por pasta. Sem Chrome Sync.\nO limite de RAM é uma meta, não um limite rígido.", "Clean Browser"));
         menu.Show(Cursor.Position);
     }
     AppDialog Dialog(string title, int w = 820, int h = 570) => new(title, Colors, w, h);
@@ -273,6 +282,7 @@ public sealed partial class BrowserWindow : Form
     }
     void Shortcut(object? sender, KeyEventArgs e)
     {
+        if (e.Control && e.Shift && e.KeyCode == Keys.I) { ToggleAssistant(); e.SuppressKeyPress = true; return; }
         if (e.Control) switch (e.KeyCode)
         {
             case Keys.L: address.Focus(); address.SelectAll(); break;
@@ -383,6 +393,7 @@ public sealed partial class BrowserWindow : Form
         void Row(string label, Control c) { int row = grid.RowCount++; grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); grid.Controls.Add(new Label { Text = label, AutoSize = true, Padding = new Padding(0, 7, 0, 0) }, 0, row); c.Dock = DockStyle.Fill; grid.Controls.Add(c, 1, row); }
         ComboBox Choice(string[] options, string value) { var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList }; c.Items.AddRange(options); c.SelectedItem = value; if (c.SelectedIndex < 0) c.SelectedIndex = 0; return c; }
         var theme = Choice(["Escuro", "Claro"], store.Settings.Theme); Row("Tema", theme);
+        var animations = new CheckBox { Checked = store.Settings.Animations, Text = "Transições suaves" }; Row("Animações", animations);
         var accent = new TextBox { Text = store.Settings.Accent }; Row("Cor de destaque (#A8E6CF)", accent);
         var engine = Choice(["Google", "DuckDuckGo", "Bing"], store.Settings.Search); Row("Buscador", engine);
         var idle = new NumericUpDown { Minimum = 1, Maximum = 60, Value = store.Settings.IdleMinutes }; Row("Suspender após (minutos)", idle);
@@ -396,7 +407,7 @@ public sealed partial class BrowserWindow : Form
         {
             try { _ = ColorTranslator.FromHtml(accent.Text); } catch { ShowNotice("Use uma cor válida, como #A8E6CF."); return; }
             if (repo.Text.Length > 0 && !Updater.ValidRepository(repo.Text)) { ShowNotice("Repositório deve ser usuario/nome."); return; }
-            var p = store.Settings; p.Theme = theme.Text; p.Accent = accent.Text; p.Search = engine.Text; p.IdleMinutes = (int)idle.Value; p.MemoryBudgetMb = (int)budget.Value; p.RestoreTabs = restore.Checked; p.GoogleClientId = client.Text.Trim(); p.GoogleClientSecret = secret.Text.Trim(); p.UpdateRepository = repo.Text.Trim(); store.SaveSettings();
+            var p = store.Settings; p.Animations = animations.Checked; Motion.Enabled = p.Animations; p.Theme = theme.Text; p.Accent = accent.Text; p.Search = engine.Text; p.IdleMinutes = (int)idle.Value; p.MemoryBudgetMb = (int)budget.Value; p.RestoreTabs = restore.Checked; p.GoogleClientId = client.Text.Trim(); p.GoogleClientSecret = secret.Text.Trim(); p.UpdateRepository = repo.Text.Trim(); store.SaveSettings();
             ApplyTheme(this); foreach (var t in tabs) { if (t.Url == "kay://new" && t.View == null) ShowHome(t); if (t.View?.CoreWebView2 is { } c) c.Profile.PreferredColorScheme = p.Theme == "Claro" ? CoreWebView2PreferredColorScheme.Light : CoreWebView2PreferredColorScheme.Dark; } f.Close();
         }); save.Dock = DockStyle.Bottom; f.Controls.Add(grid); f.Controls.Add(save); f.ShowDialog(this);
     }

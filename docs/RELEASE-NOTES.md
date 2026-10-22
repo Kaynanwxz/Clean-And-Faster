@@ -1,21 +1,18 @@
-## Clean Browser 0.5.0
+# Clean Browser 0.6.0
 
-- Novo nome do produto: **Clean Browser**.
-- Nome atualizado na janela, nova aba, menus, diálogos, avisos e documentação.
-- Ícone com a letra C, mantendo as cores e a interface existente.
-- Novo download principal: `CleanBrowser.exe`.
-- Atualizações continuam pelo botão **Atualizar**, usando o mesmo repositório.
-- Dados e atalhos existentes preservados. Arquivos com o nome antigo continuam publicados como aliases de compatibilidade para os atualizadores anteriores.
+- Moldura própria preservada ao alternar o foco para outro aplicativo.
+- Transições suaves nos botões, atalhos e indicador da aba selecionada.
+- Painel lateral Clean AI com abertura animada e atalho Ctrl+Shift+I.
+- IA pode explicar, resumir páginas, listar/abrir/selecionar abas e propor cliques, preenchimentos e rolagem. Ações exigem confirmação individual.
+- Compartilhamento de páginas e abas opcional por tarefa. Valores de formulários e campos de senha não são extraídos. Chave própria da API OpenAI protegida pelo Windows (DPAPI), modelo configurável.
+- Cancelamento, limites de etapas e de contexto. Sem modelo local, novo WebView ou loop de animação ocioso.
+- Proteção contra inicializações concorrentes do WebView na mesma aba.
+- Mantida compatibilidade do botão Atualizar das versões anteriores.
 
-### Atualizar
+## Como usar
 
-Na versão 0.4.0, clique em **Atualizar → Atualizar e reiniciar**. Não é necessário extrair ZIP. Se ainda usa uma versão anterior sem o canal preenchido, informe `Kaynanwxz/Clean-And-Faster` em **Menu → Personalizar → Atualizações pelo GitHub**.
+Clique no ícone de brilho na barra ou pressione Ctrl+Shift+I. Em **Configurar IA**, salve sua chave de API e um modelo compatível com Responses e ferramentas (padrão: `gpt-4.1-mini`). A cobrança ocorre na conta da API. Este assistente é separado da conversa no ChatGPT.
 
-### Arquivos
+Para resumir uma página, marque **Compartilhar página e abas nesta tarefa** e peça: “Leia e resuma esta página em cinco tópicos”. Para navegar, peça: “Abra o GitHub em outra aba”. Aprove as ações que desejar. **Parar** cancela a tarefa; ações já executadas permanecem.
 
-- `CleanBrowser.exe`: executável principal Windows x64.
-- `CleanBrowser.exe.sha256`: checksum.
-- `CleanBrowser-Windows-x64.zip`: pacote opcional com instruções e avisos de terceiros.
-- `KayBrowser.exe` e seu checksum: aliases para manter a atualização dos clientes antigos.
-
-O motor, os recursos e o caminho dos dados não foram alterados nesta atualização de nome. As limitações de Google OAuth, extensões locais e meta de RAM continuam descritas no README.
+As tarefas não compartilham histórico de conversa entre pedidos. Iframes, shadow DOM e páginas que bloqueiam extração podem limitar o agente. O assistente não tem acesso ao sistema de arquivos, terminal ou execução de código livre.

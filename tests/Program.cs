@@ -42,4 +42,5 @@ Equal(Distribution.Repository(null), "Kaynanwxz/Clean-And-Faster");
 Equal(Distribution.Repository(""), "Kaynanwxz/Clean-And-Faster");
 Equal(Distribution.Repository("../bad"), "Kaynanwxz/Clean-And-Faster");
 Equal(Distribution.Repository("user/custom"), "user/custom");
-Console.WriteLine($"PASS: {passed} verificações de navegação, persistência e atualização.");
+passed += await AiTests.Run();
+Console.WriteLine($"PASS: {passed} verificações de navegação, persistência, atualização e IA.");

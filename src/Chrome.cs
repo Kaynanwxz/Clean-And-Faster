@@ -57,6 +57,7 @@ public static class Glyphs
             case "play": g.FillPolygon(b,new PointF[]{new(9,5),new(20,12),new(9,19)}); break;
             case "code": Path(new(8,6),new(2,12),new(8,18)); Path(new(16,6),new(22,12),new(16,18)); Line(14,4,10,20); break;
             case "update": g.DrawArc(p,3,3,18,18,45,285); Path(new(21,3),new(21,9),new(15,9)); Line(12,7,12,17); Path(new(8,11),new(12,7),new(16,11)); break;
+            case "spark": Path(new(12,2),new(15,9),new(22,12),new(15,15),new(12,22),new(9,15),new(2,12),new(9,9),new(12,2)); break;
             case "key": g.DrawEllipse(p,3,4,10,10); Path(new(12,12),new(21,21),new(23,19)); Line(17,17,20,14); break;
             default: g.DrawEllipse(p,4,4,16,16); Line(12,7,12,13); g.FillEllipse(b,11,16,2,2); break;
         }
@@ -73,13 +74,19 @@ public class RoundedPanel : Panel, IThemed
     public int Radius { get; set; } = 14;
     public RoundedPanel() { SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true); }
     public void SetPalette(Palette p) { Colors=p; BackColor=p.Surface; ForeColor=p.Text; Invalidate(); }
+    protected override void OnEnter(EventArgs e) { base.OnEnter(e); Invalidate(); }
+    protected override void OnLeave(EventArgs e) { base.OnLeave(e); Invalidate(); }
     protected override void OnPaintBackground(PaintEventArgs e)
-    { e.Graphics.Clear(Parent?.BackColor??Colors.Background); e.Graphics.SmoothingMode=SmoothingMode.AntiAlias; using var path=Shapes.Round(new(0,0,Math.Max(1,Width-1),Math.Max(1,Height-1)),Radius*DeviceDpi/96f); using var fill=new SolidBrush(Colors.Surface); using var line=new Pen(Colors.Line); e.Graphics.FillPath(fill,path);e.Graphics.DrawPath(line,path); }
+    { e.Graphics.Clear(Parent?.BackColor??Colors.Background); e.Graphics.SmoothingMode=SmoothingMode.AntiAlias; using var path=Shapes.Round(new(0,0,Math.Max(1,Width-1),Math.Max(1,Height-1)),Radius*DeviceDpi/96f); using var fill=new SolidBrush(Colors.Surface); using var line=new Pen(ContainsFocus?Colors.Accent:Colors.Line); e.Graphics.FillPath(fill,path);e.Graphics.DrawPath(line,path); }
 }
 public class SoftButton : Button, IThemed
 {
     protected Palette Colors = Palette.Create(false, Color.MediumAquamarine);
     protected bool Hover;
+    protected float HoverAmount;
+    bool pressed;
+    readonly Tween hoverTween = new();
+    void AnimateHover() => hoverTween.Start(HoverAmount, Hover || Focused ? 1 : 0, value => { HoverAmount=value; Invalidate(); });
     protected int D(int value) => (int)Math.Round(value * DeviceDpi / 96f);
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public string Glyph { get; set; } = "";
@@ -88,12 +95,19 @@ public class SoftButton : Button, IThemed
     public SoftButton()
     { FlatStyle=FlatStyle.Flat;FlatAppearance.BorderSize=0;Cursor=Cursors.Hand;SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true); }
     public void SetPalette(Palette p) { Colors=p;BackColor=p.Surface;ForeColor=p.Text;Invalidate(); }
-    protected override void OnMouseEnter(EventArgs e){Hover=true;Invalidate();base.OnMouseEnter(e);}
-    protected override void OnMouseLeave(EventArgs e){Hover=false;Invalidate();base.OnMouseLeave(e);}
+    protected override void OnMouseEnter(EventArgs e){Hover=true;AnimateHover();base.OnMouseEnter(e);}
+    protected override void OnMouseLeave(EventArgs e){Hover=false;AnimateHover();base.OnMouseLeave(e);}
+    protected override void OnGotFocus(EventArgs e) { base.OnGotFocus(e); AnimateHover(); }
+    protected override void OnLostFocus(EventArgs e) { base.OnLostFocus(e); AnimateHover(); }
+    protected override void OnMouseDown(MouseEventArgs e) { pressed=e.Button==MouseButtons.Left; Invalidate(); base.OnMouseDown(e); }
+    protected override void OnMouseUp(MouseEventArgs e) { pressed=false; Invalidate(); base.OnMouseUp(e); }
+    protected override void OnEnabledChanged(EventArgs e) { base.OnEnabledChanged(e); if(!Enabled){Hover=false;hoverTween.Stop();HoverAmount=0;pressed=false;} }
+    protected override void Dispose(bool disposing) { if(disposing)hoverTween.Dispose(); base.Dispose(disposing); }
     protected override void OnPaint(PaintEventArgs e)
     {
         var g=e.Graphics;g.SmoothingMode=SmoothingMode.AntiAlias;g.Clear(Parent?.BackColor??Colors.Surface);
-        if(Hover || Focused){using var path=Shapes.Round(new(2,2,Width-4,Height-4),8);using var fill=new SolidBrush(Danger?Color.FromArgb(192,58,73):Colors.Elevated);g.FillPath(fill,path);}
+        if(HoverAmount > 0){using var path=Shapes.Round(new(2,2,Math.Max(1,Width-4),Math.Max(1,Height-4)),D(9));using var fill=new SolidBrush(Motion.Blend(Parent?.BackColor??Colors.Surface,Danger?Color.FromArgb(192,58,73):Colors.Elevated,HoverAmount));g.FillPath(fill,path);}
+        if(pressed)g.TranslateTransform(0,D(1));
         var ink=Enabled?Colors.Text:Colors.Muted;
         if(Glyph.Length>0)
         {
@@ -162,6 +176,8 @@ public sealed class TabRibbon : Control, IThemed
     readonly BrowserTabs owner;
     Palette colors = Palette.Create(false, Color.MediumAquamarine);
     int first, hover = -1; bool overPlus;
+    readonly Tween selectionTween = new();
+    float markerX; int markerIndex=-1;
     int D(int value) => (int)Math.Round(value * DeviceDpi / 96f);
     int TabWidth => Math.Clamp((Width - D(110)) / Math.Max(1, owner.TabCount), D(110), D(220));
     int Capacity => Math.Max(1, (Width - D(110)) / Math.Max(1, TabWidth));
@@ -197,7 +213,19 @@ public sealed class TabRibbon : Control, IThemed
             // Use the explicit page caption; Panel.Text is not a reliable tab title store.
             TextRenderer.DrawText(g, owner.TabPages[i].Caption, font, new Rectangle(r.X + D(36), r.Y, Math.Max(1, r.Width - D(65)), r.Height), active ? colors.Text : colors.Muted, TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
             if (active || i == hover) Glyphs.Draw(g, "close", new(r.Right - D(24), r.Y + (r.Height - D(14)) / 2, D(14), D(14)), colors.Muted, 1.8f);
-            if (active) { using var line = new Pen(colors.Accent, Math.Max(1, D(2))); g.DrawLine(line, r.X + D(16), r.Bottom - 1, r.Right - D(16), r.Bottom - 1); }
+
+        }
+        var selectedRect = GetTabRect(owner.SelectedIndex);
+        if (!selectedRect.IsEmpty)
+        {
+            if(markerIndex != owner.SelectedIndex) {
+                if(markerIndex < 0)markerX=selectedRect.X;
+                markerIndex=owner.SelectedIndex;
+                selectionTween.Start(markerX,selectedRect.X,value=>{markerX=value;Invalidate();});
+            }
+            else if(!selectionTween.Running)markerX=selectedRect.X;
+            using var line=new Pen(colors.Accent,Math.Max(1,D(2))) { StartCap=LineCap.Round,EndCap=LineCap.Round };
+            g.DrawLine(line,markerX+D(16),selectedRect.Bottom-1,markerX+selectedRect.Width-D(16),selectedRect.Bottom-1);
         }
         if (overPlus) { using var path = Shapes.Round(Plus, D(8)); using var fill = new SolidBrush(colors.Elevated); g.FillPath(fill, path); }
         Glyphs.Draw(g, "plus", new(Plus.X + D(7), Plus.Y + D(7), D(18), D(18)), colors.Muted);
@@ -218,6 +246,7 @@ public sealed class TabRibbon : Control, IThemed
         }
         if (e.Button == MouseButtons.Left && FindForm() is { } f) { if (e.Clicks == 2) f.WindowState = f.WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized; else NativeFrame.Drag(f); }
     }
+    protected override void Dispose(bool disposing) { if(disposing)selectionTween.Dispose(); base.Dispose(disposing); }
     protected override void OnMouseWheel(MouseEventArgs e) { first = Math.Clamp(first + (e.Delta < 0 ? 1 : -1), 0, Math.Max(0, owner.TabCount - Capacity)); Invalidate(); base.OnMouseWheel(e); }
 }
 public static class NativeFrame
