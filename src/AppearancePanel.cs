@@ -45,7 +45,9 @@ public sealed class AppearancePanel : Panel,IThemed
     void Commit(Action change,bool keepText=false)
     {
         if(syncing)return;
-        try{change();store.SaveSettings();changed();Sync(keepText);status.Text="Salvo automaticamente";}
+        try{string oldWallpaper=store.Settings.Wallpaper;change();store.SaveSettings();changed();Sync(keepText);status.Text="Salvo automaticamente";
+            if(oldWallpaper!=store.Settings.Wallpaper&&oldWallpaper.StartsWith(Path.Combine(Storage.Root,"Appearance")+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase))try{File.Delete(oldWallpaper);}catch(IOException){}
+        }
         catch(Exception ex)when(ex is IOException or UnauthorizedAccessException){status.Text="Não foi possível salvar. Tente novamente.";}
     }
     internal void Sync(bool keepText=false)

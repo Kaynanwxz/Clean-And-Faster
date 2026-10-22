@@ -80,7 +80,7 @@ public sealed class HomeBoard : Panel,IThemed
         bool small=Width<D(650),minimal=store.Settings.FocusMode||store.Settings.HomeLayout=="Essencial";
         if(!store.Settings.FocusMode&&store.Settings.Background!="Sem arte")
         {
-            Image? wallpaper=BrandAssets.Wallpaper(store.Settings.Wallpaper);Image art=wallpaper??BrandAssets.Sea;int w=Math.Min(Width,D(1200));int height=w*art.Height/art.Width;
+            Image? wallpaper=store.Settings.Background=="Personalizado"?BrandAssets.Wallpaper(store.Settings.Wallpaper):null;Image art=wallpaper??BrandAssets.Sea;int w=Math.Min(Width,D(1200));int height=w*art.Height/art.Width;
             if(wallpaper!=null){BrandAssets.DrawArt(g,art,new(0,Height-height,Width,height),0.18f);}
             else BrandAssets.DrawArt(g,art,new(Width-w,Height-height,w,height),store.Settings.Background=="Suave"?.20f:small?.30f:.53f);
         }

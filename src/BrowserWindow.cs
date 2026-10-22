@@ -133,7 +133,7 @@ public sealed partial class BrowserWindow : Form
             core.NavigationStarting += (_, e) =>
             {
                 if (t == snapshotTab) ResetSnapshot();
-                if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank") { e.Cancel = true; ShowNotice("Link externo bloqueado: " + e.Uri[..Math.Min(e.Uri.Length, 180)], "Clean Browser"); return; }
+                if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank") { e.Cancel = true;string blocked=e.Uri[..Math.Min(e.Uri.Length,180)];BeginInvoke(()=>{if(!closing)ShowNotice("Link externo bloqueado: "+blocked,"Clean Browser");});return; }
                 status.Text = "Carregando… " + new Uri(e.Uri).Host;
             };
             core.SourceChanged += (_, _) => { if (Navigation.IsWebUrl(core.Source)) t.Url = core.Source; UpdateChrome(t); };
@@ -161,19 +161,22 @@ public sealed partial class BrowserWindow : Form
             };
             core.PermissionRequested += (_, e) =>
             {
-                e.State = ShowNotice($"{e.Uri}\n\nPermitir {e.PermissionKind}?", "Permissão do site", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes ? CoreWebView2PermissionState.Allow : CoreWebView2PermissionState.Deny;
-                e.SavesInProfile = false;
+                e.SavesInProfile=false;var deferred=e.GetDeferral();
+                BeginInvoke(()=>{using(deferred){if(closing||view.IsDisposed){e.State=CoreWebView2PermissionState.Deny;return;}
+                    e.State=ShowNotice($"{e.Uri}\n\nPermitir {e.PermissionKind}?","Permissão do site",MessageBoxButtons.YesNo)==DialogResult.Yes?CoreWebView2PermissionState.Allow:CoreWebView2PermissionState.Deny;
+                }});
             };
             core.DownloadStarting += (_, e) =>
             {
-                e.Handled = true;
-                using var dlg = new SaveFileDialog { FileName = Path.GetFileName(e.ResultFilePath), InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads") };
-                if (dlg.ShowDialog(this) != DialogResult.OK) { e.Cancel = true; return; }
-                e.ResultFilePath = dlg.FileName;
-                var op = e.DownloadOperation;
-                var record = new DownloadRecord(Path.GetFileName(dlg.FileName), dlg.FileName, "Em andamento"); downloads.Add(record);
-                op.StateChanged += (_, _) => { int idx = downloads.IndexOf(record); if (idx >= 0) { var updated = record with { State = op.State.ToString() }; downloads[idx] = updated; record = updated; } };
-                status.Text = "Download: " + record.Name;
+                e.Handled=true;var deferred=e.GetDeferral();
+                BeginInvoke(()=>{using(deferred){
+                    if(closing||view.IsDisposed){e.Cancel=true;return;}
+                    using var dlg=new SaveFileDialog{FileName=Path.GetFileName(e.ResultFilePath),InitialDirectory=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),"Downloads")};
+                    if(dlg.ShowDialog(this)!=DialogResult.OK){e.Cancel=true;return;}
+                    e.ResultFilePath=dlg.FileName;var op=e.DownloadOperation;var record=new DownloadRecord(Path.GetFileName(dlg.FileName),dlg.FileName,"Em andamento");downloads.Add(record);
+                    op.StateChanged+=(_,_)=>{int index=downloads.IndexOf(record);if(index>=0){var updated=record with{State=op.State.ToString()};downloads[index]=updated;record=updated;}};
+                    status.Text="Download: "+record.Name;
+                }});
             };
             core.ProcessFailed += (_, e) => { status.Text = "Motor interrompido: " + e.ProcessFailedKind + ". Reabra esta aba pelo menu de memória."; };
             if (navigate)

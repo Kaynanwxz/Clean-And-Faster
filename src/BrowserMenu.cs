@@ -27,7 +27,7 @@ public sealed class BrowserMenuPanel : Panel,IThemed
     {
         group=index;rows.SuspendLayout();foreach(Control c in rows.Controls.Cast<Control>().ToArray())c.Dispose();rows.Controls.Clear();rows.RowStyles.Clear();rows.RowCount=0;
         foreach(var c in commands.Where(c=>c.Group==group))
-        {int row=rows.RowCount++;rows.RowStyles.Add(new RowStyle(SizeType.Absolute,42));var b=new SoftButton{Text=c.Title,Glyph=c.Glyph,Dock=DockStyle.Fill,AccessibleName=c.Id,Margin=new Padding(0,2,0,2)};b.Click+=(_,_)=>invoke(c.Id);rows.Controls.Add(b,0,row);}
+        {int row=rows.RowCount++;rows.RowStyles.Add(new RowStyle(SizeType.Absolute,42));var b=new SoftButton{Text=c.Title+(c.Hint.Length>0?"  · "+c.Hint:""),Glyph=c.Glyph,Dock=DockStyle.Fill,AccessibleName=c.Id,Margin=new Padding(0,2,0,2)};b.Click+=(_,_)=>invoke(c.Id);rows.Controls.Add(b,0,row);}
         for(int i=0;i<categories.Count;i++){categories[i].Selected=i==group;categories[i].Invalidate();}rows.ResumeLayout(true);SetPalette(palette);
     }
     internal void FocusMenu()=>categories[group].Focus();
@@ -41,7 +41,11 @@ public sealed class BrowserMenuPanel : Panel,IThemed
     {
         palette=p;void Theme(Control c){c.BackColor=p.Surface;c.ForeColor=p.Text;if(c is IThemed t&&c!=this)t.SetPalette(p);foreach(Control child in c.Controls)Theme(child);}Theme(this);Invalidate();
     }
-    protected override void OnPaint(PaintEventArgs e){base.OnPaint(e);using var p=new Pen(palette.Line);e.Graphics.DrawRectangle(p,0,0,Width-1,Height-1);}
+    protected override void OnSizeChanged(EventArgs e)
+    {
+        base.OnSizeChanged(e);if(Width<2||Height<2)return;using var shape=Shapes.Round(new Rectangle(0,0,Width,Height),16*DeviceDpi/96f);var previous=Region;Region=new Region(shape);previous?.Dispose();
+    }
+    protected override void OnPaint(PaintEventArgs e){base.OnPaint(e);e.Graphics.SmoothingMode=System.Drawing.Drawing2D.SmoothingMode.AntiAlias;using var p=new Pen(palette.Line);using var shape=Shapes.Round(new Rectangle(0,0,Width-1,Height-1),16*DeviceDpi/96f);e.Graphics.DrawPath(p,shape);}
 }
 
 public sealed partial class BrowserWindow
