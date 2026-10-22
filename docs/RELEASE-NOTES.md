@@ -1,4 +1,4 @@
-# Clean Browser 0.6.0
+# Clean Browser 0.6.1
 
 - Moldura própria preservada ao alternar o foco para outro aplicativo.
 - Transições suaves nos botões, atalhos e indicador da aba selecionada.

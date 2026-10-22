@@ -70,7 +70,7 @@ public sealed partial class BrowserWindow
         updateButton.Text = "Atualizar"; updateButton.TabStop = true;
         bar.Controls.Add(updateButton, 9, 0);
         tabStrip.Margin=Padding.Empty;
-        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Clean Browser 0.6.0   ·   Pronto para explorar";
+        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Clean Browser 0.6.1   ·   Pronto para explorar";
         chromeLayout.Controls.Add(title,0,0);chromeLayout.Controls.Add(bar,0,1);InitializeAssistantHost();
         chromeLayout.Controls.Add(pageHost,0,2);chromeLayout.Controls.Add(status,0,3);
         Controls.Add(chromeLayout);
@@ -91,7 +91,7 @@ public sealed partial class BrowserWindow
             windowButtons.Padding = new Padding(0, Ui(4), Ui(4), Ui(4));
             navigationRow.Padding = new Padding(Ui(10), Ui(8), Ui(10), Ui(8));
             for (int i = 0; i < navigationRow.ColumnCount; i++)
-                if (i != 4) navigationRow.ColumnStyles[i].Width = Ui(i == 9 ? 108 : 36);
+                if (i != 4) navigationRow.ColumnStyles[i].Width = Ui(i == 9 ? 124 : 36);
             foreach (Control control in navigationRow.Controls) control.Margin = new Padding(Ui(2));
             locationBox.Margin = new Padding(Ui(8), Ui(2), Ui(8), Ui(2));
             locationBox.Padding = new Padding(Ui(43), 0, Ui(12), 0);

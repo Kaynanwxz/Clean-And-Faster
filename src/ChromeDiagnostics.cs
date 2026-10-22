@@ -17,7 +17,13 @@ public sealed partial class BrowserWindow
     internal void SaveChromeScreenshot(string name)
     {
         using var bitmap=new Bitmap(Width,Height);
-        DrawToBitmap(bitmap,new Rectangle(Point.Empty,bitmap.Size));
+        var area=Screen.FromControl(this).Bounds;
+        if(area.Contains(Bounds))
+        {
+            try { using var g=Graphics.FromImage(bitmap);g.CopyFromScreen(Location,Point.Empty,Size); }
+            catch(System.ComponentModel.Win32Exception){DrawToBitmap(bitmap,new Rectangle(Point.Empty,bitmap.Size));}
+        }
+        else DrawToBitmap(bitmap,new Rectangle(Point.Empty,bitmap.Size));
         bitmap.Save(Path.Combine(AppContext.BaseDirectory,name));
     }
     internal void VerifyChromeLayout()
@@ -70,7 +76,7 @@ public static class ChromeDiagnostics
                 }
                 result.Add(new { width = window.Width, height = window.Height, dpi = window.DeviceDpi, status = "PASS" });
             }
-            window.Size=new Size(900,600);window.SetDiagnosticAssistant(true);Application.DoEvents();window.VerifyChromeLayout();
+            window.Size=new Size(900,600);window.Location=new Point(20,20);window.SetDiagnosticAssistant(true);Application.DoEvents();window.VerifyChromeLayout();
             window.SaveChromeScreenshot("layout-assistant-900.png");
             result.Add(new{mode="assistant-open-900",status="PASS"});
             window.SetDiagnosticAssistant(false);Application.DoEvents();window.VerifyChromeLayout();

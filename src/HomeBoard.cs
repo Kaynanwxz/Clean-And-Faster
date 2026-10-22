@@ -74,7 +74,9 @@ public sealed class HomeBoard : Panel,IThemed
         foreach(ShortcutTile tile in shortcuts.Controls){tile.Size=new Size(D(112),D(104));tile.Margin=new Padding(D(7));}
         int cols=Math.Max(1,Math.Min(shortcuts.Controls.Count,(Width-D(70))/Math.Max(1,D(126)))),w=cols*D(126);
         int rows=(shortcuts.Controls.Count+cols-1)/cols;
-        shortcuts.SetBounds((Width-w)/2,top+D(231),w,Math.Min(Math.Max(1,rows)*D(118),Math.Max(D(100),Height-top-D(325))));
+        int available=Math.Max(D(100),Height-top-D(309));
+        w+=rows*D(118)>available?SystemInformation.VerticalScrollBarWidth:D(2);
+        shortcuts.SetBounds((Width-w)/2,top+D(231),w,Math.Min(Math.Max(1,rows)*D(118)+D(2),available));
         memory.SetBounds(left,Height-D(61),D(215),D(36));customize.SetBounds(left+contentWidth-D(140),Height-D(61),D(140),D(36));
     }
     protected override void OnDpiChangedAfterParent(EventArgs e){base.OnDpiChangedAfterParent(e);LayoutContent();Invalidate();}
