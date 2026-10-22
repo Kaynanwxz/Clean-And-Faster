@@ -6,7 +6,7 @@ public sealed class AssistantPanel : Panel, IThemed
 {
     readonly Label title=new(){Text="Clean AI",Font=new Font("Segoe UI",14,FontStyle.Bold),Dock=DockStyle.Fill,TextAlign=ContentAlignment.MiddleLeft};
     readonly Label note=new(){Text="Seu copiloto, sob seu controle.",Dock=DockStyle.Fill,AutoEllipsis=true};
-    readonly RichTextBox transcript=new(){Dock=DockStyle.Fill,ReadOnly=true,BorderStyle=BorderStyle.None,DetectUrls=false,ScrollBars=RichTextBoxScrollBars.None,Font=new Font("Segoe UI",10),TabStop=false};
+    readonly TextBox transcript=new(){Dock=DockStyle.Fill,Multiline=true,ReadOnly=true,BorderStyle=BorderStyle.None,ScrollBars=ScrollBars.None,Font=new Font("Segoe UI",10),TabStop=false};
     readonly TextBox prompt=new(){Dock=DockStyle.Fill,Multiline=true,MaxLength=4000,PlaceholderText="Peça um resumo ou uma tarefa…",BorderStyle=BorderStyle.None,ScrollBars=ScrollBars.None};
     readonly Label state=new(){Dock=DockStyle.Fill,Text="Pronto · conecta somente ao enviar",AutoEllipsis=true};
     readonly SoftButton send=new(){Text="Enviar",Glyph="spark",Dock=DockStyle.Fill};

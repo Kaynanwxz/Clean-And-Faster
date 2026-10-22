@@ -30,7 +30,7 @@ public sealed class HomeBoard : Panel,IThemed
     readonly TextBox search=new(){BorderStyle=BorderStyle.None,Font=new Font("Segoe UI",14),PlaceholderText="Pesquise ou digite um endereço",AccessibleName="Pesquisar na web"};
     readonly SoftButton searchIcon=new(){Glyph="search",TabStop=false,Enabled=false};
     readonly SoftButton go=new(){Glyph="forward",AccessibleName="Pesquisar"};
-    readonly FlowLayoutPanel shortcuts=new(){WrapContents=true,AutoScroll=true};
+    readonly FlowLayoutPanel shortcuts=new(){WrapContents=true,AutoScroll=false};
     readonly SoftButton customize=new(){Text="Personalizar",AccessibleName="Personalizar o Clean Browser"};
     readonly SoftButton memory=new(){Text="Economia de memória",AccessibleName="Controle de memória"};
     readonly string engine;
@@ -75,7 +75,9 @@ public sealed class HomeBoard : Panel,IThemed
         int cols=Math.Max(1,Math.Min(shortcuts.Controls.Count,(Width-D(70))/Math.Max(1,D(126)))),w=cols*D(126);
         int rows=(shortcuts.Controls.Count+cols-1)/cols;
         int available=Math.Max(D(100),Height-top-D(309));
-        w+=rows*D(118)>available?SystemInformation.VerticalScrollBarWidth:D(2);
+        w=Math.Min(Width-D(40),cols*D(126)+D(32));
+        int slots=cols*Math.Max(1,available/D(118));
+        for(int i=0;i<shortcuts.Controls.Count;i++)shortcuts.Controls[i].Visible=i<slots;
         shortcuts.SetBounds((Width-w)/2,top+D(231),w,Math.Min(Math.Max(1,rows)*D(118)+D(2),available));
         memory.SetBounds(left,Height-D(61),D(215),D(36));customize.SetBounds(left+contentWidth-D(140),Height-D(61),D(140),D(36));
     }
