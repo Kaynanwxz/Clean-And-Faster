@@ -1,45 +1,78 @@
 namespace KayBrowser;
 
+// Every control commits one explicit setting immediately; there is no mixed draft/apply state.
 public sealed class AppearancePanel : Panel,IThemed
 {
-    readonly Storage store;readonly ComboBox preset,theme,tabs,layout,background,shortcuts,density,chrome;
-    readonly CheckBox animate,focus;readonly TextBox accent;
-    readonly Action changed;readonly Action upload;bool loading;
+    readonly Storage store;readonly Action changed,upload;readonly Label status=new(){Dock=DockStyle.Fill,Text="Salvo automaticamente",TextAlign=ContentAlignment.MiddleLeft,AutoEllipsis=true};
+    readonly Panel viewport=new(){Dock=DockStyle.Fill,AutoScroll=true,Margin=Padding.Empty};
+    readonly List<ChoiceButton> navigation=[];readonly List<(ChoiceButton Button,Func<bool> Selected)> choices=[];readonly List<TableLayoutPanel> pages=[];
+    readonly CheckBox animations=new(){Text="Animações e transições",Dock=DockStyle.Fill,AccessibleName="Animações e transições"},focus=new(){Text="Modo foco",Dock=DockStyle.Fill,AccessibleName="Modo foco"};
+    readonly TextBox accent=new(){Dock=DockStyle.Fill,MaxLength=7,AccessibleName="Cor hexadecimal"};readonly Label wallpaper=new(){Dock=DockStyle.Fill,AutoEllipsis=true};
+    Palette palette=Palette.Create(true,Color.SteelBlue);bool syncing;int activePage;readonly Tween pageMotion=new();
     public event Action? CloseRequested;
     public AppearancePanel(Storage data,Action apply,Action chooseWallpaper)
     {
-        store=data;changed=apply;upload=chooseWallpaper;Dock=DockStyle.Fill;Padding=new Padding(18);AccessibleName="Personalização do navegador";
-        var body=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=1,RowCount=3};body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));body.RowStyles.Add(new RowStyle(SizeType.Absolute,76));body.RowStyles.Add(new RowStyle(SizeType.Percent,100));body.RowStyles.Add(new RowStyle(SizeType.Absolute,48));
-        var header=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2,RowCount=1};header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,32));header.RowStyles.Add(new RowStyle(SizeType.Percent,100));
-        header.Controls.Add(new Label{Text="Seu navegador,\ndo seu jeito",Font=new Font("Georgia",18),Dock=DockStyle.Fill},0,0);var close=new SoftButton{Glyph="close",AccessibleName="Fechar aparência",Dock=DockStyle.Top,Height=32};close.Click+=(_,_)=>CloseRequested?.Invoke();header.Controls.Add(close,1,0);
-        var scroll=new Panel{Dock=DockStyle.Fill,AutoScroll=true};var grid=new TableLayoutPanel{Dock=DockStyle.Top,AutoSize=true,ColumnCount=1,Padding=new Padding(0,0,8,8)};grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));scroll.Controls.Add(grid);
-        ComboBox Choice(string label,string[] options)
-        {
-            var c=new ComboBox{DropDownStyle=ComboBoxStyle.DropDownList,Dock=DockStyle.Fill,AccessibleName=label};c.Items.AddRange(options);
-            Row(new Label{Text=label,Dock=DockStyle.Fill,TextAlign=ContentAlignment.BottomLeft},26);Row(c,35);return c;
-        }
-        void Row(Control c,int height){int row=grid.RowCount++;grid.RowStyles.Add(new RowStyle(SizeType.Absolute,height));grid.Controls.Add(c,0,row);}
-        preset=Choice("Visual",VisualPresets.All.Select(v=>v.Name).ToArray());theme=Choice("Tema",["Claro","Escuro"]);chrome=Choice("Barra do navegador",["Azul-marinho","Clara"]);tabs=Choice("Posição das abas",["Superior","Lateral"]);layout=Choice("Página inicial",["Clássico","Central","Editorial","Essencial","Espaços","Cristal","Biblioteca"]);
-        var swatches=new FlowLayoutPanel{Dock=DockStyle.Fill,WrapContents=false};foreach(string hex in new[]{"#8FBBEF","#A9C9EF","#5D96D5","#C4D2E2","#F2F5FA"}){var b=new Button{Width=37,Height=28,BackColor=ColorTranslator.FromHtml(hex),FlatStyle=FlatStyle.Flat,AccessibleName="Destaque "+hex};b.Click+=(_,_)=>{if(accent!=null)accent.Text=hex;};swatches.Controls.Add(b);}Row(new Label{Text="Cor de destaque",Dock=DockStyle.Fill},26);Row(swatches,36);accent=new TextBox{Dock=DockStyle.Fill,MaxLength=16,AccessibleName="Cor hexadecimal"};Row(accent,32);
-        background=Choice("Plano de fundo",["Arte","Suave","Sem arte","Personalizado"]);var imageActions=new FlowLayoutPanel{Dock=DockStyle.Fill,WrapContents=false};var add=new SoftButton{Text="Escolher imagem",Width=150,Height=32};add.Click+=(_,_)=>{upload();background.SelectedItem=store.Settings.Background;};var remove=new SoftButton{Text="Remover",Width=100,Height=32};remove.Click+=(_,_)=>{store.Settings.Wallpaper="";background.SelectedItem="Sem arte";};imageActions.Controls.AddRange([add,remove]);Row(imageActions,38);
-        shortcuts=Choice("Atalhos",["Meus atalhos","Mais visitados","Ocultar"]);density=Choice("Densidade",["Confortável","Compacta"]);
-        animate=new CheckBox{Text="Animações suaves",Dock=DockStyle.Fill};focus=new CheckBox{Text="Modo foco",Dock=DockStyle.Fill};Row(animate,32);Row(focus,32);
-        var actions=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2,RowCount=1};actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,50));actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,50));actions.RowStyles.Add(new RowStyle(SizeType.Percent,100));var reset=new SoftButton{Text="Restaurar padrão",Dock=DockStyle.Fill};var save=new SoftButton{Text="Aplicar",Dock=DockStyle.Fill};actions.Controls.Add(reset,0,0);actions.Controls.Add(save,1,0);
-        save.Click+=(_,_)=>Apply();reset.Click+=(_,_)=>{VisualPresets.Apply(store.Settings,"Copiloto Azul");store.Settings.Accent="#8FBBEF";store.Settings.Wallpaper="";store.Settings.FocusMode=false;store.Settings.Animations=true;store.Settings.ShowShortcuts=true;LoadValues();Apply();};
-        preset.SelectedIndexChanged+=(_,_)=>{if(!loading&&preset.SelectedItem is string value){VisualPresets.Apply(store.Settings,value);LoadValues();Apply();}};
-        body.Controls.Add(header,0,0);body.Controls.Add(scroll,0,1);body.Controls.Add(actions,0,2);Controls.Add(body);LoadValues();SetPalette(Palette.Create(true,Color.SteelBlue));
+        store=data;changed=apply;upload=chooseWallpaper;Dock=DockStyle.Fill;Padding=new Padding(18,12,18,10);AccessibleName="Aparência do Clean Browser";DoubleBuffered=true;
+        var body=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=1,RowCount=4,Margin=Padding.Empty};body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));foreach(int h in new[]{70,42,0,42})body.RowStyles.Add(new RowStyle(h==0?SizeType.Percent:SizeType.Absolute,h==0?100:h));
+        var header=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2,RowCount=1,Margin=Padding.Empty};header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,32));header.RowStyles.Add(new RowStyle(SizeType.Percent,100));header.Controls.Add(new Label{Text="Aparência",Font=new Font("Georgia",22),TextAlign=ContentAlignment.MiddleLeft,Dock=DockStyle.Fill},0,0);var close=new SoftButton{Glyph="close",AccessibleName="Fechar aparência",Dock=DockStyle.Fill};close.Click+=(_,_)=>CloseRequested?.Invoke();header.Controls.Add(close,1,0);
+        var nav=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=3,RowCount=1,Margin=Padding.Empty};nav.RowStyles.Add(new RowStyle(SizeType.Percent,100));foreach(var (name,index) in new[]{("Visuais",0),("Layout",1),("Fundo",2)}){nav.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100f/3));var b=new ChoiceButton{Text=name,Dock=DockStyle.Fill,AccessibleName="Aparência: "+name};b.Click+=(_,_)=>SelectPage(index);nav.Controls.Add(b,index,0);navigation.Add(b);}
+        for(int i=0;i<3;i++){var p=new TableLayoutPanel{Dock=DockStyle.Top,AutoSize=true,ColumnCount=1,Margin=Padding.Empty,Padding=new Padding(0,8,8,12),Visible=false};p.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));pages.Add(p);}
+        var visual=pages[0];Heading(visual,"Tema da página");Options(visual,[("Claro",()=>store.Settings.Theme=="Claro",()=>store.Settings.Theme="Claro"),("Escuro",()=>store.Settings.Theme=="Escuro",()=>store.Settings.Theme="Escuro")]);Heading(visual,"10 visuais para explorar");
+        var cards=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2,RowCount=5,Margin=Padding.Empty};cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,50));cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,50));
+        for(int i=0;i<VisualPresets.All.Length;i++){var v=VisualPresets.All[i];if(i%2==0)cards.RowStyles.Add(new RowStyle(SizeType.Absolute,94));var b=new PresetCard(v){Dock=DockStyle.Fill,AccessibleName="Visual: "+v.Name,Margin=new Padding(1)};choices.Add((b,()=>store.Settings.Visual==v.Name));b.Click+=(_,_)=>Commit(()=>VisualPresets.Apply(store.Settings,v.Name));cards.Controls.Add(b,i%2,i/2);}Row(visual,cards,470);
+        var layout=pages[1];Heading(layout,"Abas");Options(layout,[("Superior",()=>!store.Settings.VerticalTabs,()=>store.Settings.VerticalTabs=false),("Lateral",()=>store.Settings.VerticalTabs,()=>store.Settings.VerticalTabs=true)]);
+        Heading(layout,"Barra do navegador");Options(layout,[("Azul-marinho",()=>store.Settings.DarkChrome,()=>store.Settings.DarkChrome=true),("Clara",()=>!store.Settings.DarkChrome,()=>store.Settings.DarkChrome=false)]);
+        Heading(layout,"Espaçamento");Options(layout,[("Confortável",()=>!store.Settings.Compact,()=>store.Settings.Compact=false),("Compacto",()=>store.Settings.Compact,()=>store.Settings.Compact=true)]);
+        Heading(layout,"Página inicial");Options(layout,new[]{"Clássico","Central","Editorial","Essencial","Espaços","Cristal","Biblioteca"}.Select(v=>(v,(Func<bool>)(()=>store.Settings.HomeLayout==v),(Action)(()=>store.Settings.HomeLayout=v))).ToArray(),2);
+        Heading(layout,"Atalhos da página inicial");Options(layout,[("Meus atalhos",()=>store.Settings.ShowShortcuts&&!store.Settings.FrequentShortcuts,()=>{store.Settings.ShowShortcuts=true;store.Settings.FrequentShortcuts=false;}),("Mais visitados",()=>store.Settings.ShowShortcuts&&store.Settings.FrequentShortcuts,()=>{store.Settings.ShowShortcuts=true;store.Settings.FrequentShortcuts=true;}),("Ocultar",()=>!store.Settings.ShowShortcuts,()=>store.Settings.ShowShortcuts=false)],2);
+        Row(layout,animations,38);Row(layout,focus,38);animations.CheckedChanged+=(_,_)=>{if(!syncing)Commit(()=>store.Settings.Animations=animations.Checked);};focus.CheckedChanged+=(_,_)=>{if(!syncing)Commit(()=>store.Settings.FocusMode=focus.Checked);};
+        var bg=pages[2];Heading(bg,"Arte e plano de fundo");Options(bg,new[]{"Arte","Suave","Sem arte","Personalizado"}.Select(v=>(v,(Func<bool>)(()=>store.Settings.Background==v),(Action)(()=>{if(v=="Personalizado"&&string.IsNullOrEmpty(store.Settings.Wallpaper)){upload();return;}store.Settings.Background=v;}))).ToArray(),2);
+        Row(bg,wallpaper,40);var imageActions=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2,RowCount=1};imageActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,60));imageActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,40));imageActions.RowStyles.Add(new RowStyle(SizeType.Percent,100));var add=new SoftButton{Text="Escolher imagem",Glyph="plus",Dock=DockStyle.Fill,AccessibleName="Escolher imagem"};add.Click+=(_,_)=>{upload();Sync();};var remove=new SoftButton{Text="Remover",Dock=DockStyle.Fill,AccessibleName="Remover imagem"};remove.Click+=(_,_)=>Commit(()=>{store.Settings.Wallpaper="";store.Settings.Background="Sem arte";});imageActions.Controls.Add(add,0,0);imageActions.Controls.Add(remove,1,0);Row(bg,imageActions,42);
+        Heading(bg,"Cor de destaque");var swatches=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=5,RowCount=1};swatches.RowStyles.Add(new RowStyle(SizeType.Percent,100));foreach(var (hex,index) in new[]{"#8FBBEF","#A9C9EF","#5D96D5","#C4D2E2","#F2F5FA"}.Select((s,i)=>(s,i))){swatches.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,20));var b=new AccentSwatch(hex){Dock=DockStyle.Fill,AccessibleName="Destaque "+hex};choices.Add((b,()=>store.Settings.Accent.Equals(hex,StringComparison.OrdinalIgnoreCase)));b.Click+=(_,_)=>Commit(()=>store.Settings.Accent=hex);swatches.Controls.Add(b,index,0);}Row(bg,swatches,46);Row(bg,accent,34);
+        accent.TextChanged+=(_,_)=>{if(syncing)return;if(!IsHex(accent.Text)){status.Text="Use # seguido de 6 dígitos (ex.: #8FBBEF)";return;}Commit(()=>store.Settings.Accent=accent.Text,keepText:true);};
+        var footer=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2,RowCount=1};footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,60));footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,40));footer.RowStyles.Add(new RowStyle(SizeType.Percent,100));var reset=new SoftButton{Text="Restaurar",AccessibleName="Restaurar aparência",Dock=DockStyle.Fill};reset.Click+=(_,_)=>Commit(()=>{VisualPresets.Apply(store.Settings,"Copiloto Azul");store.Settings.Accent="#8FBBEF";store.Settings.Wallpaper="";store.Settings.ShowShortcuts=true;store.Settings.FrequentShortcuts=false;store.Settings.FocusMode=false;store.Settings.Animations=true;});footer.Controls.Add(status,0,0);footer.Controls.Add(reset,1,0);
+        body.Controls.Add(header,0,0);body.Controls.Add(nav,0,1);body.Controls.Add(viewport,0,2);body.Controls.Add(footer,0,3);Controls.Add(body);SelectPage(0,false);Sync();
+        viewport.Resize+=(_,_)=>FitPage();
     }
-    void LoadValues(){loading=true;try{var p=store.Settings;preset.SelectedItem=p.Visual;theme.SelectedItem=p.Theme;chrome.SelectedIndex=p.DarkChrome?0:1;tabs.SelectedItem=p.VerticalTabs?"Lateral":"Superior";layout.SelectedItem=p.HomeLayout;background.SelectedItem=p.Background;accent.Text=p.Accent;shortcuts.SelectedItem=!p.ShowShortcuts?"Ocultar":p.FrequentShortcuts?"Mais visitados":"Meus atalhos";density.SelectedIndex=p.Compact?1:0;animate.Checked=p.Animations;focus.Checked=p.FocusMode;}finally{loading=false;}}
-    void Apply()
+    static bool IsHex(string value)=>value.Length==7&&value[0]=='#'&&value[1..].All(Uri.IsHexDigit);
+    static void Row(TableLayoutPanel page,Control control,int height){int row=page.RowCount++;page.RowStyles.Add(new RowStyle(SizeType.Absolute,height));page.Controls.Add(control,0,row);control.Dock=DockStyle.Fill;}
+    static void Heading(TableLayoutPanel page,string text)=>Row(page,new Label{Text=text,Font=new Font("Segoe UI",9.5f,FontStyle.Bold),TextAlign=ContentAlignment.BottomLeft,Padding=new Padding(0,0,0,7)},42);
+    void Options(TableLayoutPanel page,(string Name,Func<bool> Selected,Action Change)[] items,int columns=2)
     {
-        try{if(accent.Text.Length!=7||accent.Text[0]!='#')throw new ArgumentException();_=ColorTranslator.FromHtml(accent.Text);}catch{System.Media.SystemSounds.Beep.Play();accent.Focus();return;}
-        var p=store.Settings;p.Theme=theme.Text;p.DarkChrome=chrome.SelectedIndex==0;p.VerticalTabs=tabs.SelectedIndex==1;p.HomeLayout=layout.Text;p.Background=background.Text;p.Accent=accent.Text;p.ShowShortcuts=shortcuts.SelectedIndex!=2;p.FrequentShortcuts=shortcuts.SelectedIndex==1;p.Compact=density.SelectedIndex==1;p.Animations=animate.Checked;p.FocusMode=focus.Checked;
-        store.SaveSettings();changed();
+        var grid=new TableLayoutPanel{ColumnCount=columns,RowCount=(items.Length+columns-1)/columns,Dock=DockStyle.Fill,Margin=Padding.Empty};for(int i=0;i<columns;i++)grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100f/columns));for(int i=0;i<grid.RowCount;i++)grid.RowStyles.Add(new RowStyle(SizeType.Absolute,40));
+        for(int i=0;i<items.Length;i++){var item=items[i];var b=new ChoiceButton{Text=item.Name,Dock=DockStyle.Fill,AccessibleName=item.Name};b.Click+=(_,_)=>Commit(item.Change);choices.Add((b,item.Selected));grid.Controls.Add(b,i%columns,i/columns);}Row(page,grid,grid.RowCount*40);
     }
+    void Commit(Action change,bool keepText=false)
+    {
+        if(syncing)return;
+        try{change();store.SaveSettings();changed();Sync(keepText);status.Text="Salvo automaticamente";}
+        catch(Exception ex)when(ex is IOException or UnauthorizedAccessException){status.Text="Não foi possível salvar. Tente novamente.";}
+    }
+    internal void Sync(bool keepText=false)
+    {
+        syncing=true;try{foreach(var (b,test) in choices){b.Selected=test();b.Invalidate();}animations.Checked=store.Settings.Animations;focus.Checked=store.Settings.FocusMode;if(!keepText)accent.Text=store.Settings.Accent;wallpaper.Text=string.IsNullOrEmpty(store.Settings.Wallpaper)?"Imagem do navegador ou fundo simples":Path.GetFileName(store.Settings.Wallpaper);}finally{syncing=false;}
+    }
+    internal void SelectPage(int page,bool animate=true)
+    {
+        pageMotion.Stop();if(viewport.Controls.Count>0){viewport.Controls[0].Visible=false;viewport.Controls.Clear();}activePage=page;var selected=pages[page];viewport.AutoScrollPosition=Point.Empty;viewport.Controls.Add(selected);selected.Visible=true;FitPage();for(int i=0;i<navigation.Count;i++){navigation[i].Selected=i==page;navigation[i].Invalidate();}
+        if(animate){selected.Dock=DockStyle.None;int y=selected.Top;pageMotion.Start(18,0,v=>selected.Top=y+(int)v,190,()=>{selected.Dock=DockStyle.Top;FitPage();});}SetPalette(palette);
+    }
+    void FitPage(){var p=pages[activePage];if(p.Dock==DockStyle.None)p.Width=Math.Max(1,viewport.ClientSize.Width-SystemInformation.VerticalScrollBarWidth);}
     public void SetPalette(Palette unused)
     {
-        var p=Palette.Create(true,Color.SteelBlue);
-        void Theme(Control c){if(c is Button b&&b is not SoftButton)return;c.BackColor=p.Background;c.ForeColor=p.Text;if(c is SoftButton soft)soft.SetPalette(p);foreach(Control child in c.Controls)Theme(child);}
-        Theme(this);
+        palette=Palette.Create(store.Settings.Theme=="Claro",ColorTranslator.FromHtml(store.Settings.Accent));var p=palette;
+        void Theme(Control c){c.BackColor=p.Background;c.ForeColor=p.Text;if(c is SoftButton b)b.SetPalette(p);foreach(Control child in c.Controls)Theme(child);}Theme(this);foreach(var page in pages)if(page.Parent==null)Theme(page);status.ForeColor=p.Muted;Invalidate();
     }
+    internal void ClickChoice(string name)
+    {
+        foreach(var page in pages){var button=Descendants(page).OfType<Button>().FirstOrDefault(b=>b.AccessibleName==name);if(button!=null){SelectPage(pages.IndexOf(page),false);button.PerformClick();return;}}
+        throw new InvalidOperationException("Opção ausente: "+name);
+    }
+    internal static IEnumerable<Control> Descendants(Control c){foreach(Control child in c.Controls){yield return child;foreach(var nested in Descendants(child))yield return nested;}}
+    internal void SetAccentForDiagnostic(string value)=>accent.Text=value;
+    protected override void Dispose(bool disposing){if(disposing){pageMotion.Dispose();foreach(var p in pages)if(p.Parent==null)p.Dispose();}base.Dispose(disposing);}
+}
+public sealed class AccentSwatch(string hex):ChoiceButton
+{
+    protected override void OnPaint(PaintEventArgs e){base.OnPaint(e);using var b=new SolidBrush(ColorTranslator.FromHtml(hex));e.Graphics.FillEllipse(b,new Rectangle(Width/2-D(12),Height/2-D(12),D(24),D(24)));}
 }

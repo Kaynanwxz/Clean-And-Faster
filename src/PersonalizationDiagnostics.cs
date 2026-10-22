@@ -5,7 +5,7 @@ public sealed partial class BrowserWindow
     internal void VerifyPersonalization()
     {
         void Check(bool ok,string message){if(!ok)throw new InvalidOperationException(message);}
-        Motion.Enabled=false;
+        Motion.Enabled=false;store.Settings.Animations=false;
         string wallpaperFile=Path.Combine(Storage.Root,"diagnostic-wallpaper.png");
         using(var sample=new Bitmap(80,40))sample.Save(wallpaperFile,System.Drawing.Imaging.ImageFormat.Png);
         var wallpaper=BrandAssets.Wallpaper(wallpaperFile);Check(wallpaper!=null&&ReferenceEquals(wallpaper,BrandAssets.Wallpaper(wallpaperFile)),"Plano de fundo duplicado na memória.");BrandAssets.Wallpaper("");

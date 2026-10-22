@@ -20,20 +20,21 @@ public sealed partial class BrowserWindow
         InitializeWorkspaceChrome();
         pageHost.Controls.Add(browserSurface,0,0);pageHost.Controls.Add(rightDock,1,0);
         pageHost.Resize+=(_,_)=>{if(RightOpen&&!assistantTween.Running)pageHost.ColumnStyles[1].Width=AssistantWidth;};
+        rightDock.Resize+=(_,_)=>{foreach(Control p in rightDock.Controls)p.SetBounds(assistantTween.Running?p.Left:0,0,rightDock.ClientSize.Width,rightDock.ClientSize.Height);};
     }
-    int AssistantWidth=>Math.Min(Ui(assistantWide?560:390),pageHost.ClientSize.Width/2);
+    int AssistantWidth=>Math.Min(Ui(assistantWide&&assistantOpen?560:390),pageHost.ClientSize.Width/2);
     void ToggleAssistant()
     {
+        CloseBrowserMenu(false);
         if(assistant==null)
         {
             assistant=new();assistant.SetPalette(BrandAssets.Navy(Accent));rightDock.Controls.Add(assistant);
-            assistant.SendRequested+=()=>_ = AskAssistant();assistant.StopRequested+=()=>aiCancellation?.Cancel();assistant.SetupRequested+=ConfigureAssistant;assistant.CloseRequested+=ToggleAssistant;assistant.ExpandRequested+=()=>{assistantWide=!assistantWide;pageHost.ColumnStyles[1].Width=AssistantWidth;ApplyWorkspaceMetrics();};
+            assistant.SendRequested+=()=>_ = AskAssistant();assistant.StopRequested+=()=>aiCancellation?.Cancel();assistant.SetupRequested+=ConfigureAssistant;assistant.CloseRequested+=ToggleAssistant;assistant.ExpandRequested+=()=>{assistantWide=!assistantWide;AnimateRightPanel(assistant,true);};
         }
         if(appearanceOpen){appearanceOpen=false;if(appearance!=null)appearance.Visible=false;}
         assistantOpen=!assistantOpen;
         if(!assistantOpen)aiCancellation?.Cancel();else {assistant.Visible=true;assistant.BringToFront();}
-        assistantTween.Start(pageHost.ColumnStyles[1].Width,assistantOpen?AssistantWidth:0,width=>pageHost.ColumnStyles[1].Width=width,220,()=>{assistant.Visible=assistantOpen;ApplyWorkspaceMetrics();});
-        ApplyWorkspaceMetrics();
+        AnimateRightPanel(assistant,assistantOpen);
     }
     void DisposeAssistant(){aiCancellation?.Cancel();assistantTween.Dispose();aiHttp?.Dispose();}
     void ConfigureAssistant()

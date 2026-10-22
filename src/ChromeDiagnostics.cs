@@ -100,6 +100,10 @@ public static class ChromeDiagnostics
             if(!agentCheck.IsCompleted)throw new TimeoutException("Diagnóstico de agente excedeu tempo.");
             agentCheck.GetAwaiter().GetResult();
             result.Add(new{mode="agent-dom-read-fill-click-stale-and-dpapi",status="PASS"});
+            var interactions=window.VerifyInteractions();var interactionDeadline=DateTime.UtcNow.AddSeconds(180);
+            while(!interactions.IsCompleted&&DateTime.UtcNow<interactionDeadline){Application.DoEvents();Thread.Sleep(5);}
+            if(!interactions.IsCompleted)throw new TimeoutException("Interações excederam prazo.");
+            result.Add(new{mode="native-buttons-menu-outside-escape-appearance-motion",status="PASS",checks=interactions.GetAwaiter().GetResult().Length});
             window.VerifyPersonalization();
             result.Add(new{mode="presets-10-vertical-focus-shortcuts-library-workspaces",status="PASS"});
             window.Close();

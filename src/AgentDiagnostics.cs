@@ -17,7 +17,7 @@ public sealed partial class BrowserWindow
         <button id="increment" onclick="document.querySelector('h1').textContent='Clique confirmado'">Contar</button>
         <p hidden>HIDDEN_DO_NOT_READ</p></body></html>
         """);
-        environment=await CoreWebView2Environment.CreateAsync(null,Path.Combine(Storage.Root,"WebView"));
+        environment=await CoreWebView2Environment.CreateAsync(null,Path.Combine(Storage.Root,"WebView"),new CoreWebView2EnvironmentOptions{AreBrowserExtensionsEnabled=true});
         var tab=Current??throw new InvalidOperationException("Aba de diagnóstico ausente.");
         await CreateView(tab,false);
         var core=tab.View?.CoreWebView2??throw new InvalidOperationException("WebView de diagnóstico indisponível.");

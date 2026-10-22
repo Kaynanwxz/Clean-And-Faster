@@ -57,7 +57,7 @@ Os dados permanecem em `%LOCALAPPDATA%\KayBrowser`. A atualização não apaga h
 
 ## Personalizar
 
-Clique em **Personalizar** na nova aba ou em **Menu → Personalizar aparência**. O visual inicial é **Copiloto Azul**, com barras azul-marinho, página clara, colagem de Apolo/mar/vela e painel Clean AI. Selecione um dos dez visuais ou combine tema, barra clara/escura, abas laterais, cores, fundo, atalhos, densidade e animações. Clique em **Aplicar**. A escolha de um visual completo aplica imediatamente seus valores. **F8** alterna modo foco; **Ctrl+Shift+I** abre/fecha IA.
+Clique em **Personalizar** na nova aba ou em **Menu → Personalizar aparência**. O visual inicial é **Copiloto Azul**, com barras azul-marinho, página clara, colagem de Apolo/mar/vela e painel Clean AI. Selecione um dos dez visuais ou combine tema, barra clara/escura, abas laterais, cores, fundo, atalhos, densidade e animações. As escolhas são salvas automaticamente, com indicação da seleção ativa. Use as seções **Visuais, Layout e Fundo**. **F8** alterna modo foco; **Ctrl+Shift+I** abre/fecha IA.
 
 Na nova aba, **Adicionar atalho** cria um endereço HTTP/HTTPS. Botão direito permite editar, remover e mover; arraste para reordenar. Enter abre o selecionado; Delete remove; Ctrl+E edita. Os favicons vêm de páginas já visitadas, sem consultas a serviços externos de ícones.
 
@@ -140,3 +140,9 @@ A versão também corrige o redesenho nativo da moldura ao perder foco, anima os
 Os controles são Windows Forms: a interface e a IA não criam outro processo Chromium. Arte compartilhada decodificada uma vez, cache de favicons limitado em memória, transições curtas que param ao concluir e respeito à preferência de reduzir animações do Windows. O peso maior depende das páginas WebView2 abertas; não há promessa de teto rígido de RAM nem benchmark comparativo.
 
 Os sites ficam com `AreHostObjectsAllowed=false` e `IsWebMessageEnabled=false`, pois não precisam da ponte de objetos/mensagens nativa. Os atalhos aceitam HTTP/HTTPS sem credenciais na URL. A chave de IA continua protegida por DPAPI; ações da IA exigem confirmação e contexto compartilhado é opcional. SHA-256 detecta corrupção do download, mas não substitui assinatura de código ou auditoria de segurança.
+
+## Menu e interações da 0.8
+
+O menu é um painel compacto integrado ao navegador, organizado em Navegar, Organizar e Mais. Clique fora ou pressione Escape para fechá-lo. Zoom, Aparência e Atualizar ficam no rodapé. A personalização salva imediatamente cada opção, sem botão Aplicar.
+
+O diagnóstico Windows testa os comandos de menu, cliques fora repetidos, Escape, perda de foco, botões da barra e da IA, presets e opções de aparência, persistência, rejeição de cor inválida, cancelamento de seletor e conclusão/interrupção das animações. `interaction-check.json` e capturas ficam no artefato do Actions. Isso cobre os cenários descritos; não é garantia de ausência de todos os bugs. Operações reais de Google/API OpenAI exigem credenciais e não são simuladas como sucesso.

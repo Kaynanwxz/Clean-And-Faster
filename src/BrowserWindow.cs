@@ -219,7 +219,7 @@ public sealed partial class BrowserWindow : Form
         foreach (Control control in t.Page.Controls.Cast<Control>().ToArray()) control.Dispose();
         t.Page.Controls.Clear();
         var home = new HomeBoard(store,NavigateCurrent,ShowAppearance,ShowMemory,ShortcutCommand,kind=>{if(kind=="favorites")ShowBookmarks();else ShowLibrary(kind);},id=>_ = SwitchWorkspace(id),ToggleFocus);
-        home.SetPalette(Colors); t.Page.Controls.Add(home); UpdateChrome(t);
+        home.SetPalette(Colors); t.Page.Controls.Add(home);home.AnimateIn(); UpdateChrome(t);
     }
     void BookmarkCurrent()
     {
@@ -228,25 +228,6 @@ public sealed partial class BrowserWindow : Form
         if (old != null) { store.Bookmarks.Remove(old); status.Text = "Favorito removido"; }
         else { store.Bookmarks.Add(new(t.Title, t.Url)); status.Text = "Favorito salvo"; }
         store.SaveBookmarks();
-    }
-    void ShowMenu()
-    {
-        var menu = new ContextMenuStrip { BackColor = Colors.Surface, ForeColor = Colors.Text, ShowImageMargin = true, Padding = new Padding(6), Font = new Font("Segoe UI", 10), Renderer = new KayMenuRenderer(Colors) };
-        void Item(string s, Action a)
-        {
-            var icon = s.StartsWith("Histórico") ? "history" : s.StartsWith("Favoritos") ? "star" : s.StartsWith("Downloads") ? "download" : s.StartsWith("Memória") ? "memory" : s.StartsWith("Extensões") ? "extension" : s.StartsWith("Personalizar") ? "settings" : s.StartsWith("Conta") ? "user" : s.StartsWith("Buscar") ? "search" : s.StartsWith("Verificar") ? "update" : s.StartsWith("Tela") ? "max" : s.StartsWith("Zoom") ? "search" : "globe";
-            var item = menu.Items.Add(s, Glyphs.Bitmap(icon, Colors.Accent), (_, _) => a()); item.Padding = new Padding(9, 7, 9, 7);
-        }
-        menu.Closed += (_, _) => { foreach (ToolStripItem item in menu.Items) item.Image?.Dispose(); menu.Dispose(); };
-        Item("Assistente IA · Ctrl+Shift+I", ToggleAssistant); Item("Histórico  ·  Ctrl+H", ShowHistory); Item("Favoritos", ShowBookmarks); Item("Downloads", ShowDownloads);
-        Item("Memória e abas", ShowMemory); Item("Extensões", () => _ = ShowExtensions()); Item("Personalizar aparência", ShowAppearance);
-        Item("Espaços de trabalho",ManageWorkspaces);Item("Lista de leitura",()=>ShowLibrary("reading"));Item("Fontes salvas",()=>ShowLibrary("source"));Item("Documentos e notas",()=>ShowLibrary("note"));Item("Modo foco",ToggleFocus);Item("Configurações avançadas",ShowSettings);
-        Item("Conta Google", () => _ = LoginGoogle()); Item("Buscar na página  ·  Ctrl+F", Find);
-        Item("Zoom +", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Min(3, v.ZoomFactor + .1); });
-        Item("Zoom −", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Max(.3, v.ZoomFactor - .1); });
-        Item("Tela cheia  ·  F11", Fullscreen); Item("Verificar atualizações", () => _ = CheckUpdate());
-        Item("Sobre o Clean Browser", () => ShowNotice("Clean Browser 0.7.1 · prévia para Windows x64\nC# / .NET 10 / Microsoft Edge WebView2\n\nExtensões por pasta. Sem Chrome Sync.\nO limite de RAM é uma meta, não um limite rígido.", "Clean Browser"));
-        menu.Show(Cursor.Position);
     }
     AppDialog Dialog(string title, int w = 820, int h = 570) => new(title, Colors, w, h);
     DialogResult ShowNotice(string text, string title = "Clean Browser", MessageBoxButtons buttons = MessageBoxButtons.OK, MessageBoxIcon icon = MessageBoxIcon.None) => UiMessage.Show(this, Colors, text, title, buttons);
@@ -359,9 +340,11 @@ public sealed partial class BrowserWindow : Form
     }
     async Task ShowExtensions()
     {
-        if (Current == null) return;
-        if (Current.View == null) await CreateView(Current);
-        var profile = Current?.View?.CoreWebView2?.Profile;
+        if (Current == null||environment==null) return;
+        using var temporary=new WebView2{Size=new Size(1,1),Location=new Point(-100,-100),Visible=false};
+        var core=Current.View?.CoreWebView2;
+        if(core==null){Controls.Add(temporary);try{await temporary.EnsureCoreWebView2Async(environment);core=temporary.CoreWebView2;}catch(Exception ex){ShowNotice("Não foi possível carregar extensões: "+ex.Message);return;}}
+        var profile = core?.Profile;
         if (profile == null) return;
         using var f = Dialog("Extensões · por pasta"); var list = List("Nome", "ID", "Estado");
         var help = new Label { Dock = DockStyle.Top, Height = 64, Text = "Instale extensões descompactadas com manifest.json. Compatibilidade depende das APIs do WebView2.\nNão há instalação direta pela Chrome Web Store; extensões com botão/popup podem não funcionar." };
@@ -420,7 +403,7 @@ public sealed partial class BrowserWindow : Form
             try { _ = ColorTranslator.FromHtml(accent.Text); } catch { ShowNotice("Use uma cor válida, como #A8E6CF."); return; }
             if (repo.Text.Length > 0 && !Updater.ValidRepository(repo.Text)) { ShowNotice("Repositório deve ser usuario/nome."); return; }
             var p = store.Settings; p.Animations = animations.Checked; Motion.Enabled = p.Animations; p.Theme = theme.Text; p.Accent = accent.Text; p.Search = engine.Text; p.IdleMinutes = (int)idle.Value; p.MemoryBudgetMb = (int)budget.Value; p.RestoreTabs = restore.Checked; p.GoogleClientId = client.Text.Trim(); p.GoogleClientSecret = secret.Text.Trim(); p.UpdateRepository = repo.Text.Trim(); store.SaveSettings();
-            ApplyTheme(this); foreach (var t in tabs) { if (t.Url == "kay://new" && t.View == null) ShowHome(t); if (t.View?.CoreWebView2 is { } c) c.Profile.PreferredColorScheme = p.Theme == "Claro" ? CoreWebView2PreferredColorScheme.Light : CoreWebView2PreferredColorScheme.Dark; } f.Close();
+            ApplyPersonalization();f.Close();
         }); save.Dock = DockStyle.Bottom; f.Controls.Add(grid); f.Controls.Add(save); f.ShowDialog(this);
     }
     async Task LoginGoogle()
