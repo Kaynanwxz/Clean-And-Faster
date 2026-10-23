@@ -26,6 +26,7 @@ public sealed partial class BrowserWindow
                 ShowMenu();await Settle();Check(menuOpen&&browserMenu!.Visible,"Menu abre "+i);
                 ClickAt(PointToScreen(new Point(Ui(30),Ui(120))));await Settle();Check(!menuOpen&&!browserMenu!.Visible,"Clique fora fecha somente menu "+i+"; open="+menuOpen+"; visible="+browserMenu!.Visible+"; "+string.Join(" / ",menuTrace));
             }
+            checks.AddRange(await VerifySidebarDismissal());
             ShowMenu();await Settle();File.AppendAllText(Path.Combine(AppContext.BaseDirectory,"interaction-progress.log"),"ESCAPE"+Environment.NewLine);SendKeys.SendWait("{ESC}");await Settle();Check(!menuOpen,"Escape fecha menu");
             ShowMenu();await Settle();using(var other=new Form{Size=new Size(160,90),StartPosition=FormStartPosition.Manual,Location=new Point(20,20)}){other.Show();other.Activate();await Settle(60);Check(!menuOpen,"Perda de foco fecha menu");other.Close();}Activate();
             foreach(int group in new[]{0,1,2}){if(!menuOpen)ShowMenu();browserMenu!.SelectGroup(group);await Settle();SaveChromeScreenshot("layout-menu-"+group+".png");}CloseBrowserMenu(false);

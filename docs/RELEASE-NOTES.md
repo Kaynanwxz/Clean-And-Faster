@@ -1,21 +1,13 @@
-# Clean Browser 0.8.0
+# Clean Browser 0.8.1
 
-- Menu reconstruído como painel integrado compacto, com Navegar, Organizar e Mais. Zoom, aparência e atualização têm acesso fixo.
-- Clicar fora ou pressionar Escape fecha apenas o menu. Não há descarte de ícones/controles dentro do evento nativo de fechamento. Comandos são despachados depois de esconder o painel.
-- Aparência dividida em Visuais, Layout e Fundo. As opções são salvas imediatamente; cartões indicam seleção. Removida a mistura entre alteração imediata e botão Aplicar.
-- Personalização, tema, abas, densidade, atalhos, cores, fundo, foco e animações agora usam o mesmo fluxo de atualização.
-- Página inicial preserva os controles ao personalizar. Abrir Extensões sem um site não substitui a nova aba por uma página vazia.
-- Deslize de entrada/saída dos painéis, transição das seções de aparência, entrada da nova aba e destaque suave dos atalhos. Temporizadores param ao concluir e respeitam redução de animações do Windows.
-- Troca entre imagem própria e arte padrão corrigida; remoção limpa o arquivo criado pelo app.
-- Diálogos de permissão e download agendados fora dos callbacks nativos do WebView2 para evitar travamentos por reentrada.
-- Diagnóstico Windows ampliado com cliques reais fora do menu, Escape, perda de foco, vinte ciclos de abertura/fechamento, todos os comandos de menu, botões da barra e da IA, opções de aparência, cores inválidas, persistência, cancelamento de seletor de arquivos e cliques rápidos durante transições.
+- Corrigido o tratamento de cliques fora do menu durante a ativação da janela e a animação de saída. O gesto de dispensa não deve acionar o botão ou o conteúdo que está por baixo.
+- Enquanto o menu está visível, o contêiner nativo da página bloqueia entrada para que o WebView2 não receba o clique de dispensa. A entrada é restaurada ao fechar o menu.
+- O menu é ocultado depois do processamento da troca de foco pelo Windows. Solicitações antigas de fechamento são ignoradas após uma nova abertura.
+- Aparência e IA permanecem abertas ao clicar na página ou trocar de aplicativo; Configurações avançadas permanecem abertas ao clicar fora e dispensar listas de opções.
+- Diagnóstico Windows ampliado com cliques nativos na barra da janela, durante a saída animada, sobre a barra de endereço e com Configurações abertas sobre Aparência. O diagnóstico também verifica se o clique externo chega indevidamente ao conteúdo WebView2.
 
 ## Atualizar
 
-Clique **Atualizar → Atualizar e reiniciar**. Não precisa extrair ZIP. Dados e perfil permanecem no mesmo local.
+Clique **Atualizar → Atualizar e reiniciar**. Não precisa extrair ZIP. Histórico, favoritos, configurações e perfil de sites são preservados.
 
-## Personalizar
-
-**Menu → Aparência** abre as seções Visuais, Layout e Fundo. As mudanças são automáticas. A opção Restaurar retorna ao Copiloto Azul.
-
-Os testes usam dados isolados, página local WebView2 e protocolo de IA simulado. Login Google real, chamadas pagas da IA e compatibilidade com todas as extensões continuam dependendo de credenciais/serviços e não são cobertos pelo diagnóstico local.
+Os testes usam dados e páginas locais isolados. A cobertura e seus limites estão em `docs/VALIDACAO.md`.

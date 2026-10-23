@@ -70,7 +70,7 @@ public sealed partial class BrowserWindow
         updateButton.Text = "Atualizar"; updateButton.TabStop = true;
         bar.Controls.Add(updateButton, 9, 0);
         tabStrip.Margin=Padding.Empty;
-        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Clean Browser 0.8.0   ·   Pronto para explorar";
+        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Clean Browser 0.8.1   ·   Pronto para explorar";
         chromeLayout.Controls.Add(title,0,0);chromeLayout.Controls.Add(bar,0,1);InitializeAssistantHost();
         chromeLayout.Controls.Add(pageHost,0,2);chromeLayout.Controls.Add(status,0,3);
         Controls.Add(chromeLayout);
@@ -131,6 +131,13 @@ public sealed partial class BrowserWindow
     }
     protected override void WndProc(ref Message m)
     {
+        if(m.Msg==0x21&&MenuVisible) // WM_MOUSEACTIVATE is sent, not queued: IMessageFilter cannot catch it.
+        {
+            menuFilter?.SuppressGesture((int)((m.LParam.ToInt64()>>16)&0xffff));
+            RememberMenuDismissalTarget();
+            QueueBrowserMenuDismissal();
+            m.Result=new IntPtr(2);return; // MA_ACTIVATEANDEAT: focus the browser, discard the dismissal click.
+        }
         const int WM_NCCALCSIZE=0x83,WM_NCHITTEST=0x84;
         if(m.Msg==WM_NCCALCSIZE&&m.WParam!=IntPtr.Zero){m.Result=IntPtr.Zero;return;}
         if(m.Msg==WM_NCHITTEST&&WindowState!=FormWindowState.Maximized&&!fullscreen)
