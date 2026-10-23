@@ -10,6 +10,8 @@ public sealed class Preferences
     public bool Animations { get; set; } = true;
     public bool ShowBottomBar { get; set; } // Absent in existing profiles: hidden until explicitly enabled.
     public string AiModel { get; set; } = "gpt-5.4-mini";
+    public string AiProvider { get; set; } = "OpenAI";
+    public string AiEndpoint { get; set; } = "https://api.openai.com/v1/responses";
     public int AppearanceRevision { get; set; }
     public string Visual { get; set; } = VisualPresets.DefaultName;
     public string HomeLayout { get; set; } = "Essencial";

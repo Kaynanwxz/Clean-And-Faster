@@ -1,25 +1,14 @@
-# Preparação 0.9.1
+# Clean Browser 0.10.0 — IA integrada
 
-- Barra inferior opcional e oculta por padrão; preferência persistente em Personalizar → Layout.
-- Atalhos centralizados pela quantidade exibida e em linhas incompletas.
-- Marca e título da nova aba centralizados pela largura real do texto.
-- Imagens personalizadas preservam resolução original, até o limite existente de 24 MP.
-- Arte aprovada de 1440 × 576 e cores preservadas; fonte em maior resolução continua pendente.
-- Testes de lógica isolam seus dados automaticamente no Windows e Linux.
-- Diagnóstico de renderização separado de entrada física; capturas limitadas aos controles do app.
+- Converse com sua IA dentro do Clean Browser, com contexto entre mensagens, texto selecionável, cópia e Nova conversa.
+- Conecte OpenAI, OpenRouter ou uma API compatível. Configuração nativa em três passos, teste de conexão e chave protegida pelo Windows, vinculada ao endereço do provedor.
+- Mostre uma aba, uma janela específica ou uma tela. Confira a prévia, recorte o que quiser e anexe à conversa sem instalar ferramentas de captura.
+- A captura permanece visível na conversa até remover, trocar ou iniciar uma nova conversa. Só é enviada ao clicar em Enviar; não há vídeo ao vivo nem gravação contínua.
+- Contexto de páginas/abas e ações aprovadas são opcionais. O painel acompanha os temas claro e escuro do navegador.
+- Sem SDK pesado, servidor intermediário ou novo aplicativo. Imagens são limitadas proporcionalmente a 1920 px no envio e não são gravadas no disco pelo recurso.
 
-Preparado localmente. Não publicado como release; consulte AUDITORIA-0.9.1.md antes de distribuir.
+## Usar
 
-# Clean Browser 0.9.0
+Atualize pelo botão Atualizar → Atualizar e reiniciar. Abra Clean AI, clique em Conectar IA, escolha o provedor, informe modelo/chave, teste e salve. Para compartilhar, use Mostrar tela ou janela → Capturar → Usar esta imagem → Enviar.
 
-- Padrão conforme as referências: Cristal do Egeu, tema e barra claros, abas no topo, compacto, página Essencial, fundo Arte e atalhos mais visitados.
-- Migração única da aparência para perfis anteriores, preservando histórico, favoritos, atalhos próprios, contas, espaços e demais dados. Personalizações posteriores são mantidas.
-- Fundo centralizado com cobertura total, mantendo a proporção, inclusive com a lateral aberta. Imagens próprias usam o mesmo enquadramento.
-- Google, GitHub e YouTube usam marcas vetoriais locais, sem ampliar favicons pequenos. Nomes curtos nos atalhos mais visitados.
-- Sem histórico, os mais visitados começam pelos atalhos salvos.
-- Ícone do Windows gerado da marca aprovada em dez tamanhos, com cantos transparentes e respiro uniforme, removendo a placa branca. Janela e barra de tarefas usam o ícone completo e uma identificação estável.
-- Painel de IA acompanha o tema da página.
-
-## Atualizar
-
-Clique **Atualizar → Atualizar e reiniciar**. Sem extrair ZIP. Depois da migração inicial de aparência, você pode personalizar normalmente; as escolhas são mantidas.
+A integração nativa usa a API do provedor escolhido. Conta/assinatura do ChatGPT não conecta esta conversa automaticamente nem substitui uma chave de API. Custos, modelos disponíveis, suporte a imagens e ferramentas dependem do provedor. Janelas protegidas/minimizadas podem impedir captura; use a aba ou tela e confira a prévia. Não inclui voz/vídeo em tempo real nem controle de outros aplicativos do Windows.
