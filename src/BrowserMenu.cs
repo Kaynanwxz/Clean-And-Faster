@@ -76,7 +76,12 @@ public sealed partial class BrowserWindow
             menuFilter=new MenuDismissFilter(this);Application.AddMessageFilter(menuFilter);
             FormClosed+=(_,_)=>{CloseBrowserMenu(false);Application.RemoveMessageFilter(menuFilter);menuMotion.Dispose();menuPopup.Dispose();};
         }
-        menuSession++;menuOpen=true;browserMenu.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));browserMenu.RefreshZoom(Current?.View?.ZoomFactor??1);PositionBrowserMenu();browserMenu.Visible=true;
+        menuSession++;menuOpen=true;
+        // WebView2 handles mouse input in another process, outside IMessageFilter.
+        // Disable its native parent while the menu is visible so Windows routes the
+        // dismissal gesture to this UI thread instead of the page underneath.
+        tabStrip.Enabled=false;
+        browserMenu.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));browserMenu.RefreshZoom(Current?.View?.ZoomFactor??1);PositionBrowserMenu();browserMenu.Visible=true;
         var target=MenuLocation();if(!menuPopup!.Visible)menuPopup.Show(this);else menuPopup.Activate();browserMenu.FocusMenu();
         menuMotion.Start(target.X+Ui(18),target.X,x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},230);
     }
@@ -89,9 +94,10 @@ public sealed partial class BrowserWindow
     }
     void CloseBrowserMenu(bool animate=true)
     {
-        menuSession++;menuOpen=false;if(menuPopup==null||menuPopup.IsDisposed||!menuPopup.Visible)return;
-        if(!animate){menuMotion.Stop();menuPopup.Hide();browserMenu!.Visible=false;return;}
-        menuMotion.Start(menuPopup.Left,menuPopup.Left+Ui(18),x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},180,()=>{if(!menuOpen&&!menuPopup.IsDisposed){menuPopup.Hide();browserMenu!.Visible=false;}});
+        menuSession++;menuOpen=false;
+        if(!MenuVisible){tabStrip.Enabled=true;return;}
+        if(!animate){menuMotion.Stop();menuPopup!.Hide();browserMenu!.Visible=false;tabStrip.Enabled=true;return;}
+        menuMotion.Start(menuPopup!.Left,menuPopup.Left+Ui(18),x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},180,()=>{if(!menuOpen&&!menuPopup.IsDisposed){menuPopup.Hide();browserMenu!.Visible=false;tabStrip.Enabled=true;}});
     }
     void QueueBrowserMenuDismissal()
     {
@@ -119,8 +125,9 @@ public sealed partial class BrowserWindow
         };
         public bool PreFilterMessage(ref Message m)
         {
-            if(suppressedRelease!=0&&m.Msg==suppressedRelease){suppressedRelease=0;return true;}
-            if(m.Msg is 0x201 or 0x204 or 0x207)suppressedRelease=0;
+            int release=m.Msg switch{0xA2=>0x202,0xA5=>0x205,0xA8=>0x208,_=>m.Msg};
+            if(suppressedRelease!=0&&release==suppressedRelease){suppressedRelease=0;return true;}
+            if(m.Msg is 0x201 or 0x204 or 0x207 or 0xA1 or 0xA4 or 0xA7)suppressedRelease=0;
             if(!owner.MenuVisible)return false;
             if(m.Msg==0x100&&(Keys)m.WParam==Keys.Escape){owner.CloseBrowserMenu(false);return true;}
             if(m.Msg is not(0x201 or 0x203 or 0x204 or 0x206 or 0x207 or 0x209 or 0xA1 or 0xA3 or 0xA4 or 0xA6 or 0xA7 or 0xA9))return false;

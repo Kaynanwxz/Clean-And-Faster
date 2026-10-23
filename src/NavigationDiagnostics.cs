@@ -23,6 +23,10 @@ public sealed partial class BrowserWindow
             ShowMenu();await Task.Delay(80);var point=tab.View.PointToScreen(new Point(30,100));Cursor.Position=point;mouse_event(2,0,0,0,UIntPtr.Zero);mouse_event(4,0,0,0,UIntPtr.Zero);await Task.Delay(120);Check(!menuOpen&&!closing,"Clique no WebView fecha menu sem encerrar app "+i);
             Check(await core.ExecuteScriptAsync("window.cleanDismissalClicks")=="0","Clique de dispensa não chega à página WebView "+i);
         }
+        Check(tabStrip.Enabled,"Entrada da página é restaurada após dispensar menu");
+        await Task.Delay(SystemInformation.DoubleClickTime+80);
+        Cursor.Position=tab.View.PointToScreen(new Point(30,100));mouse_event(2,0,0,0,UIntPtr.Zero);mouse_event(4,0,0,0,UIntPtr.Zero);await Task.Delay(100);
+        Check(await core.ExecuteScriptAsync("window.cleanDismissalClicks")=="1","Clique intencional seguinte chega normalmente à página");
         ShowMenu();browserMenu!.ClickCommand("zoom-in");Check(tab.View.ZoomFactor>1,"Botão zoom mais altera WebView");browserMenu.ClickCommand("zoom-out");Check(Math.Abs(tab.View.ZoomFactor-1)<.01,"Botão zoom menos restaura WebView");CloseBrowserMenu(false);
         int bookmarks=store.Bookmarks.Count;Toolbar("Salvar ou remover favorito").PerformClick();Check(store.Bookmarks.Count==bookmarks+1,"Estrela da barra salva favorito");Toolbar("Salvar ou remover favorito").PerformClick();Check(store.Bookmarks.Count==bookmarks,"Estrela da barra remove favorito");
         // Install an isolated extension, then operate the real toggle/remove UI against it.
