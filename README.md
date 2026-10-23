@@ -54,7 +54,7 @@ Converse no painel, continue com perguntas sobre o mesmo assunto e use **Nova co
 | Extensões | Instalação local por pasta com `manifest.json`, ativação e remoção |
 | Conta | Perfil Google por OAuth Desktop, com autorização no navegador padrão |
 | Atualizações | GitHub Releases, progresso, SHA-256, cópia anterior e reinício |
-| IA | Painel nativo, resumos e ações no navegador com aprovação; chave própria OpenAI |
+| IA | Chat nativo com contexto, imagens/capturas e APIs OpenAI/compatíveis; ações opcionais com aprovação |
 
 ## Limitações conhecidas
 
@@ -147,20 +147,19 @@ Mudanças sem incremento da versão não sobrescrevem releases existentes. Pull 
 
 Veja [CONTRIBUTING.md](CONTRIBUTING.md). Ao relatar um problema visual, informe a versão do Clean Browser, versão do Windows, escala do monitor, tamanho da janela e passos para reproduzir. Evite incluir credenciais ou dados pessoais.
 
-## Clean AI
+## Clean AI — funcionamento e limites
 
-O ícone de brilho abre o painel lateral de IA (**Ctrl+Shift+I**). Use **Configurar IA** para informar sua própria chave OpenAI e o modelo. O padrão é `gpt-5.4-mini`, editável conforme o acesso da sua conta; deve suportar a API Responses e chamadas de ferramentas. O uso é cobrado pela API. A chave fica protegida por DPAPI para o usuário atual do Windows, fora de `settings.json` e do repositório.
+Abra pelo ícone de brilho ou **Ctrl+Shift+I**. As etapas de conexão, captura e conversa estão descritas na seção **Clean AI integrado (0.10.0)** acima.
 
-- Respostas, explicações e resumos; leitura de texto/elementos da aba e listagem de abas quando o compartilhamento estiver marcado.
-- Abrir/selecionar abas, clicar, preencher campos comuns e rolar. Cada ação requer aprovação na interface, com destino ou campo visível. Nenhuma ferramenta de terminal, arquivos ou JavaScript livre é oferecida ao modelo.
-- Contexto limitado: até 12 mil caracteres da página, 60 elementos e 30 abas do espaço ativo; até 6 rodadas de ferramentas e 1.800 tokens de saída por chamada. Botão **Parar** e prazo de 4 minutos por tarefa.
-- Sem modelo embarcado ou WebView extra. O HTTP é usado somente ao enviar pedidos. As animações param quando terminam e respeitam animações reduzidas do Windows, sessão remota e a opção em **Personalizar**.
-- O compartilhamento é desativado por padrão. Nenhum valor de formulário é extraído; campos sensíveis conhecidos são excluídos. Texto publicado no corpo de uma página ainda pode conter informações pessoais: compartilhe somente páginas que deseja enviar à OpenAI. O corpo de mensagens e o contexto são enviados à API com `store: false`; isso não equivale a garantia de retenção zero do provedor.
-- O histórico do painel fica apenas na memória desta sessão; cada pedido começa uma tarefa nova. Não conecta automaticamente esta conversa do ChatGPT nem permite acesso remoto deste chat ao seu PC.
+- O contexto da página é opcional e limitado a 12 mil caracteres, 60 elementos e 30 abas do espaço ativo. Nenhum valor de formulário é extraído; imagens podem mostrar exatamente os pixels escolhidos pelo usuário, por isso existe prévia e recorte.
+- As ferramentas do navegador só ficam disponíveis quando você as permite em **Contexto**. Abrir/selecionar abas, clicar, preencher campos comuns e rolar continuam exigindo aprovação. O modelo não recebe terminal, arquivos ou execução livre de JavaScript.
+- A conversa mantém até seis pares de mensagens em memória; **Nova conversa** limpa histórico e imagem. A captura anexada é pontual e permanece visível até remover/trocar. Não há acesso remoto desta conversa do ChatGPT ao computador.
+- São até seis rodadas de ferramentas e 1.800 tokens de saída por chamada, com **Parar** e prazo de quatro minutos por envio. Sem modelo embarcado, processo de IA local, SDK de agente pesado ou captura contínua.
+- OpenAI Responses usa `store: false`. Isso não garante retenção zero; APIs compatíveis seguem suas próprias políticas. A chave é protegida por DPAPI e vinculada ao endereço escolhido, fora do repositório e de settings.json.
+- Não inclui login de assinatura do ChatGPT, voz/vídeo ao vivo ou controle de outros aplicativos. A API e o modelo escolhidos precisam aceitar imagens/ferramentas para os recursos correspondentes.
+- Extração DOM cobre o documento principal, sem iframe/shadow DOM. Páginas dinâmicas podem exigir nova leitura. Janelas protegidas, minimizadas ou incompatíveis podem impedir captura; confira a prévia ou use aba/tela.
 
-Limites: extração somente do documento principal, sem iframe/shadow DOM. Algumas páginas dinâmicas podem exigir nova leitura ou ação manual. A IA não é autorizada pelo prompt a fazer pagamentos, excluir dados ou enviar mensagens; confirme cuidadosamente cada clique proposto. A chave não foi disponibilizada no ambiente de desenvolvimento: os testes do protocolo usam uma API simulada, sem consumo de saldo real.
-
-A versão também corrige o redesenho nativo da moldura ao perder foco, anima os botões/abas e serializa a inicialização de cada WebView para evitar corridas ao abrir abas.
+Validação 0.10.0: 3.753 verificações lógicas; 25 verificações novas de conversa/imagem/captura de janela sintética/recorte/chaves; 359 verificações de interação Windows. Build e diagnóstico nativo passaram no [workflow de revisão](https://github.com/Kaynanwxz/Clean-And-Faster/actions/runs/40006847679). As chamadas de IA usaram HTTP simulado e chaves fictícias: nenhuma chamada paga ou credencial pessoal foi usada, e compatibilidade com todos os provedores/janelas não é declarada. A publicação pelo app também exige o smoke test da release.
 
 ## Leveza e segurança
 
