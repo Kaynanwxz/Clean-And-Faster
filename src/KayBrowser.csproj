@@ -20,7 +20,7 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets/*.png" />
-    <EmbeddedResource Include="kay.ico" />
+    <EmbeddedResource Include="kay.ico" LogicalName="CleanBrowser.kay.ico" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
   </ItemGroup>
