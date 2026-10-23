@@ -41,7 +41,8 @@ public sealed class HomeBoard : Panel,IThemed
     public void SetPalette(Palette unused)
     {
         Color accent;try{accent=ColorTranslator.FromHtml(store.Settings.Accent);}catch{accent=Color.SteelBlue;}
-        colors=Palette.Create(store.Settings.Theme=="Claro",accent);BackColor=colors.Background;ForeColor=colors.Text;
+        bool paper=!store.Settings.FocusMode&&store.Settings.Background is "Arte" or "Suave"&&!store.Settings.PointillistBackground;
+        colors=Palette.Create(paper||store.Settings.Theme=="Claro",accent);BackColor=colors.Background;ForeColor=colors.Text;
         searchBox.SetPalette(colors);search.BackColor=colors.Surface;search.ForeColor=colors.Text;
         foreach(var b in new[]{go,customize,memory,focus,explore,documents,favorites})b.SetPalette(colors);
         foreach(SoftButton b in spaces.Controls)b.SetPalette(colors);
@@ -81,8 +82,8 @@ public sealed class HomeBoard : Panel,IThemed
         if(!store.Settings.FocusMode&&store.Settings.Background!="Sem arte")
         {
             Image? wallpaper=store.Settings.Background=="Personalizado"?BrandAssets.Wallpaper(store.Settings.Wallpaper):null;
-            Image art=wallpaper??(store.Settings.PointillistBackground?PointillistArt.Render(ClientSize):BrandAssets.Sea);
-            BrandAssets.DrawArt(g,art,BrandAssets.Cover(art.Size,ClientRectangle),store.Settings.Background=="Suave"?.36f:wallpaper==null&&store.Settings.PointillistBackground?1f:small?.30f:.53f);
+            Image art=wallpaper??(store.Settings.Background=="Personalizado"?BrandAssets.Sea:store.Settings.PointillistBackground?PointillistArt.Render(ClientSize):BrandAssets.Engraving);
+            BrandAssets.DrawArt(g,art,BrandAssets.Cover(art.Size,ClientRectangle),store.Settings.Background=="Suave"?.36f:wallpaper==null?1f:small?.30f:.53f);
         }
         using var heading=new Font("Georgia",small?25:store.Settings.HomeLayout=="Editorial"?38:32,FontStyle.Regular);
         using var smallFont=new Font("Segoe UI",small?8:9,FontStyle.Regular);

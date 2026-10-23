@@ -31,6 +31,9 @@ static class LayoutTests
         var old=new Storage();Check(!old.Settings.ShowBottomBar);Check(old.Settings.Theme=="Escuro"&&old.Settings.HomeLayout=="Editorial"&&old.Settings.Shortcuts.Single().Id=="custom");
         old.Settings.ShowBottomBar=true;old.SaveSettings();Check(new Storage().Settings.ShowBottomBar);
         old.Settings.ShowBottomBar=false;old.SaveSettings();Check(!new Storage().Settings.ShowBottomBar);
+        old.Settings.PointillistBackground=true;old.Settings.HomeArtRevision=0;old.Settings.Background="Personalizado";old.Settings.Wallpaper="retained-user-image.png";old.SaveSettings();
+        var artMigration=new Storage();Check(!artMigration.Settings.PointillistBackground&&artMigration.Settings.HomeArtRevision==1);Check(artMigration.Settings.Theme=="Escuro"&&artMigration.Settings.Accent=="#112233");Check(artMigration.Settings.Wallpaper=="retained-user-image.png"&&artMigration.Settings.Background=="Personalizado");Check(artMigration.Settings.Shortcuts.Single().Id=="custom");
+        artMigration.Settings.PointillistBackground=true;artMigration.SaveSettings();Check(new Storage().Settings.PointillistBackground);Check(!new Preferences().PointillistBackground);
         return passed;
     }
 }

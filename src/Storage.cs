@@ -9,7 +9,8 @@ public sealed class Preferences
 {
     public List<WebAppLink> Apps { get; set; } = WebApps.Defaults();
     public bool Animations { get; set; } = true;
-    public bool PointillistBackground { get; set; } = true;
+    public bool PointillistBackground { get; set; }
+    public int HomeArtRevision { get; set; }
     public bool ShowBottomBar { get; set; } // Absent in existing profiles: hidden until explicitly enabled.
     public string AiModel { get; set; } = "gpt-5.4-mini";
     public string AiProvider { get; set; } = "OpenAI";
@@ -55,6 +56,8 @@ public sealed class Storage
         Settings = Read("settings.json", new Preferences());
         bool migrated=Settings.AppearanceRevision<VisualPresets.DefaultRevision;
         if(migrated){VisualPresets.ApplyDefault(Settings);Settings.AppearanceRevision=VisualPresets.DefaultRevision;}
+        bool artMigrated=Settings.HomeArtRevision<1;
+        if(artMigrated){Settings.PointillistBackground=false;Settings.HomeArtRevision=1;}
         Settings.Apps=WebApps.Sanitize(Settings.Apps);
         Settings.Shortcuts ??= [];
         Settings.Shortcuts=Settings.Shortcuts.Where(s=>s!=null&&Navigation.IsWebUrl(s.Url)&&!string.IsNullOrWhiteSpace(s.Name)).DistinctBy(s=>s.Id).Take(20).ToList();
@@ -68,7 +71,7 @@ public sealed class Storage
         History = Read<List<Visit>>("history.json", []);
         Bookmarks = Read<List<Bookmark>>("bookmarks.json", []);
         Library = Read<List<LibraryEntry>>("library.json", []).Where(e=>e!=null&&e.Kind is "reading" or "source" or "note").Take(500).ToList();
-        if(migrated)SaveSettings();
+        if(migrated||artMigrated)SaveSettings();
     }
     static T Read<T>(string name, T fallback)
     {

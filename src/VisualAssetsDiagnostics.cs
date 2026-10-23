@@ -6,6 +6,9 @@ public sealed partial class BrowserWindow
     {
         void Check(bool ok,string message){if(!ok)throw new InvalidOperationException(message);}
         Check(store.Settings.Visual==VisualPresets.DefaultName&&!store.Settings.DarkChrome&&store.Settings.Compact&&store.Settings.HomeLayout=="Essencial","Padrão diferente das referências claras.");
+        Check(BrandAssets.Engraving.Size==new Size(1672,941),"Gravura aprovada perdeu resolução original.");
+        using(var original=typeof(BrandAssets).Assembly.GetManifestResourceStream(typeof(BrandAssets).Assembly.GetManifestResourceNames().Single(n=>n.EndsWith(".apollo-engraving.png")))!)Check(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(original)).Equals("1741291c368581f85b79f63a089697f8526d524af58f63160216d4349724a6cf",StringComparison.OrdinalIgnoreCase),"Gravura difere da versão 1 aprovada.");
+        Check(!store.Settings.PointillistBackground,"Gravura aprovada não está selecionada no padrão.");
         foreach(var size in new[]{new Size(1920,1080),new Size(900,600),new Size(510,450),new Size(2560,1080)})
         {
             var view=new Rectangle(Point.Empty,size);var art=BrandAssets.Cover(BrandAssets.Sea.Size,view);
@@ -55,6 +58,9 @@ public sealed partial class BrowserWindow
             }
         }
         finally{store.History.AddRange(history);}
+        var previousTheme=store.Settings.Theme;store.Settings.Theme="Escuro";
+        using(var paperHome=new HomeBoard(store,_=>{},()=>{},()=>{},(_,_)=>{},_=>{},_=>{},()=>{}){Size=new Size(1320,800),Font=Font}){paperHome.SetPalette(Colors);Check(paperHome.ForeColor==Palette.Create(true,Accent).Text,"Texto da gravura ilegível com barra escura.");}
+        store.Settings.Theme=previousTheme;
         ToggleAssistant();Check(assistant!.BackColor==Palette.Create(true,Accent).Surface,"IA não acompanhou tema claro.");ToggleAssistant();
         ShowAppearance();ApplyChromeMetrics();Application.DoEvents();VerifyChromeLayout();SaveChromeScreenshot("layout-default-appearance.png");ShowAppearance();
     }

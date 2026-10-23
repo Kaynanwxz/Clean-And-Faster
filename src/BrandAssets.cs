@@ -28,6 +28,7 @@ public static class BrandAssets
         catch(Exception e)when(e is IOException or ArgumentException or OutOfMemoryException){wallpaper?.Dispose();wallpaper=null;return null;}
     }
     public static readonly Bitmap Logo=Load("clean-emblem.png");
+    public static readonly Bitmap Engraving=Load("apollo-engraving.png");
     public static readonly Bitmap Sea=Load("apollo-sea.png");
     public static Rectangle Cover(Size image,Rectangle viewport)
     {
