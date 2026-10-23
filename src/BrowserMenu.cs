@@ -53,15 +53,20 @@ public sealed partial class BrowserWindow
     readonly List<string> menuTrace=[];
     BrowserMenuPanel? browserMenu;Form? menuPopup;bool menuOpen;readonly Tween menuMotion=new();MenuDismissFilter? menuFilter;string? lastMenuCommand;
     int menuSession;
+    bool menuPageBlocked,menuRestorePageFocus;
     readonly System.Windows.Forms.Timer menuInputRelease=new(){Interval=16};
     [DllImport("user32.dll")]static extern short GetAsyncKeyState(int key);
     bool MenuVisible=>menuPopup is {IsDisposed:false,Visible:true};
     void RestoreMenuPageInput()
     {
+        if(!menuPageBlocked)return;
         if(closing||IsDisposed||MenuVisible){menuInputRelease.Stop();return;}
         if(((GetAsyncKeyState(1)|GetAsyncKeyState(2)|GetAsyncKeyState(4))&0x8000)!=0){menuInputRelease.Start();return;}
-        menuInputRelease.Stop();menuFilter?.ResetGesture();tabStrip.Enabled=true;
+        menuInputRelease.Stop();menuFilter?.ResetGesture();menuPageBlocked=false;tabStrip.Enabled=true;
+        bool focus=menuRestorePageFocus;menuRestorePageFocus=false;
+        if(focus&&Form.ActiveForm==this&&Current?.View is {IsDisposed:false} view)view.Focus();
     }
+    void RememberMenuDismissalTarget()=>menuRestorePageFocus=tabStrip.RectangleToScreen(tabStrip.ClientRectangle).Contains(Cursor.Position);
     BrowserCommand[] MenuCommands()=>[
         new("new-tab","Nova aba","Ctrl+T","plus",0,()=>_ = AddTab("kay://new")),new("ai","Clean AI","Ctrl+Shift+I","spark",0,ToggleAssistant),new("history","Histórico","Ctrl+H","history",0,ShowHistory),new("bookmarks","Favoritos","","star",0,ShowBookmarks),new("downloads","Downloads","Ctrl+J","download",0,ShowDownloads),new("reading","Lista de leitura","","code",0,()=>ShowLibrary("reading")),
         new("workspaces","Espaços de trabalho","","globe",1,ManageWorkspaces),new("sources","Fontes salvas","","globe",1,()=>ShowLibrary("source")),new("notes","Documentos e notas","","code",1,()=>ShowLibrary("note")),new("memory","Memória e abas","","memory",1,ShowMemory),new("extensions","Extensões","","extension",1,()=>_ = ShowExtensions()),
@@ -89,7 +94,7 @@ public sealed partial class BrowserWindow
         // WebView2 handles mouse input in another process, outside IMessageFilter.
         // Disable its native parent while the menu is visible so Windows routes the
         // dismissal gesture to this UI thread instead of the page underneath.
-        menuInputRelease.Stop();tabStrip.Enabled=false;
+        menuInputRelease.Stop();menuRestorePageFocus=false;menuPageBlocked=true;tabStrip.Enabled=false;
         browserMenu.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));browserMenu.RefreshZoom(Current?.View?.ZoomFactor??1);PositionBrowserMenu();browserMenu.Visible=true;
         var target=MenuLocation();if(!menuPopup!.Visible)menuPopup.Show(this);else menuPopup.Activate();browserMenu.FocusMenu();
         menuMotion.Start(target.X+Ui(18),target.X,x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},230);
@@ -143,6 +148,7 @@ public sealed partial class BrowserWindow
             if(m.Msg is not(0x201 or 0x203 or 0x204 or 0x206 or 0x207 or 0x209 or 0xA1 or 0xA3 or 0xA4 or 0xA6 or 0xA7 or 0xA9))return false;
             if(owner.browserMenu?.RectangleToScreen(owner.browserMenu.ClientRectangle).Contains(Cursor.Position)==true)return false;
             SuppressGesture(m.Msg);
+            owner.RememberMenuDismissalTarget();
             owner.CloseBrowserMenu(false);return true;
         }
     }

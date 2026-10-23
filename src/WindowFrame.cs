@@ -134,6 +134,7 @@ public sealed partial class BrowserWindow
         if(m.Msg==0x21&&MenuVisible) // WM_MOUSEACTIVATE is sent, not queued: IMessageFilter cannot catch it.
         {
             menuFilter?.SuppressGesture((int)((m.LParam.ToInt64()>>16)&0xffff));
+            RememberMenuDismissalTarget();
             QueueBrowserMenuDismissal();
             m.Result=new IntPtr(2);return; // MA_ACTIVATEANDEAT: focus the browser, discard the dismissal click.
         }
