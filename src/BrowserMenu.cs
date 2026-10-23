@@ -52,6 +52,8 @@ public sealed partial class BrowserWindow
 {
     readonly List<string> menuTrace=[];
     BrowserMenuPanel? browserMenu;Form? menuPopup;bool menuOpen;readonly Tween menuMotion=new();MenuDismissFilter? menuFilter;string? lastMenuCommand;
+    int menuSession;
+    bool MenuVisible=>menuPopup is {IsDisposed:false,Visible:true};
     BrowserCommand[] MenuCommands()=>[
         new("new-tab","Nova aba","Ctrl+T","plus",0,()=>_ = AddTab("kay://new")),new("ai","Clean AI","Ctrl+Shift+I","spark",0,ToggleAssistant),new("history","Histórico","Ctrl+H","history",0,ShowHistory),new("bookmarks","Favoritos","","star",0,ShowBookmarks),new("downloads","Downloads","Ctrl+J","download",0,ShowDownloads),new("reading","Lista de leitura","","code",0,()=>ShowLibrary("reading")),
         new("workspaces","Espaços de trabalho","","globe",1,ManageWorkspaces),new("sources","Fontes salvas","","globe",1,()=>ShowLibrary("source")),new("notes","Documentos e notas","","code",1,()=>ShowLibrary("note")),new("memory","Memória e abas","","memory",1,ShowMemory),new("extensions","Extensões","","extension",1,()=>_ = ShowExtensions()),
@@ -66,13 +68,15 @@ public sealed partial class BrowserWindow
             browserMenu=new(MenuCommands(),DispatchMenuCommand){Font=Font};browserMenu.CloseRequested+=()=>CloseBrowserMenu();
             menuPopup=new Form{Text="Menu do Clean Browser",FormBorderStyle=FormBorderStyle.None,ShowInTaskbar=false,ControlBox=false,StartPosition=FormStartPosition.Manual,KeyPreview=true,AutoScaleMode=AutoScaleMode.Dpi};
             menuPopup.Controls.Add(browserMenu);browserMenu.Dock=DockStyle.Fill;
-            menuPopup.Deactivate+=(_,_)=>CloseBrowserMenu(false);
+            // WM_ACTIVATE is sent before the outside mouse-down reaches the queue.
+            // Keep the popup alive until activation finishes, then hide it on our UI queue.
+            menuPopup.Deactivate+=(_,_)=>QueueBrowserMenuDismissal();
             menuPopup.FormClosing+=(_,e)=>{if(!closing&&e.CloseReason==CloseReason.UserClosing){e.Cancel=true;CloseBrowserMenu(false);}};
             Resize+=(_,_)=>{if(menuOpen){menuMotion.Stop();PositionBrowserMenu();}};
             menuFilter=new MenuDismissFilter(this);Application.AddMessageFilter(menuFilter);
             FormClosed+=(_,_)=>{CloseBrowserMenu(false);Application.RemoveMessageFilter(menuFilter);menuMotion.Dispose();menuPopup.Dispose();};
         }
-        menuOpen=true;browserMenu.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));browserMenu.RefreshZoom(Current?.View?.ZoomFactor??1);PositionBrowserMenu();browserMenu.Visible=true;
+        menuSession++;menuOpen=true;browserMenu.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));browserMenu.RefreshZoom(Current?.View?.ZoomFactor??1);PositionBrowserMenu();browserMenu.Visible=true;
         var target=MenuLocation();if(!menuPopup!.Visible)menuPopup.Show(this);else menuPopup.Activate();browserMenu.FocusMenu();
         menuMotion.Start(target.X+Ui(18),target.X,x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},230);
     }
@@ -85,9 +89,15 @@ public sealed partial class BrowserWindow
     }
     void CloseBrowserMenu(bool animate=true)
     {
-        menuOpen=false;if(menuPopup==null||menuPopup.IsDisposed||!menuPopup.Visible)return;
+        menuSession++;menuOpen=false;if(menuPopup==null||menuPopup.IsDisposed||!menuPopup.Visible)return;
         if(!animate){menuMotion.Stop();menuPopup.Hide();browserMenu!.Visible=false;return;}
         menuMotion.Start(menuPopup.Left,menuPopup.Left+Ui(18),x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},180,()=>{if(!menuOpen&&!menuPopup.IsDisposed){menuPopup.Hide();browserMenu!.Visible=false;}});
+    }
+    void QueueBrowserMenuDismissal()
+    {
+        if(!MenuVisible||closing||IsDisposed||!IsHandleCreated)return;
+        int session=menuSession;
+        BeginInvoke(()=>{if(!closing&&!IsDisposed&&session==menuSession)CloseBrowserMenu(false);});
     }
     void DispatchMenuCommand(string id)
     {
@@ -99,12 +109,23 @@ public sealed partial class BrowserWindow
     }
     sealed class MenuDismissFilter(BrowserWindow owner):IMessageFilter
     {
+        int suppressedRelease;
+        internal void SuppressGesture(int down)=>suppressedRelease=down switch
+        {
+            0x201 or 0x203 or 0xA1 or 0xA3=>0x202,
+            0x204 or 0x206 or 0xA4 or 0xA6=>0x205,
+            0x207 or 0x209 or 0xA7 or 0xA9=>0x208,
+            _=>0
+        };
         public bool PreFilterMessage(ref Message m)
         {
-            if(!owner.menuOpen)return false;
+            if(suppressedRelease!=0&&m.Msg==suppressedRelease){suppressedRelease=0;return true;}
+            if(m.Msg is 0x201 or 0x204 or 0x207)suppressedRelease=0;
+            if(!owner.MenuVisible)return false;
             if(m.Msg==0x100&&(Keys)m.WParam==Keys.Escape){owner.CloseBrowserMenu(false);return true;}
-            if(m.Msg is not(0x201 or 0x203 or 0x204 or 0x206 or 0x207 or 0x209 or 0xA1 or 0xA3))return false;
+            if(m.Msg is not(0x201 or 0x203 or 0x204 or 0x206 or 0x207 or 0x209 or 0xA1 or 0xA3 or 0xA4 or 0xA6 or 0xA7 or 0xA9))return false;
             if(owner.browserMenu?.RectangleToScreen(owner.browserMenu.ClientRectangle).Contains(Cursor.Position)==true)return false;
+            SuppressGesture(m.Msg);
             owner.CloseBrowserMenu(false);return true;
         }
     }

@@ -1,16 +1,17 @@
-# Validação da versão 0.8
+# Validação da versão 0.8.1
 
-[Execuções e resultados no Windows](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml) · [Correção e revisão](https://github.com/Kaynanwxz/Clean-And-Faster/pull/1)
+[Execuções e resultados no Windows](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml) · [Correção e revisão](https://github.com/Kaynanwxz/Clean-And-Faster/pull/2)
 
 O diagnóstico usa o mesmo ciclo de eventos do aplicativo, com dados isolados. A release só é publicada depois dos testes de lógica e da interface passarem. A atualização pública é verificada depois da publicação.
 
 | Área | Cenários verificados |
 |---|---|
-| Menu | 21 comandos; cliques fora na página inicial e em WebView2 real; Escape; perda de foco; 20 reaberturas; cliques rápidos |
+| Menu | Ativação nativa, bloqueio do gesto completo e clique durante a animação de saída; 21 comandos; cliques fora na página inicial e em WebView2 real; Escape; perda de foco; 20 reaberturas; cliques rápidos |
+| Laterais e Configurações | Cliques fora com e sem animações, perda/retorno de foco, Configurações abertas sobre Aparência, dispensa de listas; painéis continuam abertos |
 | Aparência | 10 presets pelos cartões; tema, abas, barra, densidade, 7 layouts, 3 modos de atalhos, foco, animações, cores, rejeição de cor inválida, restaurar e persistência |
 | Imagens | Cancelar seletor, importar PNG real, voltar à arte padrão, reutilizar a imagem escolhida e remover arquivo próprio |
 | Diálogos | Criar/editar/cancelar atalho; criar/renomear/abrir/excluir espaço; criar/editar/remover nota; salvar fonte; filtrar/apagar histórico; remover favorito |
-| Navegação | Voltar, avançar e recarregar páginas locais reais, estrela de favoritos, zoom e botão início |
+| Navegação | Clique de dispensa não aciona conteúdo WebView2 por baixo; voltar, avançar e recarregar páginas locais reais, estrela de favoritos, zoom e botão início |
 | Memória e janela | Proteger/desproteger e descarregar WebView real; minimizar, maximizar, restaurar e fechar janela de teste |
 | Extensões | Instalar uma extensão local de teste pela API real; desativar, reativar e remover pelos botões |
 | Download | Iniciar download real de teste e cancelar o seletor sem gravar arquivo ou travar |

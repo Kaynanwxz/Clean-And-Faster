@@ -57,7 +57,7 @@ Os dados permanecem em `%LOCALAPPDATA%\KayBrowser`. A atualização não apaga h
 
 ## Personalizar
 
-Clique em **Personalizar** na nova aba ou em **Menu → Personalizar aparência**. O visual inicial é **Copiloto Azul**, com barras azul-marinho, página clara, colagem de Apolo/mar/vela e painel Clean AI. Selecione um dos dez visuais ou combine tema, barra clara/escura, abas laterais, cores, fundo, atalhos, densidade e animações. As escolhas são salvas automaticamente, com indicação da seleção ativa. Use as seções **Visuais, Layout e Fundo**. **F8** alterna modo foco; **Ctrl+Shift+I** abre/fecha IA.
+Clique em **Personalizar** na nova aba ou em **Menu → Personalizar aparência**. O visual inicial é **Copiloto Azul**, com barras azul-marinho, página clara, colagem de Apolo/mar/vela e painel Clean AI. Selecione um dos dez visuais ou combine tema, barra clara/escura, abas laterais, cores, fundo, atalhos, densidade e animações. As escolhas são salvas automaticamente, com indicação da seleção ativa. Clicar fora de Aparência ou IA mantém a lateral aberta; use o botão de fechar do próprio painel. O clique fora do menu dispensa somente o menu. Use as seções **Visuais, Layout e Fundo**. **F8** alterna modo foco; **Ctrl+Shift+I** abre/fecha IA.
 
 Na nova aba, **Adicionar atalho** cria um endereço HTTP/HTTPS. Botão direito permite editar, remover e mover; arraste para reordenar. Enter abre o selecionado; Delete remove; Ctrl+E edita. Os favicons vêm de páginas já visitadas, sem consultas a serviços externos de ícones.
 

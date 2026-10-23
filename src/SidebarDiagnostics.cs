@@ -21,7 +21,7 @@ public sealed partial class BrowserWindow
         var exit=probe.windowButtons!.Controls.OfType<Button>().Single(b=>b.AccessibleName=="Fechar navegador");
         Click(exit);await Task.Delay(120);
         Check(!probe.IsDisposed&&!probe.closing,"Clique fora sobre Fechar descarta apenas menu, sem encerrar navegador");
-        Check(!probe.menuOpen&&probe.menuPopup?.Visible!=true,"Menu fica oculto após clique externo na barra da janela");
+        Check(!probe.menuOpen&&!probe.MenuVisible,"Menu fica oculto após clique externo na barra da janela");
         // A second, intentional click must still work after the dismissal gesture is consumed.
         var maximize=probe.windowButtons.Controls.OfType<Button>().Single(b=>b.AccessibleName=="Maximizar / restaurar");
         probe.ShowMenu();await Task.Delay(70);Click(maximize);await Task.Delay(100);
