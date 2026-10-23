@@ -76,9 +76,8 @@ public sealed partial class BrowserWindow
             Cursor.Position=probe.tabStrip.PointToScreen(new Point(25,100));mouse_event(2,0,0,0,UIntPtr.Zero);mouse_event(4,0,0,0,UIntPtr.Zero);await Task.Delay(70);
             Check(probe.assistantOpen&&probe.assistant!.Visible&&!probe.closing,"Clique fora mantém IA e navegador abertos; animações="+animated);
             probe.ShowMenu();await Task.Delay(300);
-            var closeAi=AppearancePanel.Descendants(probe.assistant!).OfType<Button>().Single(b=>b.AccessibleName=="Fechar IA");
-            Click(closeAi);await Task.Delay(100);
-            Check(probe.assistantOpen&&!probe.menuOpen,"Dispensar menu não aciona Fechar IA por baixo");
+            Click(probe.address);await Task.Delay(100);
+            Check(probe.assistantOpen&&!probe.menuOpen,"Dispensar menu na barra de endereço preserva IA");
             probe.ToggleAssistant();await Task.Delay(300);
         }
         Motion.DiagnosticAnimations=null;Motion.Enabled=false;
