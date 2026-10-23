@@ -62,54 +62,33 @@ public static class ChromeDiagnostics
 {
     public static int Run()
     {
-        var result = new List<object>();
-        try
+        int exit=1;var result=new List<object>();using var window=new BrowserWindow(diagnostics:true);
+        // Use the same message loop and synchronization context as the real application.
+        window.Shown+=async(_,_)=>
         {
-            using var window = new BrowserWindow(diagnostics: true);
-            window.Show(); window.PrepareDiagnosticPage(); Application.DoEvents();
-            foreach (var size in new[] { new Size(900, 600), new Size(1320, 860), new Size(1920, 1080) })
+            try
             {
-                window.WindowState = FormWindowState.Normal; window.Size = size;
-                Application.DoEvents(); window.VerifyChromeLayout();
-                using (var bitmap = new Bitmap(window.Width, window.Height))
+                window.PrepareDiagnosticPage();await Task.Delay(40);
+                foreach(var size in new[]{new Size(900,600),new Size(1320,860),new Size(1920,1080)})
                 {
-                    window.DrawToBitmap(bitmap, new Rectangle(Point.Empty, bitmap.Size));
-                    bitmap.Save(Path.Combine(AppContext.BaseDirectory, $"layout-{size.Width}x{size.Height}.png"));
+                    window.WindowState=FormWindowState.Normal;window.Size=size;await Task.Delay(40);window.VerifyChromeLayout();window.SaveChromeScreenshot($"layout-{size.Width}x{size.Height}.png");
+                    result.Add(new{width=window.Width,height=window.Height,dpi=window.DeviceDpi,status="PASS"});
                 }
-                result.Add(new { width = window.Width, height = window.Height, dpi = window.DeviceDpi, status = "PASS" });
+                window.Size=new Size(900,600);window.Location=new Point(20,20);window.SetDiagnosticAssistant(true);await Task.Delay(40);window.VerifyChromeLayout();window.SaveChromeScreenshot("layout-assistant-900.png");result.Add(new{mode="assistant-open-900",status="PASS"});
+                window.SetDiagnosticAssistant(false);await Task.Delay(40);window.VerifyChromeLayout();window.SaveChromeScreenshot("layout-focused.png");
+                using(var other=new Form{Text="Focus test",Size=new Size(180,100),StartPosition=FormStartPosition.Manual,Location=new Point(window.Right-185,window.Bottom-105)})
+                {
+                    other.Show();other.Activate();await Task.Delay(40);window.VerifyChromeLayout();window.SaveChromeScreenshot("layout-inactive.png");result.Add(new{mode="focus-lost",status="PASS"});other.Close();window.Activate();await Task.Delay(40);window.VerifyChromeLayout();result.Add(new{mode="focus-returned",status="PASS"});
+                }
+                window.WindowState=FormWindowState.Maximized;await Task.Delay(40);window.VerifyChromeLayout();result.Add(new{mode="maximized",status="PASS"});window.WindowState=FormWindowState.Normal;await Task.Delay(40);window.VerifyChromeLayout();result.Add(new{mode="restored",status="PASS"});
+                await window.VerifyAgentDom().WaitAsync(TimeSpan.FromSeconds(80));result.Add(new{mode="agent-dom-read-fill-click-stale-and-dpapi",status="PASS"});
+                var interactions=await window.VerifyInteractions().WaitAsync(TimeSpan.FromSeconds(180));result.Add(new{mode="native-buttons-menu-outside-escape-appearance-motion",status="PASS",checks=interactions.Length});
+                window.VerifyPersonalization();result.Add(new{mode="presets-10-vertical-focus-shortcuts-library-workspaces",status="PASS"});
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"layout-check.json"),JsonSerializer.Serialize(result,new JsonSerializerOptions{WriteIndented=true}));exit=0;
             }
-            window.Size=new Size(900,600);window.Location=new Point(20,20);window.SetDiagnosticAssistant(true);Application.DoEvents();window.VerifyChromeLayout();
-            window.SaveChromeScreenshot("layout-assistant-900.png");
-            result.Add(new{mode="assistant-open-900",status="PASS"});
-            window.SetDiagnosticAssistant(false);Application.DoEvents();window.VerifyChromeLayout();
-            window.SaveChromeScreenshot("layout-focused.png");
-            using(var other=new Form{Text="Focus test",Size=new Size(180,100),StartPosition=FormStartPosition.Manual,Location=new Point(window.Right-185,window.Bottom-105)})
-            {
-                other.Show();other.Activate();Application.DoEvents();window.VerifyChromeLayout();
-                window.SaveChromeScreenshot("layout-inactive.png");
-                result.Add(new{mode="focus-lost",status="PASS"});
-                other.Close();window.Activate();Application.DoEvents();window.VerifyChromeLayout();
-                result.Add(new{mode="focus-returned",status="PASS"});
-            }
-            window.WindowState = FormWindowState.Maximized; Application.DoEvents(); window.VerifyChromeLayout();
-            result.Add(new { mode = "maximized", status = "PASS" });
-            window.WindowState = FormWindowState.Normal; Application.DoEvents(); window.VerifyChromeLayout();
-            result.Add(new { mode = "restored", status = "PASS" });
-            var agentCheck=window.VerifyAgentDom();var deadline=DateTime.UtcNow.AddSeconds(80);
-            while(!agentCheck.IsCompleted&&DateTime.UtcNow<deadline){Application.DoEvents();Thread.Sleep(10);}
-            if(!agentCheck.IsCompleted)throw new TimeoutException("Diagnóstico de agente excedeu tempo.");
-            agentCheck.GetAwaiter().GetResult();
-            result.Add(new{mode="agent-dom-read-fill-click-stale-and-dpapi",status="PASS"});
-            window.VerifyPersonalization();
-            result.Add(new{mode="presets-10-vertical-focus-shortcuts-library-workspaces",status="PASS"});
-            window.Close();
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "layout-check.json"), JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "layout-check.json"), JsonSerializer.Serialize(new { status = "FAIL", error = ex.ToString() }));
-            return 1;
-        }
+            catch(Exception ex){File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"layout-check.json"),JsonSerializer.Serialize(new{status="FAIL",error=ex.ToString()}));}
+            finally{window.Close();}
+        };
+        Application.Run(window);return exit;
     }
 }

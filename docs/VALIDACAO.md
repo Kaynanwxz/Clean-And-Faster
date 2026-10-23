@@ -1,3 +1,28 @@
+# Validação da versão 0.8
+
+[Execuções e resultados no Windows](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml) · [Correção e revisão](https://github.com/Kaynanwxz/Clean-And-Faster/pull/1)
+
+O diagnóstico usa o mesmo ciclo de eventos do aplicativo, com dados isolados. A release só é publicada depois dos testes de lógica e da interface passarem. A atualização pública é verificada depois da publicação.
+
+| Área | Cenários verificados |
+|---|---|
+| Menu | 21 comandos; cliques fora na página inicial e em WebView2 real; Escape; perda de foco; 20 reaberturas; cliques rápidos |
+| Aparência | 10 presets pelos cartões; tema, abas, barra, densidade, 7 layouts, 3 modos de atalhos, foco, animações, cores, rejeição de cor inválida, restaurar e persistência |
+| Imagens | Cancelar seletor, importar PNG real, voltar à arte padrão, reutilizar a imagem escolhida e remover arquivo próprio |
+| Diálogos | Criar/editar/cancelar atalho; criar/renomear/abrir/excluir espaço; criar/editar/remover nota; salvar fonte; filtrar/apagar histórico; remover favorito |
+| Navegação | Voltar, avançar e recarregar páginas locais reais, estrela de favoritos, zoom e botão início |
+| Memória e janela | Proteger/desproteger e descarregar WebView real; minimizar, maximizar, restaurar e fechar janela de teste |
+| Extensões | Instalar uma extensão local de teste pela API real; desativar, reativar e remover pelos botões |
+| Download | Iniciar download real de teste e cancelar o seletor sem gravar arquivo ou travar |
+| IA | Botões do painel, salvar modelo, remover chave, parar tarefa, leitura/preenchimento/clique com confirmação, referência expirada e contexto por espaço |
+| Movimento | Menu, lateral e seções; fim dos temporizadores; abrir/fechar rapidamente; redução de animações |
+
+Os arquivos `interaction-check.json`, `interaction-progress.log`, `layout-check.json` e capturas reais ficam no artefato **Windows-build-and-layout**. Os 115 testes de lógica incluem navegação, armazenamento, migração, atualização e protocolo da IA.
+
+A instalação de extensão usa uma fixture controlada; isso não comprova compatibilidade com todas as extensões. Seletores nativos são exercitados pelo cancelamento; importação de imagem usa o mesmo caminho de processamento com um PNG de teste. Login Google e chamadas pagas OpenAI não usam credenciais reais nesta validação. A interface é executada a 96 DPI no Windows Server do Actions; múltiplos monitores e demais escalas não são cobertos. Esses resultados cobrem os cenários descritos, sem garantia de ausência de todos os bugs.
+
+---
+
 # Validação da família 0.7
 
 [Execução confirmada da 0.7.0](https://github.com/Kaynanwxz/Clean-And-Faster/actions/runs/39867960481) · [Execuções e logs atuais](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml)

@@ -7,7 +7,8 @@ public static class Motion
 {
     public static bool Enabled { get; set; } = true;
     [DllImport("user32.dll")] static extern bool SystemParametersInfo(uint action,uint parameter,out bool value,uint flags);
-    public static bool Allowed => Enabled && !SystemInformation.TerminalServerSession && SystemParametersInfo(0x1042,0,out bool animate,0) && animate;
+    internal static bool? DiagnosticAnimations;
+    public static bool Allowed => Enabled && (DiagnosticAnimations??(!SystemInformation.TerminalServerSession && SystemParametersInfo(0x1042,0,out bool animate,0) && animate));
     public static Color Blend(Color a, Color b, float amount)
     {
         float t = Math.Clamp(amount, 0, 1);

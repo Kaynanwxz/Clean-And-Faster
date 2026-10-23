@@ -8,14 +8,30 @@ public sealed partial class BrowserWindow
     AppearancePanel? appearance;bool appearanceOpen;
     void ShowAppearance()
     {
-        if(appearanceOpen){appearanceOpen=false;appearance!.Visible=false;assistantTween.Start(pageHost.ColumnStyles[1].Width,0,w=>pageHost.ColumnStyles[1].Width=w,220,ApplyWorkspaceMetrics);return;}
+        CloseBrowserMenu(false);
+        if(appearanceOpen){appearanceOpen=false;AnimateRightPanel(appearance!,false);return;}
         if(assistantOpen){assistantOpen=false;aiCancellation?.Cancel();assistant!.Visible=false;}
-        appearance?.Dispose();appearance=new(store,ApplyPersonalization,ChooseWallpaper);appearance.CloseRequested+=ShowAppearance;rightDock.Controls.Add(appearance);appearanceOpen=true;appearance.BringToFront();appearance.Visible=true;
-        assistantTween.Start(pageHost.ColumnStyles[1].Width,AssistantWidth,w=>pageHost.ColumnStyles[1].Width=w,220,ApplyWorkspaceMetrics);ApplyWorkspaceMetrics();
+        if(appearance==null){appearance=new(store,ApplyPersonalization,ChooseWallpaper);appearance.CloseRequested+=ShowAppearance;rightDock.Controls.Add(appearance);}
+        appearance.Sync();appearanceOpen=true;AnimateRightPanel(appearance,true);
+    }
+    void AnimateRightPanel(Control panel,bool open)
+    {
+        assistantTween.Stop();panel.Dock=DockStyle.None;
+        int target=AssistantWidth;
+        if(open)
+        {
+            pageHost.ColumnStyles[1].Width=target;panel.SetBounds(target,0,target,rightDock.ClientSize.Height);panel.Visible=true;panel.BringToFront();ApplyWorkspaceMetrics();
+        }
+        assistantTween.Start(open?target:panel.Left,open?0:target,x=>{if(!panel.IsDisposed)panel.Left=(int)x;},open?270:200,()=>{
+            if(panel.IsDisposed)return;
+            if(!open){panel.Visible=false;if(!RightOpen)pageHost.ColumnStyles[1].Width=0;}
+            else panel.SetBounds(0,0,rightDock.ClientSize.Width,rightDock.ClientSize.Height);
+            ApplyWorkspaceMetrics();
+        });
     }
     void ApplyPersonalization()
     {
-        Motion.Enabled=store.Settings.Animations;ApplyTheme(this);ApplyChromeMetrics();ApplyWorkspaceMetrics();RefreshHomePages();
+        Motion.Enabled=store.Settings.Animations;BrandAssets.Wallpaper(store.Settings.Background=="Personalizado"?store.Settings.Wallpaper:"");ApplyTheme(this);ApplyChromeMetrics();ApplyWorkspaceMetrics();RefreshHomePages();appearance?.Sync();
         foreach(var t in tabs)if(t.View?.CoreWebView2 is {} c)c.Profile.PreferredColorScheme=store.Settings.Theme=="Claro"?CoreWebView2PreferredColorScheme.Light:CoreWebView2PreferredColorScheme.Dark;
     }
     void ToggleFocus()
@@ -25,10 +41,14 @@ public sealed partial class BrowserWindow
     void ChooseWallpaper()
     {
         using var picker=new OpenFileDialog{Title="Escolher plano de fundo",Filter="Imagens PNG ou JPEG|*.png;*.jpg;*.jpeg",CheckFileExists=true};if(picker.ShowDialog(this)!=DialogResult.OK)return;
+        SetWallpaperFromFile(picker.FileName);
+    }
+    internal void SetWallpaperFromFile(string file)
+    {
         try
         {
-            if(new FileInfo(picker.FileName).Length>12*1024*1024)throw new IOException("Escolha uma imagem de até 12 MB.");
-            using var source=Image.FromFile(picker.FileName);if((long)source.Width*source.Height>24000000)throw new IOException("Escolha uma imagem de até 24 megapixels.");
+            if(new FileInfo(file).Length>12*1024*1024)throw new IOException("Escolha uma imagem de até 12 MB.");
+            using var source=Image.FromFile(file);if((long)source.Width*source.Height>24000000)throw new IOException("Escolha uma imagem de até 24 megapixels.");
             float scale=Math.Min(1f,1600f/Math.Max(source.Width,source.Height));int width=Math.Max(1,(int)(source.Width*scale)),height=Math.Max(1,(int)(source.Height*scale));using var reduced=new Bitmap(width,height);using(var g=Graphics.FromImage(reduced)){g.InterpolationMode=System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;g.DrawImage(source,0,0,width,height);}
             string root=Path.Combine(Storage.Root,"Appearance");Directory.CreateDirectory(root);string path=Path.Combine(root,Guid.NewGuid().ToString("N")+".png");reduced.Save(path,ImageFormat.Png);
             string old=store.Settings.Wallpaper;store.Settings.Wallpaper=path;store.Settings.Background="Personalizado";store.SaveSettings();RefreshHomePages();

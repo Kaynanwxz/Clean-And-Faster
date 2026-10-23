@@ -17,13 +17,13 @@ public sealed partial class BrowserWindow
         <button id="increment" onclick="document.querySelector('h1').textContent='Clique confirmado'">Contar</button>
         <p hidden>HIDDEN_DO_NOT_READ</p></body></html>
         """);
-        environment=await CoreWebView2Environment.CreateAsync(null,Path.Combine(Storage.Root,"WebView"));
+        environment=await CoreWebView2Environment.CreateAsync(null,Path.Combine(Storage.Root,"WebView"),new CoreWebView2EnvironmentOptions{AreBrowserExtensionsEnabled=true});
         var tab=Current??throw new InvalidOperationException("Aba de diagnóstico ausente.");
         await CreateView(tab,false);
         var core=tab.View?.CoreWebView2??throw new InvalidOperationException("WebView de diagnóstico indisponível.");
         if(core.Settings.AreHostObjectsAllowed||core.Settings.IsWebMessageEnabled)throw new InvalidOperationException("Ponte nativa desnecessária permaneceu ativa.");
         core.SetVirtualHostNameToFolderMapping("clean-ai.test",fixture,CoreWebView2HostResourceAccessKind.DenyCors);
-        var ready=new TaskCompletionSource<bool>();
+        var ready=new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         void Loaded(object? s,CoreWebView2NavigationCompletedEventArgs e){if(e.IsSuccess)ready.TrySetResult(true);else ready.TrySetException(new IOException("Fixture não carregou: "+e.WebErrorStatus));}
         core.NavigationCompleted+=Loaded;
         try{core.Navigate("https://clean-ai.test/index.html");await ready.Task.WaitAsync(TimeSpan.FromSeconds(25));}

@@ -67,7 +67,7 @@ public sealed partial class BrowserWindow
     }
     void RefreshHomePages()
     {
-        foreach(var t in tabs.Where(t=>t.Url=="kay://new"&&t.View==null).ToArray())ShowHome(t);
+        foreach(var t in tabs.Where(t=>t.Url=="kay://new"&&t.View==null).ToArray()){if(t.Page.Controls.OfType<HomeBoard>().FirstOrDefault() is {} home)home.RefreshSettings(Colors);else ShowHome(t);}
     }
     void ManageWorkspaces()
     {

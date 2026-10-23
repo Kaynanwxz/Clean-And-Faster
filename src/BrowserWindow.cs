@@ -123,6 +123,7 @@ public sealed partial class BrowserWindow : Form
             if (closing || !tabs.Contains(t)) return;
             var core = view.CoreWebView2;
             view.KeyDown += Shortcut;
+            view.GotFocus+=(_,_)=>CloseBrowserMenu();
             core.Settings.AreDevToolsEnabled = true;
             core.Settings.IsStatusBarEnabled=false;
             core.Settings.AreHostObjectsAllowed=false;
@@ -132,7 +133,7 @@ public sealed partial class BrowserWindow : Form
             core.NavigationStarting += (_, e) =>
             {
                 if (t == snapshotTab) ResetSnapshot();
-                if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank") { e.Cancel = true; ShowNotice("Link externo bloqueado: " + e.Uri[..Math.Min(e.Uri.Length, 180)], "Clean Browser"); return; }
+                if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank") { e.Cancel = true;string blocked=e.Uri[..Math.Min(e.Uri.Length,180)];BeginInvoke(()=>{if(!closing)ShowNotice("Link externo bloqueado: "+blocked,"Clean Browser");});return; }
                 status.Text = "Carregando… " + new Uri(e.Uri).Host;
             };
             core.SourceChanged += (_, _) => { if (Navigation.IsWebUrl(core.Source)) t.Url = core.Source; UpdateChrome(t); };
@@ -160,19 +161,22 @@ public sealed partial class BrowserWindow : Form
             };
             core.PermissionRequested += (_, e) =>
             {
-                e.State = ShowNotice($"{e.Uri}\n\nPermitir {e.PermissionKind}?", "Permissão do site", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes ? CoreWebView2PermissionState.Allow : CoreWebView2PermissionState.Deny;
-                e.SavesInProfile = false;
+                e.SavesInProfile=false;var deferred=e.GetDeferral();
+                BeginInvoke(()=>{using(deferred){if(closing||view.IsDisposed){e.State=CoreWebView2PermissionState.Deny;return;}
+                    e.State=ShowNotice($"{e.Uri}\n\nPermitir {e.PermissionKind}?","Permissão do site",MessageBoxButtons.YesNo)==DialogResult.Yes?CoreWebView2PermissionState.Allow:CoreWebView2PermissionState.Deny;
+                }});
             };
             core.DownloadStarting += (_, e) =>
             {
-                e.Handled = true;
-                using var dlg = new SaveFileDialog { FileName = Path.GetFileName(e.ResultFilePath), InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads") };
-                if (dlg.ShowDialog(this) != DialogResult.OK) { e.Cancel = true; return; }
-                e.ResultFilePath = dlg.FileName;
-                var op = e.DownloadOperation;
-                var record = new DownloadRecord(Path.GetFileName(dlg.FileName), dlg.FileName, "Em andamento"); downloads.Add(record);
-                op.StateChanged += (_, _) => { int idx = downloads.IndexOf(record); if (idx >= 0) { var updated = record with { State = op.State.ToString() }; downloads[idx] = updated; record = updated; } };
-                status.Text = "Download: " + record.Name;
+                e.Handled=true;var deferred=e.GetDeferral();
+                BeginInvoke(()=>{using(deferred){
+                    if(closing||view.IsDisposed){e.Cancel=true;return;}
+                    using var dlg=new SaveFileDialog{FileName=Path.GetFileName(e.ResultFilePath),InitialDirectory=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),"Downloads")};
+                    if(dlg.ShowDialog(this)!=DialogResult.OK){e.Cancel=true;return;}
+                    e.ResultFilePath=dlg.FileName;var op=e.DownloadOperation;var record=new DownloadRecord(Path.GetFileName(dlg.FileName),dlg.FileName,"Em andamento");downloads.Add(record);
+                    op.StateChanged+=(_,_)=>{int index=downloads.IndexOf(record);if(index>=0){var updated=record with{State=op.State.ToString()};downloads[index]=updated;record=updated;}};
+                    status.Text="Download: "+record.Name;
+                }});
             };
             core.ProcessFailed += (_, e) => { status.Text = "Motor interrompido: " + e.ProcessFailedKind + ". Reabra esta aba pelo menu de memória."; };
             if (navigate)
@@ -219,7 +223,7 @@ public sealed partial class BrowserWindow : Form
         foreach (Control control in t.Page.Controls.Cast<Control>().ToArray()) control.Dispose();
         t.Page.Controls.Clear();
         var home = new HomeBoard(store,NavigateCurrent,ShowAppearance,ShowMemory,ShortcutCommand,kind=>{if(kind=="favorites")ShowBookmarks();else ShowLibrary(kind);},id=>_ = SwitchWorkspace(id),ToggleFocus);
-        home.SetPalette(Colors); t.Page.Controls.Add(home); UpdateChrome(t);
+        home.SetPalette(Colors); t.Page.Controls.Add(home);home.AnimateIn(); UpdateChrome(t);if(Current==t)status.Text="Clean Browser · Pronto para explorar";
     }
     void BookmarkCurrent()
     {
@@ -228,25 +232,6 @@ public sealed partial class BrowserWindow : Form
         if (old != null) { store.Bookmarks.Remove(old); status.Text = "Favorito removido"; }
         else { store.Bookmarks.Add(new(t.Title, t.Url)); status.Text = "Favorito salvo"; }
         store.SaveBookmarks();
-    }
-    void ShowMenu()
-    {
-        var menu = new ContextMenuStrip { BackColor = Colors.Surface, ForeColor = Colors.Text, ShowImageMargin = true, Padding = new Padding(6), Font = new Font("Segoe UI", 10), Renderer = new KayMenuRenderer(Colors) };
-        void Item(string s, Action a)
-        {
-            var icon = s.StartsWith("Histórico") ? "history" : s.StartsWith("Favoritos") ? "star" : s.StartsWith("Downloads") ? "download" : s.StartsWith("Memória") ? "memory" : s.StartsWith("Extensões") ? "extension" : s.StartsWith("Personalizar") ? "settings" : s.StartsWith("Conta") ? "user" : s.StartsWith("Buscar") ? "search" : s.StartsWith("Verificar") ? "update" : s.StartsWith("Tela") ? "max" : s.StartsWith("Zoom") ? "search" : "globe";
-            var item = menu.Items.Add(s, Glyphs.Bitmap(icon, Colors.Accent), (_, _) => a()); item.Padding = new Padding(9, 7, 9, 7);
-        }
-        menu.Closed += (_, _) => { foreach (ToolStripItem item in menu.Items) item.Image?.Dispose(); menu.Dispose(); };
-        Item("Assistente IA · Ctrl+Shift+I", ToggleAssistant); Item("Histórico  ·  Ctrl+H", ShowHistory); Item("Favoritos", ShowBookmarks); Item("Downloads", ShowDownloads);
-        Item("Memória e abas", ShowMemory); Item("Extensões", () => _ = ShowExtensions()); Item("Personalizar aparência", ShowAppearance);
-        Item("Espaços de trabalho",ManageWorkspaces);Item("Lista de leitura",()=>ShowLibrary("reading"));Item("Fontes salvas",()=>ShowLibrary("source"));Item("Documentos e notas",()=>ShowLibrary("note"));Item("Modo foco",ToggleFocus);Item("Configurações avançadas",ShowSettings);
-        Item("Conta Google", () => _ = LoginGoogle()); Item("Buscar na página  ·  Ctrl+F", Find);
-        Item("Zoom +", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Min(3, v.ZoomFactor + .1); });
-        Item("Zoom −", () => { if (Current?.View is { } v) v.ZoomFactor = Math.Max(.3, v.ZoomFactor - .1); });
-        Item("Tela cheia  ·  F11", Fullscreen); Item("Verificar atualizações", () => _ = CheckUpdate());
-        Item("Sobre o Clean Browser", () => ShowNotice("Clean Browser 0.7.1 · prévia para Windows x64\nC# / .NET 10 / Microsoft Edge WebView2\n\nExtensões por pasta. Sem Chrome Sync.\nO limite de RAM é uma meta, não um limite rígido.", "Clean Browser"));
-        menu.Show(Cursor.Position);
     }
     AppDialog Dialog(string title, int w = 820, int h = 570) => new(title, Colors, w, h);
     DialogResult ShowNotice(string text, string title = "Clean Browser", MessageBoxButtons buttons = MessageBoxButtons.OK, MessageBoxIcon icon = MessageBoxIcon.None) => UiMessage.Show(this, Colors, text, title, buttons);
@@ -353,15 +338,17 @@ public sealed partial class BrowserWindow : Form
             var t = (BrowserTab)list.SelectedItems[0].Tag!;
             if (t == Current || t.Pinned) { ShowNotice("Selecione uma aba em segundo plano e sem proteção."); return; }
             if (ShowNotice("A página será recarregada ao voltar. Descartar formulários e estado não salvos?", "Clean Browser", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
-            t.View?.Dispose(); t.View = null; t.Suspended = false; t.Page.Controls.Clear(); Render();
+            t.View?.Dispose(); t.View = null; t.Suspended = false; foreach(Control c in t.Page.Controls.Cast<Control>().ToArray())c.Dispose();t.Page.Controls.Clear(); Render();
         }));
         f.Controls.Add(list); f.Controls.Add(note); f.Controls.Add(actions); Render(); f.ShowDialog(this);
     }
     async Task ShowExtensions()
     {
-        if (Current == null) return;
-        if (Current.View == null) await CreateView(Current);
-        var profile = Current?.View?.CoreWebView2?.Profile;
+        if (Current == null||environment==null) return;
+        using var temporary=new WebView2{Size=new Size(1,1),Location=new Point(-100,-100),Visible=false};
+        var core=Current.View?.CoreWebView2;
+        if(core==null){Controls.Add(temporary);try{await temporary.EnsureCoreWebView2Async(environment);core=temporary.CoreWebView2;}catch(Exception ex){await Task.Yield();ShowNotice("Não foi possível carregar extensões: "+ex.Message);return;}}
+        var profile = core?.Profile;
         if (profile == null) return;
         using var f = Dialog("Extensões · por pasta"); var list = List("Nome", "ID", "Estado");
         var help = new Label { Dock = DockStyle.Top, Height = 64, Text = "Instale extensões descompactadas com manifest.json. Compatibilidade depende das APIs do WebView2.\nNão há instalação direta pela Chrome Web Store; extensões com botão/popup podem não funcionar." };
@@ -388,7 +375,7 @@ public sealed partial class BrowserWindow : Form
         var toggle = Button("Ativar / desativar", () => { }); toggle.Click += async (_, _) => { try { if (list.SelectedItems.Count > 0) { var x = (CoreWebView2BrowserExtension)list.SelectedItems[0].Tag!; await x.EnableAsync(!x.IsEnabled); await Render(); } } catch (Exception ex) { ShowNotice(ex.Message); } };
         var remove = Button("Remover", () => { }); remove.Click += async (_, _) => { try { if (list.SelectedItems.Count > 0) { var x = (CoreWebView2BrowserExtension)list.SelectedItems[0].Tag!; await x.RemoveAsync(); await Render(); } } catch (Exception ex) { ShowNotice(ex.Message); } };
         actions.Controls.AddRange([add, toggle, remove]); f.Controls.Add(list); f.Controls.Add(help); f.Controls.Add(actions);
-        try { await Render(); f.ShowDialog(this); } catch (Exception ex) { ShowNotice(ex.Message); }
+        try { await Render(); await Task.Yield();f.ShowDialog(this); } catch (Exception ex) { await Task.Yield();ShowNotice(ex.Message); }
     }
     static void CopyExtension(string source, string destination)
     {
@@ -420,7 +407,7 @@ public sealed partial class BrowserWindow : Form
             try { _ = ColorTranslator.FromHtml(accent.Text); } catch { ShowNotice("Use uma cor válida, como #A8E6CF."); return; }
             if (repo.Text.Length > 0 && !Updater.ValidRepository(repo.Text)) { ShowNotice("Repositório deve ser usuario/nome."); return; }
             var p = store.Settings; p.Animations = animations.Checked; Motion.Enabled = p.Animations; p.Theme = theme.Text; p.Accent = accent.Text; p.Search = engine.Text; p.IdleMinutes = (int)idle.Value; p.MemoryBudgetMb = (int)budget.Value; p.RestoreTabs = restore.Checked; p.GoogleClientId = client.Text.Trim(); p.GoogleClientSecret = secret.Text.Trim(); p.UpdateRepository = repo.Text.Trim(); store.SaveSettings();
-            ApplyTheme(this); foreach (var t in tabs) { if (t.Url == "kay://new" && t.View == null) ShowHome(t); if (t.View?.CoreWebView2 is { } c) c.Profile.PreferredColorScheme = p.Theme == "Claro" ? CoreWebView2PreferredColorScheme.Light : CoreWebView2PreferredColorScheme.Dark; } f.Close();
+            ApplyPersonalization();f.Close();
         }); save.Dock = DockStyle.Bottom; f.Controls.Add(grid); f.Controls.Add(save); f.ShowDialog(this);
     }
     async Task LoginGoogle()

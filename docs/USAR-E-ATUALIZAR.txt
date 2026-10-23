@@ -30,7 +30,7 @@ Meta de RAM flexivel, sem limite rigido por processo.
 
 PERSONALIZAR A VERSAO 0.7
 Na nova aba clique Personalizar, ou Menu > Personalizar aparencia.
-Escolha um dos 10 visuais. Para combinar opcoes, ajuste e clique Aplicar.
+Abra Visuais, Layout ou Fundo. As escolhas sao salvas automaticamente.
 Pode mudar tema, barra, cor, fundo, abas laterais, densidade e animacoes.
 F8: modo foco. Ctrl+Shift+I: abrir/fechar Clean AI.
 
@@ -50,3 +50,7 @@ CLEAN AI
 Configure sua propria chave da API OpenAI; uso cobrado na conta da API.
 Compartilhamento de pagina/abas e opcional; cada acao requer aprovacao.
 Nao conecta automaticamente esta conversa do ChatGPT ao seu computador.
+
+MENU 0.8
+Navegar, Organizar e Mais agrupam os comandos. Clique fora ou Escape
+fecha apenas o menu. Aparencia e Atualizar ficam no rodape.
