@@ -26,7 +26,10 @@ public sealed partial class BrowserWindow
         var maximize=probe.windowButtons.Controls.OfType<Button>().Single(b=>b.AccessibleName=="Maximizar / restaurar");
         probe.ShowMenu();await Task.Delay(70);Click(maximize);await Task.Delay(100);
         Check(probe.WindowState==FormWindowState.Normal&&!probe.menuOpen,"Clique de dispensa não aciona Maximizar por baixo");
+        // Separate intentional clicks from the OS double-click window.
+        await Task.Delay(SystemInformation.DoubleClickTime+80);
         Click(maximize);await Task.Delay(100);Check(probe.WindowState==FormWindowState.Maximized,"Próximo clique intencional continua funcionando");
+        await Task.Delay(SystemInformation.DoubleClickTime+80);
         Click(maximize);await Task.Delay(100);
         foreach(bool animated in new[]{false,true})
         {
