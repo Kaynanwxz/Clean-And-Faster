@@ -1,13 +1,13 @@
-# Clean Browser 0.8.1
+# Clean Browser 0.9.0
 
-- Corrigido o tratamento de cliques fora do menu durante a ativação da janela e a animação de saída. O gesto de dispensa não deve acionar o botão ou o conteúdo que está por baixo.
-- Enquanto o menu está visível, o contêiner nativo da página bloqueia entrada para que o WebView2 não receba o clique de dispensa. A entrada é restaurada ao fechar o menu.
-- O menu é ocultado depois do processamento da troca de foco pelo Windows. Solicitações antigas de fechamento são ignoradas após uma nova abertura.
-- Aparência e IA permanecem abertas ao clicar na página ou trocar de aplicativo; Configurações avançadas permanecem abertas ao clicar fora e dispensar listas de opções.
-- Diagnóstico Windows ampliado com cliques nativos na barra da janela, durante a saída animada, sobre a barra de endereço e com Configurações abertas sobre Aparência. O diagnóstico também verifica se o clique externo chega indevidamente ao conteúdo WebView2.
+- Padrão conforme as referências: Cristal do Egeu, tema e barra claros, abas no topo, compacto, página Essencial, fundo Arte e atalhos mais visitados.
+- Migração única da aparência para perfis anteriores, preservando histórico, favoritos, atalhos próprios, contas, espaços e demais dados. Personalizações posteriores são mantidas.
+- Fundo centralizado com cobertura total, mantendo a proporção, inclusive com a lateral aberta. Imagens próprias usam o mesmo enquadramento.
+- Google, GitHub e YouTube usam marcas vetoriais locais, sem ampliar favicons pequenos. Nomes curtos nos atalhos mais visitados.
+- Sem histórico, os mais visitados começam pelos atalhos salvos.
+- Ícone do Windows gerado da marca aprovada em dez tamanhos, com cantos transparentes e respiro uniforme, removendo a placa branca. Janela e barra de tarefas usam o ícone completo e uma identificação estável.
+- Painel de IA acompanha o tema da página.
 
 ## Atualizar
 
-Clique **Atualizar → Atualizar e reiniciar**. Não precisa extrair ZIP. Histórico, favoritos, configurações e perfil de sites são preservados.
-
-Os testes usam dados e páginas locais isolados. A cobertura e seus limites estão em `docs/VALIDACAO.md`.
+Clique **Atualizar → Atualizar e reiniciar**. Sem extrair ZIP. Depois da migração inicial de aparência, você pode personalizar normalmente; as escolhas são mantidas.

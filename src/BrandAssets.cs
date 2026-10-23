@@ -29,6 +29,17 @@ public static class BrandAssets
     }
     public static readonly Bitmap Logo=Load("clean-logo.png");
     public static readonly Bitmap Sea=Load("apollo-sea.png");
+    public static Rectangle Cover(Size image,Rectangle viewport)
+    {
+        if(image.Width<=0||image.Height<=0||viewport.Width<=0||viewport.Height<=0)return Rectangle.Empty;
+        double scale=Math.Max((double)viewport.Width/image.Width,(double)viewport.Height/image.Height);
+        int width=(int)Math.Ceiling(image.Width*scale),height=(int)Math.Ceiling(image.Height*scale);
+        return new(viewport.X+(viewport.Width-width)/2,viewport.Y+(viewport.Height-height)/2,width,height);
+    }
+    public static Icon ApplicationIcon
+    {
+        get {using var stream=typeof(BrandAssets).Assembly.GetManifestResourceStream("CleanBrowser.kay.ico")??throw new IOException("Ícone não encontrado.");return new Icon(stream);}
+    }
     public static void DrawArt(Graphics g,Image image,Rectangle bounds,float opacity=1)
     {
         if(bounds.Width<=0||bounds.Height<=0)return;

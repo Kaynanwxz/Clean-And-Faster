@@ -28,7 +28,7 @@ public sealed partial class BrowserWindow
         CloseBrowserMenu(false);
         if(assistant==null)
         {
-            assistant=new();assistant.SetPalette(BrandAssets.Navy(Accent));rightDock.Controls.Add(assistant);
+            assistant=new();assistant.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));rightDock.Controls.Add(assistant);
             assistant.SendRequested+=()=>_ = AskAssistant();assistant.StopRequested+=()=>aiCancellation?.Cancel();assistant.SetupRequested+=ConfigureAssistant;assistant.CloseRequested+=ToggleAssistant;assistant.ExpandRequested+=()=>{assistantWide=!assistantWide;AnimateRightPanel(assistant,true);};
         }
         if(appearanceOpen){appearanceOpen=false;if(appearance!=null)appearance.Visible=false;}

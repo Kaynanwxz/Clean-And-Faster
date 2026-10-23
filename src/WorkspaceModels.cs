@@ -11,6 +11,12 @@ public record LibraryEntry(string Id, string Title, string Url, string Kind, str
 public sealed record VisualPreset(string Name,string Theme,bool Vertical,string Layout,string Background,bool Compact=false);
 public static class VisualPresets
 {
+    public const string DefaultName="Cristal do Egeu";
+    public const int DefaultRevision=2;
+    public static void ApplyDefault(Preferences p)
+    {
+        Apply(p,DefaultName);p.Accent="#8FBBEF";p.ShowShortcuts=true;p.FrequentShortcuts=true;p.FocusMode=false;p.Animations=true;
+    }
     public static readonly VisualPreset[] All = [
         new("Egeu Noturno","Escuro",false,"Editorial","Arte"),
         new("Mármore Claro","Claro",false,"Central","Suave"),
@@ -19,7 +25,7 @@ public static class VisualPresets
         new("Renascimento Editorial","Claro",false,"Editorial","Arte"),
         new("Horizonte Essencial","Claro",false,"Essencial","Sem arte",true),
         new("Arquipélago de Espaços","Claro",false,"Espaços","Suave"),
-        new("Cristal do Egeu","Claro",false,"Cristal","Suave"),
+        new("Cristal do Egeu","Claro",false,"Essencial","Arte",true),
         new("Biblioteca Noturna","Escuro",true,"Biblioteca","Suave"),
         new("Atelier Personalizável","Claro",false,"Central","Arte")
     ];

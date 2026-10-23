@@ -1,0 +1,51 @@
+using System.Drawing.Imaging;
+namespace KayBrowser;
+public sealed partial class BrowserWindow
+{
+    internal void VerifyVisualAssets()
+    {
+        void Check(bool ok,string message){if(!ok)throw new InvalidOperationException(message);}
+        Check(store.Settings.Visual==VisualPresets.DefaultName&&!store.Settings.DarkChrome&&store.Settings.Compact&&store.Settings.HomeLayout=="Essencial","Padrão diferente das referências claras.");
+        foreach(var size in new[]{new Size(1920,1080),new Size(900,600),new Size(510,450),new Size(2560,1080)})
+        {
+            var view=new Rectangle(Point.Empty,size);var art=BrandAssets.Cover(BrandAssets.Sea.Size,view);
+            Check(art.Contains(view),"Arte não cobre toda a página: "+size);
+            Check(Math.Abs(art.Left+(art.Width-view.Width)/2)<=1&&Math.Abs(art.Top+(art.Height-view.Height)/2)<=1,"Arte fora do centro: "+size);
+            Check(Math.Abs((double)art.Width/art.Height-(double)BrandAssets.Sea.Width/BrandAssets.Sea.Height)<.01,"Arte distorcida.");
+        }
+        Check(BrandMarks.ShortName("https://www.google.com/")=="Google"&&BrandMarks.ShortName("https://m.youtube.com/")=="YouTube"&&BrandMarks.ShortName("https://github.com/")=="GitHub","Marcas não reconhecidas.");
+        Check(BrandMarks.ShortName("https://google.com.evil.test/")==null&&BrandMarks.ShortName("https://notgithub.com/")==null,"Marca em domínio incorreto.");
+        using(var marks=new Bitmap(400,120))
+        {
+            using(var g=Graphics.FromImage(marks))
+            {
+                g.Clear(Color.FromArgb(249,251,254));
+                foreach(var (url,index) in new[]{("https://google.com",0),("https://github.com",1),("https://youtube.com",2)})
+                    foreach(int pixels in new[]{16,28,48})Check(BrandMarks.Draw(g,url,new Rectangle(index*130+(pixels==16?0:pixels==28?25:65),30,pixels,pixels),Color.FromArgb(9,34,65)),"Marca não desenhada.");
+            }
+            marks.Save(Path.Combine(AppContext.BaseDirectory,"layout-shortcut-vectors.png"),ImageFormat.Png);
+        }
+        using var icon=BrandAssets.ApplicationIcon;
+        foreach(int size in new[]{16,20,24,32,40,48,64,96,128,256})
+        {
+            using var frame=new Icon(icon,new Size(size,size));using var bitmap=frame.ToBitmap();
+            Check(bitmap.Width==size&&bitmap.Height==size,"Tamanho de ícone ausente: "+size);
+            Check(bitmap.GetPixel(0,0).A==0,"Ícone com placa opaca: "+size);
+            if(size==32)bitmap.Save(Path.Combine(AppContext.BaseDirectory,"layout-taskbar-icon32.png"),ImageFormat.Png);
+        }
+        var history=store.History.ToArray();store.History.Clear();
+        try
+        {
+            foreach(var size in new[]{new Size(1920,900),new Size(980,660)})
+            {
+                using var home=new HomeBoard(store,_=>{},()=>{},()=>{},(_,_)=>{},_=>{},_=>{},()=>{}){Size=size,Font=Font};
+                home.SetPalette(Colors);home.CreateControl();home.VerifyLayout();
+                using var bitmap=new Bitmap(size.Width,size.Height);home.DrawToBitmap(bitmap,new Rectangle(Point.Empty,size));
+                bitmap.Save(Path.Combine(AppContext.BaseDirectory,$"layout-home-centered-{size.Width}.png"),ImageFormat.Png);
+            }
+        }
+        finally{store.History.AddRange(history);}
+        ToggleAssistant();Check(assistant!.BackColor==Palette.Create(true,Accent).Surface,"IA não acompanhou tema claro.");ToggleAssistant();
+        ShowAppearance();ApplyChromeMetrics();Application.DoEvents();VerifyChromeLayout();SaveChromeScreenshot("layout-default-appearance.png");ShowAppearance();
+    }
+}

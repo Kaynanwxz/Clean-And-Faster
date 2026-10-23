@@ -2,9 +2,12 @@ namespace KayBrowser;
 
 internal static class Program
 {
+    [System.Runtime.InteropServices.DllImport("shell32.dll",CharSet=System.Runtime.InteropServices.CharSet.Unicode)]
+    static extern int SetCurrentProcessExplicitAppUserModelID(string id);
     [STAThread]
     static void Main(string[] args)
     {
+        SetCurrentProcessExplicitAppUserModelID("TheKay.CleanBrowser");
         ApplicationConfiguration.Initialize();
         if (args.Contains("--update-receipt"))
         {

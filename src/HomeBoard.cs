@@ -80,9 +80,9 @@ public sealed class HomeBoard : Panel,IThemed
         bool small=Width<D(650),minimal=store.Settings.FocusMode||store.Settings.HomeLayout=="Essencial";
         if(!store.Settings.FocusMode&&store.Settings.Background!="Sem arte")
         {
-            Image? wallpaper=store.Settings.Background=="Personalizado"?BrandAssets.Wallpaper(store.Settings.Wallpaper):null;Image art=wallpaper??BrandAssets.Sea;int w=Math.Min(Width,D(1200));int height=w*art.Height/art.Width;
-            if(wallpaper!=null){BrandAssets.DrawArt(g,art,new(0,Height-height,Width,height),0.18f);}
-            else BrandAssets.DrawArt(g,art,new(Width-w,Height-height,w,height),store.Settings.Background=="Suave"?.20f:small?.30f:.53f);
+            Image? wallpaper=store.Settings.Background=="Personalizado"?BrandAssets.Wallpaper(store.Settings.Wallpaper):null;
+            Image art=wallpaper??BrandAssets.Sea;
+            BrandAssets.DrawArt(g,art,BrandAssets.Cover(art.Size,ClientRectangle),store.Settings.Background=="Suave"?.20f:small?.30f:.53f);
         }
         using var heading=new Font("Georgia",small?25:store.Settings.HomeLayout=="Editorial"?38:32,FontStyle.Regular);
         using var smallFont=new Font("Segoe UI",small?8:9,FontStyle.Regular);
@@ -108,7 +108,16 @@ public sealed class ShortcutGrid : Control,IThemed
     Palette colors=Palette.Create(true,Color.SteelBlue);readonly ToolTip tips=new();readonly Tween hoverMotion=new();float hoverAmount;
     int hover=-1,selected,firstRow,drag=-1;Point down;bool dragging;
     int D(int n)=>(int)Math.Round(n*DeviceDpi/96f);
-    List<ShortcutLink> Links=>store.Settings.FrequentShortcuts?store.History.GroupBy(v=>new Uri(v.Url).Host).OrderByDescending(g=>g.Count()).Take(10).Select(g=>new ShortcutLink(g.Key,g.First().Title,g.First().Url)).ToList():store.Settings.Shortcuts;
+    List<ShortcutLink> Links
+    {
+        get
+        {
+            if(!store.Settings.FrequentShortcuts)return store.Settings.Shortcuts;
+            return store.History.GroupBy(v=>new Uri(v.Url).Host).OrderByDescending(g=>g.Count())
+                .Select(g=>new ShortcutLink(g.Key,BrandMarks.ShortName(g.First().Url)??g.First().Title,g.First().Url))
+                .Concat(store.Settings.Shortcuts).DistinctBy(s=>new Uri(s.Url).Host).Take(10).ToList();
+        }
+    }
     int Columns=>Math.Min(store.Settings.FrequentShortcuts?11:store.Settings.Shortcuts.Count+1,Math.Clamp((Width-D(12))/Math.Max(1,D(98)),1,6));
     int Rows=>Math.Max(1,(Height-D(28))/D(101));
     Rectangle Tile(int index)=>new((Width-Columns*D(98))/2+index%Columns*D(98),D(2)+(index/Columns-firstRow)*D(101),D(96),D(96));
@@ -120,7 +129,7 @@ public sealed class ShortcutGrid : Control,IThemed
     public void SetPalette(Palette p){colors=p;BackColor=Color.Transparent;ForeColor=p.Text;Invalidate();}
     protected override void OnPaint(PaintEventArgs e)
     {
-        var g=e.Graphics;g.SmoothingMode=SmoothingMode.AntiAlias;
+        var g=e.Graphics;g.SmoothingMode=SmoothingMode.AntiAlias;g.InterpolationMode=InterpolationMode.HighQualityBicubic;g.PixelOffsetMode=PixelOffsetMode.HighQuality;
         var links=Links;int count=links.Count+1;
         firstRow=Math.Clamp(firstRow,0,Math.Max(0,(count+Columns-1)/Columns-Rows));
         for(int i=firstRow*Columns;i<Math.Min(count,(firstRow+Rows)*Columns);i++)
@@ -131,10 +140,12 @@ public sealed class ShortcutGrid : Control,IThemed
             if(add)Glyphs.Draw(g,"plus",Rectangle.Inflate(circle,-D(13),-D(13)),colors.Text);
             else
             {
-                var cached=SiteIcons.Get(links[i].Url);
-                if(cached!=null)g.DrawImage(cached,Rectangle.Inflate(circle,-D(10),-D(10)));
-                else if(new Uri(links[i].Url).Host.Contains("youtube"))Glyphs.Draw(g,"play",Rectangle.Inflate(circle,-D(11),-D(11)),Color.FromArgb(218,53,75));
-                else {using var f=new Font("Segoe UI",16,FontStyle.Bold);TextRenderer.DrawText(g,links[i].Name[..1].ToUpperInvariant(),f,circle,colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);}
+                if(!BrandMarks.Draw(g,links[i].Url,Rectangle.Inflate(circle,-D(10),-D(10)),colors.Text))
+                {
+                    var cached=SiteIcons.Get(links[i].Url);
+                    if(cached!=null)g.DrawImage(cached,Rectangle.Inflate(circle,-D(10),-D(10)));
+                    else {using var f=new Font("Segoe UI",16,FontStyle.Bold);TextRenderer.DrawText(g,links[i].Name[..1].ToUpperInvariant(),f,circle,colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.VerticalCenter);}
+                }
             }
             using var font=new Font("Segoe UI",add?8.5f:9);
             TextRenderer.DrawText(g,add?"Adicionar atalho":links[i].Name,font,new Rectangle(r.X+D(2),r.Y+D(63),r.Width-D(4),D(32)),colors.Text,TextFormatFlags.HorizontalCenter|TextFormatFlags.NoPrefix|(add?TextFormatFlags.WordBreak:TextFormatFlags.EndEllipsis));

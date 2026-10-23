@@ -26,7 +26,7 @@ public static class SiteIcons
         string host=Host(url);if(host.Length==0)return;
         using var data=new MemoryStream();var buffer=new byte[8192];int n;while((n=stream.Read(buffer))>0){if(data.Length+n>262144)return;data.Write(buffer,0,n);}data.Position=0;
         using var source=Image.FromStream(data);if(source.Width>1024||source.Height>1024)return;
-        var bitmap=new Bitmap(48,48);using(var g=Graphics.FromImage(bitmap))g.DrawImage(source,0,0,48,48);
+        var bitmap=new Bitmap(Math.Min(128,source.Width),Math.Min(128,source.Height));using(var g=Graphics.FromImage(bitmap)){g.InterpolationMode=System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;g.DrawImage(source,0,0,bitmap.Width,bitmap.Height);}
         string directory=Path.GetDirectoryName(FileName(host))!;Directory.CreateDirectory(directory);
         try{bitmap.Save(FileName(host),System.Drawing.Imaging.ImageFormat.Png);}catch{bitmap.Dispose();throw;}
         Add(host,bitmap);
