@@ -36,7 +36,8 @@ public sealed partial class BrowserWindow
         Check(await core.ExecuteScriptAsync("window.cleanDismissalInput+window.cleanDismissalClicks")=="0","Gesto externo prolongado não chega ao conteúdo web");
         await Task.Delay(SystemInformation.DoubleClickTime+80);
         Cursor.Position=tab.View.PointToScreen(new Point(30,100));mouse_event(2,0,0,0,UIntPtr.Zero);mouse_event(4,0,0,0,UIntPtr.Zero);await Task.Delay(100);
-        Check(await core.ExecuteScriptAsync("window.cleanDismissalClicks")=="1","Clique intencional seguinte chega normalmente à página");
+        string nextClick=await core.ExecuteScriptAsync("JSON.stringify({clicks:window.cleanDismissalClicks,input:window.cleanDismissalInput,focus:document.hasFocus()})");
+        Check(await core.ExecuteScriptAsync("window.cleanDismissalClicks")=="1","Clique intencional seguinte chega normalmente à página: "+nextClick);
         ShowMenu();browserMenu!.ClickCommand("zoom-in");Check(tab.View.ZoomFactor>1,"Botão zoom mais altera WebView");browserMenu.ClickCommand("zoom-out");Check(Math.Abs(tab.View.ZoomFactor-1)<.01,"Botão zoom menos restaura WebView");CloseBrowserMenu(false);
         int bookmarks=store.Bookmarks.Count;Toolbar("Salvar ou remover favorito").PerformClick();Check(store.Bookmarks.Count==bookmarks+1,"Estrela da barra salva favorito");Toolbar("Salvar ou remover favorito").PerformClick();Check(store.Bookmarks.Count==bookmarks,"Estrela da barra remove favorito");
         // Install an isolated extension, then operate the real toggle/remove UI against it.

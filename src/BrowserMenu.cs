@@ -60,7 +60,7 @@ public sealed partial class BrowserWindow
     {
         if(closing||IsDisposed||MenuVisible){menuInputRelease.Stop();return;}
         if(((GetAsyncKeyState(1)|GetAsyncKeyState(2)|GetAsyncKeyState(4))&0x8000)!=0){menuInputRelease.Start();return;}
-        menuInputRelease.Stop();tabStrip.Enabled=true;
+        menuInputRelease.Stop();menuFilter?.ResetGesture();tabStrip.Enabled=true;
     }
     BrowserCommand[] MenuCommands()=>[
         new("new-tab","Nova aba","Ctrl+T","plus",0,()=>_ = AddTab("kay://new")),new("ai","Clean AI","Ctrl+Shift+I","spark",0,ToggleAssistant),new("history","Histórico","Ctrl+H","history",0,ShowHistory),new("bookmarks","Favoritos","","star",0,ShowBookmarks),new("downloads","Downloads","Ctrl+J","download",0,ShowDownloads),new("reading","Lista de leitura","","code",0,()=>ShowLibrary("reading")),
@@ -125,6 +125,7 @@ public sealed partial class BrowserWindow
     sealed class MenuDismissFilter(BrowserWindow owner):IMessageFilter
     {
         int suppressedRelease;
+        internal void ResetGesture()=>suppressedRelease=0;
         internal void SuppressGesture(int down)=>suppressedRelease=down switch
         {
             0x201 or 0x203 or 0xA1 or 0xA3=>0x202,
