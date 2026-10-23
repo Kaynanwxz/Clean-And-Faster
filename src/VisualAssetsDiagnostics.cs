@@ -25,10 +25,20 @@ public sealed partial class BrowserWindow
             }
             marks.Save(Path.Combine(AppContext.BaseDirectory,"layout-shortcut-vectors.png"),ImageFormat.Png);
         }
-        using var icon=BrandAssets.ApplicationIcon;
+        using var iconStream=typeof(BrandAssets).Assembly.GetManifestResourceStream("CleanBrowser.kay.ico")!;
+        using var iconReader=new BinaryReader(iconStream);
+        Check(iconReader.ReadUInt16()==0&&iconReader.ReadUInt16()==1,"Cabeçalho ICO inválido.");
+        int frames=iconReader.ReadUInt16();Check(frames==10,"Quantidade de tamanhos ICO incorreta.");
+        var entries=new List<(int Width,int Height,int Length,int Offset)>();
+        for(int i=0;i<frames;i++)
+        {
+            int width=iconReader.ReadByte(),height=iconReader.ReadByte();iconReader.ReadUInt16();iconReader.ReadUInt16();iconReader.ReadUInt16();
+            entries.Add((width==0?256:width,height==0?256:height,iconReader.ReadInt32(),iconReader.ReadInt32()));
+        }
         foreach(int size in new[]{16,20,24,32,40,48,64,96,128,256})
         {
-            using var frame=new Icon(icon,new Size(size,size));using var bitmap=frame.ToBitmap();
+            var entry=entries.Single(e=>e.Width==size&&e.Height==size);iconStream.Position=entry.Offset;
+            using var data=new MemoryStream(iconReader.ReadBytes(entry.Length));using var bitmap=new Bitmap(data);
             Check(bitmap.Width==size&&bitmap.Height==size,"Tamanho de ícone ausente: "+size);
             Check(bitmap.GetPixel(0,0).A==0,"Ícone com placa opaca: "+size);
             if(size==32)bitmap.Save(Path.Combine(AppContext.BaseDirectory,"layout-taskbar-icon32.png"),ImageFormat.Png);
