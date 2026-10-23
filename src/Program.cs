@@ -28,7 +28,9 @@ internal static class Program
         if (args.Contains("--layout-check"))
         {
             AppContext.SetData("KayBrowser.DiagnosticsRoot", Path.Combine(Path.GetTempPath(), "kay-layout-check-" + Guid.NewGuid().ToString("N")));
-            Environment.ExitCode = ChromeDiagnostics.Run(); return;
+            try { Environment.ExitCode = ChromeDiagnostics.Run(); }
+            catch(Exception ex) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"layout-check.json"), System.Text.Json.JsonSerializer.Serialize(new { status="FAIL", error=ex.ToString() })); Environment.ExitCode=1; }
+            return;
         }
         Application.ThreadException += (_, e) => UiMessage.Show(Form.ActiveForm, Palette.Create(false, Color.MediumAquamarine), e.Exception.Message, "Clean Browser · ocorreu um erro");
         using var mutex = new Mutex(true, "Local\\KayBrowser.Main", out var first);
