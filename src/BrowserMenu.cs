@@ -51,7 +51,7 @@ public sealed class BrowserMenuPanel : Panel,IThemed
 public sealed partial class BrowserWindow
 {
     readonly List<string> menuTrace=[];
-    BrowserMenuPanel? browserMenu;ToolStripDropDown? menuPopup;bool menuOpen;readonly Tween menuMotion=new();string? lastMenuCommand;
+    BrowserMenuPanel? browserMenu;Form? menuPopup;bool menuOpen;readonly Tween menuMotion=new();MenuDismissFilter? menuFilter;string? lastMenuCommand;
     BrowserCommand[] MenuCommands()=>[
         new("new-tab","Nova aba","Ctrl+T","plus",0,()=>_ = AddTab("kay://new")),new("ai","Clean AI","Ctrl+Shift+I","spark",0,ToggleAssistant),new("history","Histórico","Ctrl+H","history",0,ShowHistory),new("bookmarks","Favoritos","","star",0,ShowBookmarks),new("downloads","Downloads","Ctrl+J","download",0,ShowDownloads),new("reading","Lista de leitura","","code",0,()=>ShowLibrary("reading")),
         new("workspaces","Espaços de trabalho","","globe",1,ManageWorkspaces),new("sources","Fontes salvas","","globe",1,()=>ShowLibrary("source")),new("notes","Documentos e notas","","code",1,()=>ShowLibrary("note")),new("memory","Memória e abas","","memory",1,ShowMemory),new("extensions","Extensões","","extension",1,()=>_ = ShowExtensions()),
@@ -64,28 +64,30 @@ public sealed partial class BrowserWindow
         if(browserMenu==null)
         {
             browserMenu=new(MenuCommands(),DispatchMenuCommand){Font=Font};browserMenu.CloseRequested+=()=>CloseBrowserMenu();
-            menuPopup=new ToolStripDropDown{AutoSize=false,AutoClose=true,Padding=Padding.Empty,Margin=Padding.Empty,DropShadowEnabled=true};
-            var host=new ToolStripControlHost(browserMenu){AutoSize=false,Padding=Padding.Empty,Margin=Padding.Empty};menuPopup.Items.Add(host);
-            menuPopup.Closed+=(_,_)=>{menuOpen=false;menuMotion.Stop();browserMenu.Visible=false;};
+            menuPopup=new Form{Text="Menu do Clean Browser",FormBorderStyle=FormBorderStyle.None,ShowInTaskbar=false,ControlBox=false,StartPosition=FormStartPosition.Manual,KeyPreview=true,AutoScaleMode=AutoScaleMode.Dpi};
+            menuPopup.Controls.Add(browserMenu);browserMenu.Dock=DockStyle.Fill;
+            menuPopup.Deactivate+=(_,_)=>CloseBrowserMenu(false);
+            menuPopup.FormClosing+=(_,e)=>{if(!closing&&e.CloseReason==CloseReason.UserClosing){e.Cancel=true;CloseBrowserMenu(false);}};
             Resize+=(_,_)=>{if(menuOpen){menuMotion.Stop();PositionBrowserMenu();}};
-            FormClosed+=(_,_)=>{CloseBrowserMenu(false);menuMotion.Dispose();menuPopup.Dispose();};
+            menuFilter=new MenuDismissFilter(this);Application.AddMessageFilter(menuFilter);
+            FormClosed+=(_,_)=>{CloseBrowserMenu(false);Application.RemoveMessageFilter(menuFilter);menuMotion.Dispose();menuPopup.Dispose();};
         }
         menuOpen=true;browserMenu.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));browserMenu.RefreshZoom(Current?.View?.ZoomFactor??1);PositionBrowserMenu();browserMenu.Visible=true;
-        var target=MenuLocation();menuPopup!.Show(this,PointToClient(target));browserMenu.FocusMenu();
+        var target=MenuLocation();if(!menuPopup!.Visible)menuPopup.Show(this);else menuPopup.Activate();browserMenu.FocusMenu();
         menuMotion.Start(target.X+Ui(18),target.X,x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},230);
     }
     Point MenuLocation()=>PointToScreen(new Point(ClientSize.Width-Ui(366)-Ui(12),fullscreen?Ui(10):navigationRow!.Bottom+Ui(8)));
     void PositionBrowserMenu()
     {
         if(browserMenu==null||menuPopup==null)return;var point=MenuLocation();int height=Math.Min(Ui(502),Math.Max(Ui(220),ClientSize.Height-PointToClient(point).Y-Ui(12)));var size=new Size(Ui(366),height);
-        menuPopup.Size=size;menuPopup.Items[0].Size=size;browserMenu.Size=size;menuPopup.Location=point;
+        menuPopup.ClientSize=size;browserMenu.Size=size;menuPopup.Location=point;menuPopup.BackColor=browserMenu.BackColor;
         using var shape=Shapes.Round(new Rectangle(Point.Empty,size),Ui(16));var previous=menuPopup.Region;menuPopup.Region=new Region(shape);previous?.Dispose();
     }
     void CloseBrowserMenu(bool animate=true)
     {
         menuOpen=false;if(menuPopup==null||menuPopup.IsDisposed||!menuPopup.Visible)return;
-        if(!animate){menuMotion.Stop();menuPopup.Close();return;}
-        menuMotion.Start(menuPopup.Left,menuPopup.Left+Ui(18),x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},180,()=>{if(!menuOpen&&!menuPopup.IsDisposed)menuPopup.Close();});
+        if(!animate){menuMotion.Stop();menuPopup.Hide();browserMenu!.Visible=false;return;}
+        menuMotion.Start(menuPopup.Left,menuPopup.Left+Ui(18),x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},180,()=>{if(!menuOpen&&!menuPopup.IsDisposed){menuPopup.Hide();browserMenu!.Visible=false;}});
     }
     void DispatchMenuCommand(string id)
     {
@@ -95,4 +97,16 @@ public sealed partial class BrowserWindow
         CloseBrowserMenu(false);
         BeginInvoke(()=>{if(!closing&&!IsDisposed)MenuCommands().First(c=>c.Id==id).Run();});
     }
+    sealed class MenuDismissFilter(BrowserWindow owner):IMessageFilter
+    {
+        public bool PreFilterMessage(ref Message m)
+        {
+            if(!owner.menuOpen)return false;
+            if(m.Msg==0x100&&(Keys)m.WParam==Keys.Escape){owner.CloseBrowserMenu(false);return true;}
+            if(m.Msg is not(0x201 or 0x203 or 0x204 or 0x206 or 0x207 or 0x209 or 0xA1 or 0xA3))return false;
+            if(owner.browserMenu?.RectangleToScreen(owner.browserMenu.ClientRectangle).Contains(Cursor.Position)==true)return false;
+            owner.CloseBrowserMenu(false);return true;
+        }
+    }
+
 }
