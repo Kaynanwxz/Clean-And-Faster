@@ -16,15 +16,10 @@ public sealed partial class BrowserWindow
     }
     internal void SaveChromeScreenshot(string name)
     {
-        var screen=Screen.FromControl(this).Bounds;Cursor.Position=new Point(screen.Right-2,screen.Bottom-2);Application.DoEvents();
+        // Capture only our native controls; never capture unrelated foreground windows.
+        // WebView2 content is validated through its local DOM fixture, not DrawToBitmap.
         using var bitmap=new Bitmap(Width,Height);
-        var area=Screen.FromControl(this).Bounds;
-        if(area.Contains(Bounds))
-        {
-            try { using var g=Graphics.FromImage(bitmap);g.CopyFromScreen(Location,Point.Empty,Size); }
-            catch(System.ComponentModel.Win32Exception){DrawToBitmap(bitmap,new Rectangle(Point.Empty,bitmap.Size));}
-        }
-        else DrawToBitmap(bitmap,new Rectangle(Point.Empty,bitmap.Size));
+        DrawToBitmap(bitmap,new Rectangle(Point.Empty,bitmap.Size));
         bitmap.Save(Path.Combine(AppContext.BaseDirectory,name));
     }
     internal void VerifyChromeLayout()
@@ -60,7 +55,7 @@ public sealed partial class BrowserWindow
 }
 public static class ChromeDiagnostics
 {
-    public static int Run()
+    public static int Run(bool physicalInput=true)
     {
         int exit=1;var result=new List<object>();using var window=new BrowserWindow(diagnostics:true);
         // Use the same message loop and synchronization context as the real application.
@@ -82,7 +77,8 @@ public static class ChromeDiagnostics
                 }
                 window.WindowState=FormWindowState.Maximized;await Task.Delay(40);window.VerifyChromeLayout();result.Add(new{mode="maximized",status="PASS"});window.WindowState=FormWindowState.Normal;await Task.Delay(40);window.VerifyChromeLayout();result.Add(new{mode="restored",status="PASS"});
                 await window.VerifyAgentDom().WaitAsync(TimeSpan.FromSeconds(80));result.Add(new{mode="agent-dom-read-fill-click-stale-and-dpapi",status="PASS"});
-                var interactions=await window.VerifyInteractions().WaitAsync(TimeSpan.FromSeconds(180));result.Add(new{mode="native-buttons-menu-outside-escape-appearance-motion",status="PASS",checks=interactions.Length});
+                if(physicalInput){var interactions=await window.VerifyInteractions().WaitAsync(TimeSpan.FromSeconds(180));result.Add(new{mode="native-buttons-menu-outside-escape-appearance-motion",status="PASS",checks=interactions.Length});}
+                else result.Add(new{mode="physical-input",status="SKIPPED",reason="Render-only diagnostic; requires an interactive foreground desktop."});
                 window.VerifyPersonalization();result.Add(new{mode="presets-10-vertical-focus-shortcuts-library-workspaces",status="PASS"});
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"layout-check.json"),JsonSerializer.Serialize(result,new JsonSerializerOptions{WriteIndented=true}));exit=0;
             }

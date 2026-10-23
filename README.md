@@ -57,6 +57,10 @@ Os dados permanecem em `%LOCALAPPDATA%\KayBrowser`. A atualização não apaga h
 
 ## Personalizar
 
+**Barra inferior:** fica oculta por padrão, inclusive em perfis existentes sem essa preferência. Ative **Personalizar → Layout → Mostrar barra inferior**. A escolha é salva; desativar recolhe a linha inteira. Tela cheia e modo foco a ocultam temporariamente.
+
+**Fundo:** a arte aprovada do repositório tem 1440 × 576 pixels. O recorte permanece centralizado e proporcional. A versão 0.9.1 preserva a resolução de novas imagens personalizadas até 24 MP, sem reduzi-las a 1600 px. Não adiciona detalhe à arte pequena; para isso é necessária sua fonte em maior resolução.
+
 Clique em **Personalizar** na nova aba ou em **Menu → Personalizar aparência**. O visual inicial é **Cristal do Egeu**, com tema e barra claros, abas no topo, espaçamento compacto, página Essencial e atalhos mais visitados. A colagem de Apolo/mar/vela cobre toda a página, centralizada e sem distorção. O painel Clean AI acompanha o tema escolhido. Selecione um dos dez visuais ou combine tema, barra clara/escura, abas laterais, cores, fundo, atalhos, densidade e animações. As escolhas são salvas automaticamente, com indicação da seleção ativa. Clicar fora de Aparência ou IA mantém a lateral aberta; use o botão de fechar do próprio painel. O clique fora do menu dispensa somente o menu. Use as seções **Visuais, Layout e Fundo**. **F8** alterna modo foco; **Ctrl+Shift+I** abre/fecha IA.
 
 Na nova aba, **Adicionar atalho** cria um endereço HTTP/HTTPS. Botão direito permite editar, remover e mover; arraste para reordenar. Enter abre o selecionado; Delete remove; Ctrl+E edita. Google, GitHub e YouTube usam marcas vetoriais locais. Os demais favicons vêm de páginas já visitadas, sem consultas a serviços externos de ícones.
@@ -65,7 +69,11 @@ Na nova aba, **Adicionar atalho** cria um endereço HTTP/HTTPS. Botão direito p
 
 ## Validação
 
-115 verificações de lógica passaram localmente na preparação da família 0.7, incluindo migração das configurações e dez presets. A CI também verifica a interface real no Windows e a atualização pela release pública; confira o [workflow da versão](https://github.com/Kaynanwxz/Clean-And-Faster/actions/workflows/windows.yml). Veja [a cobertura e seus limites](docs/VALIDACAO.md).
+A preparação 0.9.1 passou por build Windows e 3.711 verificações de lógica, incluindo geometria de 1–21 itens (atalhos mais o botão Adicionar), três escalas, persistência e migração da barra inferior. Muitas dessas verificações são geométricas; a contagem não significa milhares de testes de integração.
+
+A CI da implementação também passou no Windows com 359 verificações de interação: painéis, foco, clique seguinte, botões, extensão local e preferências. Consulte o [workflow validado](https://github.com/Kaynanwxz/Clean-And-Faster/actions/runs/39996863911).
+
+Consulte [a auditoria desta preparação](docs/AUDITORIA-0.9.1.md) para os resultados efetivamente executados e as pendências. O diagnóstico de entrada física depende de uma área de trabalho interativa em primeiro plano; renderização separada não comprova foco ou cliques.
 
 ## Tecnologia e estrutura
 
@@ -95,7 +103,7 @@ Ou execute `Compilar-Windows.cmd`. Para desenvolvimento, use `dotnet run --proje
 A CI executa lógica em Linux e a interface nativa no Windows. Os testes de lógica usam um diretório temporário; não aponte testes para dados pessoais.
 
 ```bash
-XDG_DATA_HOME="$(mktemp -d -t kay-test-data-XXXXXXXX)" dotnet run --project tests/Tests.csproj -c Release
+dotnet run --project tests/Tests.csproj -c Release
 ```
 
 No Windows, após publicar localmente:
@@ -105,7 +113,16 @@ Start-Process dist/CleanBrowser.exe -ArgumentList '--layout-check' -Wait
 Get-Content dist/layout-check.json
 ```
 
-O diagnóstico abre uma janela isolada, verifica encaixe em três tamanhos, maximização/restauração, perda de foco, dez presets, abas laterais, IA, personalização, modo foco, troca de espaços, reordenação de atalhos e persistência de notas. Salva capturas sem dados de usuário. O teste de atualização da CI compila um cliente com versão anterior, baixa a release pública real, verifica o checksum, substitui o executável, confirma a cópia anterior e valida o reinício na versão nova.
+O diagnóstico abre uma janela isolada, verifica encaixe em três tamanhos, maximização/restauração, perda de foco, dez presets, abas laterais, IA, personalização, modo foco, troca de espaços, reordenação de atalhos e persistência de notas. As capturas usam DrawToBitmap dos controles do aplicativo, sem fotografar outras janelas. Conteúdo WebView2 é verificado pela fixture DOM e pode não aparecer nessas capturas. O teste de atualização da CI compila um cliente com versão anterior, baixa a release pública real, verifica o checksum, substitui o executável, confirma a cópia anterior e valida o reinício na versão nova.
+
+Para validar renderização e a fixture WebView2 sem enviar entrada física à área de trabalho:
+
+```powershell
+Start-Process dist/CleanBrowser.exe -ArgumentList '--render-check' -Wait
+Get-Content dist/layout-check.json
+```
+
+Esse modo registra explicitamente os cliques físicos como SKIPPED. Não substitui o teste de painéis, foco e clique seguinte.
 
 ## Publicar uma versão
 

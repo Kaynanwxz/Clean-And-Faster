@@ -1,4 +1,5 @@
 using KayBrowser;
+AppContext.SetData("KayBrowser.DiagnosticsRoot",Path.Combine(Path.GetTempPath(),"kay-test-data-"+Guid.NewGuid().ToString("N")));
 int passed = 0;
 void Equal(string actual, string expected) { if (actual != expected) throw new Exception($"Esperado: {expected}\nRecebido: {actual}"); passed++; }
 void Check(bool value) { if (!value) throw new Exception("Assertion failed"); passed++; }
@@ -44,4 +45,5 @@ Equal(Distribution.Repository("../bad"), "Kaynanwxz/Clean-And-Faster");
 Equal(Distribution.Repository("user/custom"), "user/custom");
 passed += await AiTests.Run();
 passed += WorkspaceTests.Run();
+passed += LayoutTests.Run();
 Console.WriteLine($"PASS: {passed} verificações de navegação, persistência, atualização e IA.");

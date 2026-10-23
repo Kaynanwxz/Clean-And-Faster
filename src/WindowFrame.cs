@@ -21,7 +21,7 @@ public sealed partial class BrowserWindow
         chromeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,48));
         chromeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,64));
         chromeLayout.RowStyles.Add(new RowStyle(SizeType.Percent,100));
-        chromeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,28));
+        chromeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,0));
         var title = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty, Padding = Padding.Empty };
         titleRow = title; title.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         title.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));title.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,138));
@@ -70,7 +70,7 @@ public sealed partial class BrowserWindow
         updateButton.Text = "Atualizar"; updateButton.TabStop = true;
         bar.Controls.Add(updateButton, 9, 0);
         tabStrip.Margin=Padding.Empty;
-        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text="Clean Browser 0.9.0   ·   Pronto para explorar";
+        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text=$"Clean Browser {Updater.CurrentVersion.ToString(3)}   ·   Pronto para explorar";
         chromeLayout.Controls.Add(title,0,0);chromeLayout.Controls.Add(bar,0,1);InitializeAssistantHost();
         chromeLayout.Controls.Add(pageHost,0,2);chromeLayout.Controls.Add(status,0,3);
         Controls.Add(chromeLayout);
@@ -86,7 +86,9 @@ public sealed partial class BrowserWindow
         {
             chromeLayout.RowStyles[0].Height = fullscreen ? 0 : Ui(store.Settings.Compact||store.Settings.FocusMode?42:48);
             chromeLayout.RowStyles[1].Height = fullscreen ? 0 : Ui(store.Settings.Compact||store.Settings.FocusMode?52:60);
-            chromeLayout.RowStyles[3].Height = fullscreen||store.Settings.FocusMode ? 0 : Ui(24);
+            bool showBottomBar = store.Settings.ShowBottomBar && !fullscreen && !store.Settings.FocusMode;
+            status.Visible = showBottomBar;
+            chromeLayout.RowStyles[3].Height = showBottomBar ? Ui(24) : 0;
             titleRow.ColumnStyles[1].Width = Ui(138);
             windowButtons.Padding = new Padding(0, Ui(4), Ui(4), Ui(4));
             navigationRow.Padding = new Padding(Ui(10), Ui(8), Ui(10), Ui(8));

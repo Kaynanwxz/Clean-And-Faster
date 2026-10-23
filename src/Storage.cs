@@ -8,6 +8,7 @@ public record DownloadRecord(string Name, string Path, string State);
 public sealed class Preferences
 {
     public bool Animations { get; set; } = true;
+    public bool ShowBottomBar { get; set; } // Absent in existing profiles: hidden until explicitly enabled.
     public string AiModel { get; set; } = "gpt-5.4-mini";
     public int AppearanceRevision { get; set; }
     public string Visual { get; set; } = VisualPresets.DefaultName;
