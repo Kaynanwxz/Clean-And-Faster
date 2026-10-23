@@ -6,6 +6,8 @@
 - Personalização, tema, abas, densidade, atalhos, cores, fundo, foco e animações agora usam o mesmo fluxo de atualização.
 - Página inicial preserva os controles ao personalizar. Abrir Extensões sem um site não substitui a nova aba por uma página vazia.
 - Deslize de entrada/saída dos painéis, transição das seções de aparência, entrada da nova aba e destaque suave dos atalhos. Temporizadores param ao concluir e respeitam redução de animações do Windows.
+- Troca entre imagem própria e arte padrão corrigida; remoção limpa o arquivo criado pelo app.
+- Diálogos de permissão e download agendados fora dos callbacks nativos do WebView2 para evitar travamentos por reentrada.
 - Diagnóstico Windows ampliado com cliques reais fora do menu, Escape, perda de foco, vinte ciclos de abertura/fechamento, todos os comandos de menu, botões da barra e da IA, opções de aparência, cores inválidas, persistência, cancelamento de seletor de arquivos e cliques rápidos durante transições.
 
 ## Atualizar
