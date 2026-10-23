@@ -77,6 +77,7 @@ public static class ChromeDiagnostics
                 }
                 window.WindowState=FormWindowState.Maximized;await Task.Delay(40);window.VerifyChromeLayout();result.Add(new{mode="maximized",status="PASS"});window.WindowState=FormWindowState.Normal;await Task.Delay(40);window.VerifyChromeLayout();result.Add(new{mode="restored",status="PASS"});
                 await window.VerifyAgentDom().WaitAsync(TimeSpan.FromSeconds(80));result.Add(new{mode="agent-dom-read-fill-click-stale-and-dpapi",status="PASS"});
+                int aiChecks=await window.VerifyIntegratedAi().WaitAsync(TimeSpan.FromSeconds(60));result.Add(new{mode="ai-provider-conversation-image-selected-window-crop",status="PASS",checks=aiChecks});
                 if(physicalInput){var interactions=await window.VerifyInteractions().WaitAsync(TimeSpan.FromSeconds(180));result.Add(new{mode="native-buttons-menu-outside-escape-appearance-motion",status="PASS",checks=interactions.Length});}
                 else result.Add(new{mode="physical-input",status="SKIPPED",reason="Render-only diagnostic; requires an interactive foreground desktop."});
                 window.VerifyPersonalization();result.Add(new{mode="presets-10-vertical-focus-shortcuts-library-workspaces",status="PASS"});

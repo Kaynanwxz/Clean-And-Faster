@@ -10,6 +10,7 @@ public sealed partial class BrowserWindow
     readonly Tween assistantTween=new();
     CancellationTokenSource? aiCancellation;
     HttpClient? aiHttp;
+    readonly AiConversation aiConversation=new();
     bool assistantOpen,assistantWide;
     string snapshotToken="", snapshotSource="";
     BrowserTab? snapshotTab;
@@ -29,7 +30,7 @@ public sealed partial class BrowserWindow
         if(assistant==null)
         {
             assistant=new();assistant.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));rightDock.Controls.Add(assistant);
-            assistant.SendRequested+=()=>_ = AskAssistant();assistant.StopRequested+=()=>aiCancellation?.Cancel();assistant.SetupRequested+=ConfigureAssistant;assistant.CloseRequested+=ToggleAssistant;assistant.ExpandRequested+=()=>{assistantWide=!assistantWide;AnimateRightPanel(assistant,true);};
+            assistant.SendRequested+=()=>_ = AskAssistant();assistant.StopRequested+=()=>aiCancellation?.Cancel();assistant.SetupRequested+=ConfigureAssistant;assistant.CaptureRequested+=()=>_ = ShowAiCapture();assistant.ResetRequested+=aiConversation.Clear;RefreshAiConnectionLabel();assistant.CloseRequested+=ToggleAssistant;assistant.ExpandRequested+=()=>{assistantWide=!assistantWide;AnimateRightPanel(assistant,true);};
         }
         if(appearanceOpen){appearanceOpen=false;if(appearance!=null)appearance.Visible=false;}
         assistantOpen=!assistantOpen;
@@ -37,41 +38,58 @@ public sealed partial class BrowserWindow
         AnimateRightPanel(assistant,assistantOpen);
     }
     void DisposeAssistant(){aiCancellation?.Cancel();assistantTween.Dispose();aiHttp?.Dispose();}
+    void RefreshAiConnectionLabel()
+    {
+        try{var c=AiConnection.From(store.Settings);assistant?.ConnectionLabel(AiSecrets.Read(c.Url).Length>0||new Uri(c.Url).IsLoopback?c.Provider+" · conexão":"Conectar IA");}catch(Exception ex)when(ex is ArgumentException or IOException or UnauthorizedAccessException){assistant?.ConnectionLabel("Conectar IA");}
+    }
     void ConfigureAssistant()
     {
-        using var dialog=Dialog("Configurar Clean AI",640,450);
-        var grid=new TableLayoutPanel{Dock=DockStyle.Fill,Padding=new Padding(22),ColumnCount=1,RowCount=6};grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));
-        foreach(var h in new[]{115,28,40,28,40,0})grid.RowStyles.Add(new RowStyle(h==0?SizeType.Percent:SizeType.Absolute,h==0?100:h));
-        var explanation=new Label{Dock=DockStyle.Fill,Text="Conecte sua própria chave da API OpenAI. O uso tem cobrança na sua conta da API. A chave é protegida pelo Windows e não vai para o GitHub.\n\nA IA recebe somente o pedido e o contexto que você autorizar. Não conecta automaticamente esta conversa do ChatGPT ao navegador."};
-        var key=new TextBox{Dock=DockStyle.Fill,UseSystemPasswordChar=true,PlaceholderText=AiSecrets.Read().Length>0?"Chave já salva · deixe vazio para manter":"Cole sua chave de API"};
-        var model=new TextBox{Dock=DockStyle.Fill,Text=store.Settings.AiModel};
-        grid.Controls.Add(explanation,0,0);grid.Controls.Add(new Label{Text="Chave da API",Dock=DockStyle.Fill},0,1);grid.Controls.Add(key,0,2);grid.Controls.Add(new Label{Text="Modelo (editável conforme sua conta)",Dock=DockStyle.Fill},0,3);grid.Controls.Add(model,0,4);
-        var buttons=new FlowLayoutPanel{Dock=DockStyle.Bottom,Height=55,FlowDirection=FlowDirection.RightToLeft};
-        buttons.Controls.Add(Button("Salvar",()=>{
-            try{var chosen=AiPolicy.CleanModel(model.Text);if(key.Text.Trim().Length>0)AiSecrets.Save(key.Text);store.Settings.AiModel=chosen;store.SaveSettings();dialog.Close();}
-            catch(Exception ex)when(ex is ArgumentException or IOException or System.Security.Cryptography.CryptographicException){ShowNotice(ex.Message,"Configurar IA");}
-        }));
-        buttons.Controls.Add(Button("Remover chave",()=>{AiSecrets.Save("");dialog.Close();}));
-        dialog.Controls.Add(grid);dialog.Controls.Add(buttons);ApplyTheme(dialog);dialog.ShowDialog(this);
+        using var dialog=new AiSetupDialog(store,Palette.Create(store.Settings.Theme=="Claro",Accent));
+        if(dialog.ShowDialog(this)==DialogResult.OK){aiConversation.Clear();assistant?.Reset();}
+        RefreshAiConnectionLabel();
+    }
+    async Task ShowAiCapture()
+    {
+        if(aiCancellation!=null||assistant==null)return;
+        using var dialog=new AiCaptureDialog(Palette.Create(store.Settings.Theme=="Claro",Accent),CaptureAiTab);
+        if(dialog.ShowDialog(this)==DialogResult.OK&&dialog.Attachment!=null)assistant.SetAttachment(dialog.Attachment);
+        await Task.CompletedTask;
+    }
+    async Task<Bitmap> CaptureAiTab(CancellationToken cancellation)
+    {
+        var tab=Current??throw new IOException("Abra uma aba antes de capturar.");
+        if(tab.View?.CoreWebView2 is {} core)
+        {
+            string url=core.Source;using var bytes=new MemoryStream();await core.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png,bytes);cancellation.ThrowIfCancellationRequested();
+            if(Current!=tab||core.Source!=url)throw new IOException("A aba mudou durante a captura. Capture novamente.");bytes.Position=0;using var image=Image.FromStream(bytes);if((long)image.Width*image.Height>24_000_000)throw new IOException("A aba excede o limite de captura.");return new Bitmap(image);
+        }
+        var home=tab.Page.Controls.OfType<HomeBoard>().FirstOrDefault()??throw new IOException("Esta aba ainda não está pronta.");
+        if(home.Width<1||home.Height<1||(long)home.Width*home.Height>24_000_000)throw new IOException("Área de captura indisponível.");var bitmap=new Bitmap(home.Width,home.Height);try{home.DrawToBitmap(bitmap,new Rectangle(Point.Empty,bitmap.Size));return bitmap;}catch{bitmap.Dispose();throw;}
     }
     async Task AskAssistant()
     {
-        if(assistant==null||aiCancellation!=null||string.IsNullOrWhiteSpace(assistant.Prompt))return;
-        string key;
-        try{key=AiSecrets.Read();}catch(IOException){ShowNotice("Não foi possível ler a chave. Abra Configurar IA.");return;}
-        if(key.Length==0){ConfigureAssistant();return;}
-        string question=assistant.Prompt.Trim();bool share=assistant.Share;assistant.Prompt="";assistant.Add("Você",question);assistant.Busy(true);
+        if(assistant==null||aiCancellation!=null||string.IsNullOrWhiteSpace(assistant.Prompt)&&assistant.Attachment==null)return;
+        AiConnection connection;string key;
+        try{connection=AiConnection.From(store.Settings);key=AiSecrets.Read(connection.Url);}
+        catch(Exception ex)when(ex is ArgumentException or IOException or UnauthorizedAccessException){ShowNotice("Confira sua conexão de IA.");ConfigureAssistant();return;}
+        if(key.Length==0&&!new Uri(connection.Url).IsLoopback){ConfigureAssistant();return;}
+        string question=assistant.Prompt.Trim();if(question.Length==0)question="Analise a imagem compartilhada e me ajude a entendê-la.";
+        bool share=assistant.Share,tools=assistant.BrowserActions;var image=assistant.Attachment;assistant.Prompt="";assistant.Add("Você",question+(image==null?"":"\n[Imagem: "+image.Label+"]"));assistant.Busy(true);
         using var cancel=new CancellationTokenSource(TimeSpan.FromMinutes(4));aiCancellation=cancel;
-        aiHttp??=new HttpClient{Timeout=TimeSpan.FromSeconds(100)};
+        aiHttp??=AiSetupDialog.CreateHttp();var answer=new System.Text.StringBuilder();
         try
         {
-            string context=share?TabsContext():"Compartilhamento de páginas e abas desativado.";
-            await new AiClient(aiHttp).Run(key,store.Settings.AiModel,question,context,
-                (name,args,token)=>ExecuteAiTool(name,args,share,token),text=>{if(!closing)assistant.Add("Clean AI",text);},cancel.Token);
+            string context=share?TabsContext()+"\nPágina atual:\n"+await ReadAiPage(cancel.Token):"Compartilhamento de páginas e abas desativado.";
+            await new AiClient(aiHttp).Run(key,connection.Model,question,context,
+                (name,args,token)=>ExecuteAiTool(name,args,share,token),text=>{answer.AppendLine(text);if(!closing)assistant.Add("Clean AI",text);},cancel.Token,connection,aiConversation.Snapshot(),image,tools);
+            if(answer.Length==0)throw new IOException("A IA não devolveu texto. Confira o modelo na conexão.");
+            aiConversation.Complete(question,answer.ToString());
+            if(!closing)assistant.AttachmentSent();
         }
-        catch(OperationCanceledException){if(!closing)assistant.Add("Clean AI","Tarefa interrompida ou tempo esgotado. As ações já aprovadas permanecem.");}
+        catch(OperationCanceledException){if(!closing)assistant.Add("Clean AI","Conversa interrompida ou tempo esgotado. A imagem permanece anexada se precisar tentar novamente.");}
+        catch(Exception)when(closing){}
         catch(Exception ex)when(ex is HttpRequestException or IOException or JsonException or InvalidOperationException or ArgumentException)
-        {if(!closing)assistant.Add("Clean AI",ex is HttpRequestException?"Não foi possível conectar à API. Confira sua conexão e tente novamente.":ex.Message);}
+        {if(!closing){assistant.Add("Clean AI",ex is HttpRequestException?"Não foi possível conectar à sua IA. Confira sua conexão e tente novamente.":ex is JsonException?"A API retornou um formato incompatível. Confira o endereço em Conectar IA.":ex.Message);assistant.Prompt=question;}}
         finally{aiCancellation=null;key="";if(!closing)assistant.Busy(false);}
     }
     string TabsContext()=>JsonSerializer.Serialize(tabs.Select((t,i)=>new{index=i+1,title=t.Title,url=t.Url,active=t==Current,workspace=t.Page.WorkspaceId}).Where(t=>t.workspace==WorkspaceId).Take(30));

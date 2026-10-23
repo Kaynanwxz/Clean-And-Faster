@@ -32,6 +32,16 @@ Se configurou um servidor alternativo, use **Atualizar → Canal de atualizaçã
 
 Os dados permanecem em `%LOCALAPPDATA%\KayBrowser`. A atualização não apaga histórico, favoritos, configurações ou perfil de sites. A meta é atualizar todo o código do aplicativo por troca do executável; a atualização do motor WebView2 continua sendo gerenciada pela Microsoft.
 
+## Clean AI integrado (0.10.0)
+
+Abra **Clean AI → Conectar IA**. Escolha OpenAI, OpenRouter ou Personalizada, informe o modelo e a chave da sua API, use **Testar conexão** e salve. O teste faz um pedido curto à API e pode consumir crédito. Endereços personalizados terminam em /responses ou /chat/completions; HTTP só é aceito no próprio computador. Não é preciso instalar outro aplicativo, extensão ou SDK.
+
+Converse no painel, continue com perguntas sobre o mesmo assunto e use **Nova conversa** para limpar o contexto desta sessão. A conversa mantém até seis pares de mensagens e 32 mil caracteres em memória; não é salva no disco nem sincronizada. Mudar a conexão também limpa o contexto. A chave usa proteção do Windows e fica vinculada ao endereço escolhido, preservando chaves OpenAI existentes.
+
+**Mostrar tela ou janela** abre o seletor nativo. Escolha a aba, uma janela específica ou um monitor, clique em **Capturar**, arraste na prévia se quiser recortar, confirme em **Usar esta imagem** e clique em **Enviar**. A captura é pontual; não há vídeo/gravação em segundo plano. Ela permanece anexada, visível, para perguntas seguintes até remover, trocar ou iniciar uma nova conversa. Remover impede os próximos envios; não retira o que já foi enviado ao provedor. Imagens não são salvas pelo recurso e são reduzidas proporcionalmente a até 1920 px para envio leve. Janelas protegidas, minimizadas ou com renderização incompatível podem mostrar captura vazia; confira a prévia ou use a aba/tela.
+
+**Contexto → Usar texto da página e lista de abas** compartilha contexto textual opcional. **Permitir ações aprovadas no navegador** permite as ferramentas existentes de navegação; cada alteração continua sujeita à sua confirmação. A IA não controla outros aplicativos. Modelos precisam oferecer suporte às imagens/ferramentas escolhidas. Não inclui recursos de voz/vídeo ao vivo de outros produtos, nem conecta uma assinatura do ChatGPT como se fosse crédito de API.
+
 ## Recursos
 
 | Área | Incluído |

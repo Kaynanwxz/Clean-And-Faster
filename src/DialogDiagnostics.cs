@@ -68,8 +68,8 @@ public sealed partial class BrowserWindow
             if(f.Text=="Histórico"){if(stage==0){Input(f).Text="Histórico teste";var list=AppearancePanel.Descendants(f).OfType<ListView>().Single();Check(list.Items.Count==1,"Filtro do histórico");stage=1;ButtonIn(f,"Apagar histórico").PerformClick();}else if(stage==2){Check(store.History.Count==0&&new Storage().History.Count==0,"Apagar histórico confirmado");f.Close();}}
             else{stage=2;ButtonIn(f,"Sim").PerformClick();}
         });
-        Script(ConfigureAssistant,f=>{var model=AppearancePanel.Descendants(f).OfType<TextBox>().Single(t=>!t.UseSystemPasswordChar);model.Text="gpt-5.4-mini";ButtonIn(f,"Salvar").PerformClick();});Check(new Storage().Settings.AiModel=="gpt-5.4-mini","Salvar modelo de IA pelo botão");
-        AiSecrets.Save("diagnostic-only-not-a-real-key");Script(ConfigureAssistant,f=>ButtonIn(f,"Remover chave").PerformClick());Check(AiSecrets.Read()=="","Remover chave de IA pelo botão");
+        Script(ConfigureAssistant,f=>{var model=AppearancePanel.Descendants(f).OfType<TextBox>().Single(t=>t.AccessibleName=="Modelo de IA");model.Text="gpt-5.4-mini";ButtonIn(f,"Salvar").PerformClick();});Check(new Storage().Settings.AiModel=="gpt-5.4-mini","Salvar modelo de IA pelo botão");
+        AiSecrets.Save("diagnostic-only-not-a-real-key");Script(ConfigureAssistant,f=>{ButtonIn(f,"Remover chave").PerformClick();f.Close();});Check(AiSecrets.Read()=="","Remover chave de IA pelo botão");
         stage=0;
         Script(ShowSettings,f=>{
             if(f.Text=="Configurações avançadas")

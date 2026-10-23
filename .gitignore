@@ -14,3 +14,7 @@ update-failure.json
 
 ai-key.bin
 ai-key.bin.tmp
+
+.dotnet-home/
+.nuget/
+.packages/
