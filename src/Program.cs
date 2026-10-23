@@ -25,10 +25,10 @@ internal static class Program
             catch (Exception ex) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "update-failure.json"), ex.ToString()); Environment.ExitCode = 1; }
             return;
         }
-        if (args.Contains("--layout-check"))
+        if (args.Contains("--layout-check") || args.Contains("--render-check"))
         {
             AppContext.SetData("KayBrowser.DiagnosticsRoot", Path.Combine(Path.GetTempPath(), "kay-layout-check-" + Guid.NewGuid().ToString("N")));
-            try { Environment.ExitCode = ChromeDiagnostics.Run(); }
+            try { Environment.ExitCode = ChromeDiagnostics.Run(!args.Contains("--render-check")); }
             catch(Exception ex) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"layout-check.json"), System.Text.Json.JsonSerializer.Serialize(new { status="FAIL", error=ex.ToString() })); Environment.ExitCode=1; }
             return;
         }

@@ -9,8 +9,8 @@ public static class BrandAssets
         using var stream=typeof(BrandAssets).Assembly.GetManifestResourceStream("CleanBrowser.Assets."+name)??
             typeof(BrandAssets).Assembly.GetManifestResourceNames().Where(x=>x.EndsWith("."+name)).Select(x=>typeof(BrandAssets).Assembly.GetManifestResourceStream(x)).FirstOrDefault()??throw new IOException("Arte não encontrada: "+name);
         using var source=Image.FromStream(stream);
-        // Decode once at a bounded working resolution, shared by all tabs.
-        int width=Math.Min(source.Width,name=="clean-logo.png"?256:1440);int height=source.Height*width/source.Width;
+        // Share a single decode across tabs. Preserve the original wallpaper pixels.
+        int width=name=="clean-logo.png"?Math.Min(source.Width,256):source.Width;int height=source.Height*width/source.Width;
         var bitmap=new Bitmap(width,height);using var g=Graphics.FromImage(bitmap);g.InterpolationMode=System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;g.DrawImage(source,0,0,width,height);return bitmap;
     }
     static Bitmap? wallpaper;static string wallpaperPath="";
@@ -21,9 +21,9 @@ public static class BrandAssets
         if(path.Length==0||!File.Exists(path))return null;
         try
         {
-            using var source=Image.FromFile(path);float scale=Math.Min(1f,1600f/Math.Max(source.Width,source.Height));
-            wallpaper=new Bitmap(Math.Max(1,(int)(source.Width*scale)),Math.Max(1,(int)(source.Height*scale)));
-            using var g=Graphics.FromImage(wallpaper);g.DrawImage(source,0,0,wallpaper.Width,wallpaper.Height);return wallpaper;
+            using var source=Image.FromFile(path);
+            if((long)source.Width*source.Height>24000000)throw new IOException("Imagem acima de 24 megapixels.");
+            wallpaper=new Bitmap(source);return wallpaper;
         }
         catch(Exception e)when(e is IOException or ArgumentException or OutOfMemoryException){wallpaper?.Dispose();wallpaper=null;return null;}
     }

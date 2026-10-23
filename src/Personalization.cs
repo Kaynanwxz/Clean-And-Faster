@@ -49,7 +49,7 @@ public sealed partial class BrowserWindow
         {
             if(new FileInfo(file).Length>12*1024*1024)throw new IOException("Escolha uma imagem de até 12 MB.");
             using var source=Image.FromFile(file);if((long)source.Width*source.Height>24000000)throw new IOException("Escolha uma imagem de até 24 megapixels.");
-            float scale=Math.Min(1f,1600f/Math.Max(source.Width,source.Height));int width=Math.Max(1,(int)(source.Width*scale)),height=Math.Max(1,(int)(source.Height*scale));using var reduced=new Bitmap(width,height);using(var g=Graphics.FromImage(reduced)){g.InterpolationMode=System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;g.DrawImage(source,0,0,width,height);}
+            using var reduced=new Bitmap(source); // Keep original detail; the existing 24 MP limit bounds memory.
             string root=Path.Combine(Storage.Root,"Appearance");Directory.CreateDirectory(root);string path=Path.Combine(root,Guid.NewGuid().ToString("N")+".png");reduced.Save(path,ImageFormat.Png);
             string old=store.Settings.Wallpaper;store.Settings.Wallpaper=path;store.Settings.Background="Personalizado";store.SaveSettings();RefreshHomePages();
             if(old.StartsWith(root+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase))try{File.Delete(old);}catch(IOException){}

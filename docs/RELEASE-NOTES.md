@@ -1,3 +1,15 @@
+# Preparação 0.9.1
+
+- Barra inferior opcional e oculta por padrão; preferência persistente em Personalizar → Layout.
+- Atalhos centralizados pela quantidade exibida e em linhas incompletas.
+- Marca e título da nova aba centralizados pela largura real do texto.
+- Imagens personalizadas preservam resolução original, até o limite existente de 24 MP.
+- Arte aprovada de 1440 × 576 e cores preservadas; fonte em maior resolução continua pendente.
+- Testes de lógica isolam seus dados automaticamente no Windows e Linux.
+- Diagnóstico de renderização separado de entrada física; capturas limitadas aos controles do app.
+
+Preparado localmente. Não publicado como release; consulte AUDITORIA-0.9.1.md antes de distribuir.
+
 # Clean Browser 0.9.0
 
 - Padrão conforme as referências: Cristal do Egeu, tema e barra claros, abas no topo, compacto, página Essencial, fundo Arte e atalhos mais visitados.

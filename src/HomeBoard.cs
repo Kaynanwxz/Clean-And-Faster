@@ -86,7 +86,7 @@ public sealed class HomeBoard : Panel,IThemed
         }
         using var heading=new Font("Georgia",small?25:store.Settings.HomeLayout=="Editorial"?38:32,FontStyle.Regular);
         using var smallFont=new Font("Segoe UI",small?8:9,FontStyle.Regular);
-        int icon=D(small?42:56);int titleW=small?D(262):D(350);int groupW=titleW+icon+D(16);int x=store.Settings.HomeLayout=="Editorial"&&!small?contentLeft:(Width-groupW)/2;
+        int icon=D(small?42:56);int titleW=Math.Min(Math.Max(1,contentWidth-icon-D(16)),TextRenderer.MeasureText(g,"Clean Browser",heading,Size.Empty,TextFormatFlags.NoPadding).Width);int groupW=titleW+icon+D(16);int x=store.Settings.HomeLayout=="Editorial"&&!small?contentLeft:(Width-groupW)/2;
         g.DrawImage(BrandAssets.Logo,new Rectangle(x,brandY,icon,icon));
         TextRenderer.DrawText(g,"Clean Browser",heading,new Rectangle(x+icon+D(14),brandY-D(3),titleW,icon),colors.Text,TextFormatFlags.VerticalCenter|TextFormatFlags.NoPadding|TextFormatFlags.EndEllipsis);
         string sub=store.Settings.HomeLayout switch{"Espaços"=>"SEU ESPAÇO, SEU RITMO", "Biblioteca"=>"PESQUISE, LEIA E ORGANIZE", "Essencial"=>"PARA ONDE VAMOS?",_=>"N A V E G A R   C O M   M A I S   C L A R E Z A"};
@@ -118,9 +118,9 @@ public sealed class ShortcutGrid : Control,IThemed
                 .Concat(store.Settings.Shortcuts).DistinctBy(s=>new Uri(s.Url).Host).Take(10).ToList();
         }
     }
-    int Columns=>Math.Min(store.Settings.FrequentShortcuts?11:store.Settings.Shortcuts.Count+1,Math.Clamp((Width-D(12))/Math.Max(1,D(98)),1,6));
+    int Columns=>ShortcutLayout.Columns(Links.Count+1,Width,D(98),D(12));
     int Rows=>Math.Max(1,(Height-D(28))/D(101));
-    Rectangle Tile(int index)=>new((Width-Columns*D(98))/2+index%Columns*D(98),D(2)+(index/Columns-firstRow)*D(101),D(96),D(96));
+    Rectangle Tile(int index)=>ShortcutLayout.Tile(index,Links.Count+1,Columns,Width,D(98),D(96),D(101),D(2),firstRow);
     public ShortcutGrid(Storage data,Action<string> navigate,Action<string,ShortcutLink?> actions)
     {
         store=data;open=navigate;command=actions;TabStop=true;AccessibleRole=AccessibleRole.List;Cursor=Cursors.Hand;
@@ -130,7 +130,7 @@ public sealed class ShortcutGrid : Control,IThemed
     protected override void OnPaint(PaintEventArgs e)
     {
         var g=e.Graphics;g.SmoothingMode=SmoothingMode.AntiAlias;g.InterpolationMode=InterpolationMode.HighQualityBicubic;g.PixelOffsetMode=PixelOffsetMode.HighQuality;
-        var links=Links;int count=links.Count+1;
+        var links=Links;int count=links.Count+1;selected=Math.Clamp(selected,0,links.Count);
         firstRow=Math.Clamp(firstRow,0,Math.Max(0,(count+Columns-1)/Columns-Rows));
         for(int i=firstRow*Columns;i<Math.Min(count,(firstRow+Rows)*Columns);i++)
         {
