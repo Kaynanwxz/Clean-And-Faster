@@ -14,5 +14,6 @@ public static class WebApps
         return new(id??Guid.NewGuid().ToString("N"),name,url);
     }
     public static List<WebAppLink> Sanitize(IEnumerable<WebAppLink>? apps)=>(apps??[]).Where(a=>a!=null&&!string.IsNullOrWhiteSpace(a.Id)).Select(a=>{try{return Create(a.Name,a.Url,a.Id);}catch(ArgumentException){return null;}}).OfType<WebAppLink>().DistinctBy(a=>a.Id).Take(20).ToList();
-    public static bool SameSite(string url,string entry)=>Uri.TryCreate(url,UriKind.Absolute,out var a)&&Uri.TryCreate(entry,UriKind.Absolute,out var b)&&a.Scheme==b.Scheme&&a.IdnHost.Equals(b.IdnHost,StringComparison.OrdinalIgnoreCase)&&a.Port==b.Port;
+    static string SiteHost(string host)=>host.ToLowerInvariant() switch {"www.notion.com" or "app.notion.com" or "www.notion.so" or "notion.so"=>"notion.com",var value=>value};
+    public static bool SameSite(string url,string entry)=>Uri.TryCreate(url,UriKind.Absolute,out var a)&&Uri.TryCreate(entry,UriKind.Absolute,out var b)&&a.Scheme==b.Scheme&&SiteHost(a.IdnHost)==SiteHost(b.IdnHost)&&a.Port==b.Port;
 }
