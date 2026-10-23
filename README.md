@@ -71,6 +71,8 @@ Na nova aba, **Adicionar atalho** cria um endereço HTTP/HTTPS. Botão direito p
 
 A preparação 0.9.1 passou por build Windows e 3.711 verificações de lógica, incluindo geometria de 1–21 itens (atalhos mais o botão Adicionar), três escalas, persistência e migração da barra inferior. Muitas dessas verificações são geométricas; a contagem não significa milhares de testes de integração.
 
+A CI da implementação também passou no Windows com 359 verificações de interação: painéis, foco, clique seguinte, botões, extensão local e preferências. Consulte o [workflow validado](https://github.com/Kaynanwxz/Clean-And-Faster/actions/runs/39996863911).
+
 Consulte [a auditoria desta preparação](docs/AUDITORIA-0.9.1.md) para os resultados efetivamente executados e as pendências. O diagnóstico de entrada física depende de uma área de trabalho interativa em primeiro plano; renderização separada não comprova foco ou cliques.
 
 ## Tecnologia e estrutura

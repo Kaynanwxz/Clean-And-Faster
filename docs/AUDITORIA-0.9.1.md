@@ -6,6 +6,14 @@ Data: 23/10/2026. Base: commit 2d26a42a398e897db312c5cb9fce2f0d6ac537a2 de Kayna
 
 Preparação 0.9.1 compilada localmente para Windows x64, autocontida, com WebView2 Runtime externo. Sem release 0.9.1 publicada e sem substituição do executável em uso pelo usuário. As alterações ficam em branch de revisão. README atualizado.
 
+## Validação final na CI
+
+O workflow https://github.com/Kaynanwxz/Clean-And-Faster/actions/runs/39996863911 passou em lógica e Windows no commit de implementação aeeb72199f27bc2963e41565e9435d99f140b4d7. O diagnóstico completo reportou 359 verificações de interação PASS, incluindo Aparência/IA/Configurações abertas após cliques externos, foco, clique seguinte, navegação, barra inferior e persistência, atalhos, extensão local (instalar/ativar/remover), descarregamento manual, cancelamento de download e animações.
+
+Isso acrescenta validação física no runner Windows Server 2025 a 96 DPI; não transforma a tentativa local inconclusiva em PASS. O runner limitou as janelas maiores a aproximadamente 1044×788; os tamanhos maiores foram verificados na renderização local. Google/OpenAI live, suspensão automática sob carga, múltiplos monitores e inspeção da barra de tarefas pessoal continuam sem validação.
+
+A primeira execução de CI falhou porque o teste antigo atribuía a nova caixa de seleção a Animações. O teste foi corrigido para conferir cada preferência explicitamente; a suíte completa passou depois. A lógica da opção não precisou ser alterada.
+
 ## Inspeção
 
 O repositório usa C#/.NET 10, Windows Forms e Microsoft.Web.WebView2 1.0.4258.31; não usa uma interface web simulada como shell. CONTRIBUTING.md lido; nenhuma AGENTS.md encontrada na árvore do repositório. As releases 0.8.1 e 0.9.0 existem. O workflow 39942581662 da base terminou com sucesso nas tarefas de lógica, Windows e atualização; isso é histórico consultado, não evidência de validação desta preparação.
@@ -29,7 +37,7 @@ O checkout de origem estava limpo. O trabalho foi feito em cópia separada e man
 | Lógica | PASS: 3.711 verificações. Inclui URLs, persistência/recuperação, manifestos, IA com HTTP simulado e geometria. A maioria das novas verificações é geométrica, não integração |
 | Grade | 1–21 itens totais (0–20 atalhos mais Adicionar), larguras 270/510/760/1200 e escalas 96/144/192 DPI; centralização de cada linha e ausência de sobreposição |
 | Migração da barra | Perfil sem propriedade começa oculto; true e false persistem; tema, layout e atalho personalizado preservados |
-| Entrada física --layout-check | FAIL na primeira dispensa externa do menu nas duas tentativas. Capturas iniciais mostraram outra janela em primeiro plano. Resultado inconclusivo quanto ao produto; NÃO declarar foco/menu corrigidos. Capturas que incluíam outra janela foram removidas |
+| Entrada física --layout-check | Local: inconclusivo por primeiro plano. CI final: PASS com 359 verificações de interação. Capturas locais de outra janela foram removidas |
 | Renderização --render-check | PASS no .exe final: 900×600, 1320×860 e 1920×1080 a 96 DPI, maximizar/restaurar, layout com IA, dez presets, imagem 3840×2160 sem redução, barra inferior sem espaço vazio, persistência, espaços e fixture DOM real WebView2/DPAPI. Entrada física registrada SKIPPED; testes de foco aqui verificam estabilidade de layout, não o destino real dos cliques |
 | Atualizador real | PASS em cópia 0.8.9 isolada → release pública 0.9.0; download, SHA-256, backup .previous, substituição e update-receipt.json com version=0.9.0/status=restarted |
 | Integridade do arquivo atualizado | SHA-256 b1c3c09d9ac470de2ae3e8976e92c4785208ca79c38739009bb787f9982e60a0, igual ao checksum publicado |
@@ -40,12 +48,12 @@ O checkout de origem estava limpo. O trabalho foi feito em cópia separada e man
 
 | Recurso | Classificação | Alcance confirmado / pendência |
 |---|---|---|
-| Navegação e abas | Implementado; validação parcial | AddTab/CloseTab, WebView2, voltar/avançar/recarregar e restauração por espaço existem. Resolução de URLs testada. Testes físicos de botões não concluíram |
-| Histórico | Implementado e testado na persistência | Record/SaveHistory, recuperação e limite de registros; fluxo completo da tela ainda pendente |
-| Personalização | Implementado; validação parcial | Presets, tema, layouts, atalhos, imagem e barra inferior. Persistência lógica passou; teste de entrada física pendente |
+| Navegação e abas | Implementado e testado nas fixtures | URLs/persistência locais e navegação real WebView2, botões, abas e espaços na CI passaram. Compatibilidade com todo site externo não foi auditada |
+| Histórico | Implementado e testado na persistência | Record/SaveHistory, recuperação e limite de registros; abertura da tela e operações definidas no diagnóstico também passaram na CI |
+| Personalização | Implementado e testado nos cenários do diagnóstico | Presets, tema, layouts, atalhos, imagem e barra inferior. Persistência lógica, renderização e interação na CI passaram |
 | Login Google | Dependente de credenciais e validação externa | OAuth Desktop com PKCE/state e autorização no navegador padrão; salva nome/e-mail protegidos por DPAPI. Não faz Chrome Sync nem autentica automaticamente o usuário em todos os sites |
-| Extensões | Implementado parcialmente | APIs reais de instalar pasta, listar, ativar e remover; cópia própria persistente. Sem Chrome Web Store nem barra de popups. Instalação de extensão real não revalidada nesta sessão |
-| Controle de RAM | Implementado parcialmente | WorkingSet estimado do app/motor; TrySuspendAsync para abas ociosas sem áudio/proteção; descarregamento manual. Meta flexível, sem limite rígido; suspensão não medida nesta sessão |
+| Extensões | Implementado parcialmente | APIs reais de instalar pasta, listar, ativar e remover; cópia própria persistente. Sem Chrome Web Store nem barra de popups. Uma extensão local de diagnóstico foi instalada, ativada, desativada e removida no WebView2 real na CI; compatibilidade com extensões de terceiros continua limitada |
+| Controle de RAM | Implementado parcialmente | WorkingSet estimado do app/motor; TrySuspendAsync para abas ociosas sem áudio/proteção; descarregamento manual. Meta flexível, sem limite rígido; descarregamento manual passou na CI; suspensão automática sob carga não foi medida |
 | IA/OpenAI | Dependente de chave; validação parcial | Cliente real com chave própria e ações aprovadas. HTTP simulado passou; fixture DOM local no diagnóstico. Nenhuma chamada paga/live realizada |
 | Atualização interna | Implementado e testado em cópia isolada | Botão, detecção, download, checksum, backup, substituição e reinício. GitHub ainda exige aliases KayBrowser.exe/KayBrowser.exe.sha256, presentes na release atual. Não testada atualização para 0.9.1, pois ela não foi publicada |
 | Executável Windows | Implementado | .exe autocontido; requer WebView2. Não assinado com Authenticode |
@@ -55,12 +63,12 @@ Ausentes no alcance atual: sincronização Google/Chrome, instalação direta de
 
 ## Pendências concretas
 
-1. Validar cliques fora, foco, clique seguinte e retorno à página em desktop interativo com Clean Browser em primeiro plano. O comportamento do código mantém Aparência/IA abertas; o menu é dispensável; Configurações avançadas são modais. Isso ainda precisa de comprovação física nesta preparação.
+1. Revalidar uso diário no desktop pessoal/múltiplos monitores. A suíte de cliques fora, foco e retorno passou no runner: Aparência/IA ficam abertas, menu é dispensável e Configurações avançadas são modais.
 2. Fornecer a fonte aprovada do fundo acima de 1440 × 576 para melhorar o detalhe real da arte padrão. Reavaliar nitidez em janela/maximizada após trocar pela mesma arte em alta resolução.
 3. Recuperar imagens aprovadas 1/2/3 antes de qualquer reformulação visual adicional.
-4. Validar OAuth Google com cadastro Desktop, extensão compatível real, suspensão de abas sob carga e chamada OpenAI com chave. Nenhuma credencial foi solicitada ou gravada para esta auditoria.
+4. Validar OAuth Google com cadastro Desktop, compatibilidade com as extensões específicas do usuário e suspensão de abas sob carga e chamada OpenAI com chave. Nenhuma credencial foi solicitada ou gravada para esta auditoria.
 5. Validar aparência do ícone na barra de tarefas (inclusive atalho fixado/cache do Windows), redimensionamento manual e múltiplos monitores.
-6. Revisar e executar CI da branch; publicar 0.9.1 somente depois da revisão dos limites de interface. Nenhuma release nova foi criada automaticamente nesta sessão.
+6. A CI da implementação passou. Revisar as pendências restantes antes de publicar 0.9.1. Nenhuma release nova foi criada nesta sessão.
 
 ## Comandos
 
