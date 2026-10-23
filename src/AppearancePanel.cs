@@ -7,6 +7,7 @@ public sealed class AppearancePanel : Panel,IThemed
     readonly Panel viewport=new(){Dock=DockStyle.Fill,AutoScroll=true,Margin=Padding.Empty};
     readonly List<ChoiceButton> navigation=[];readonly List<(ChoiceButton Button,Func<bool> Selected)> choices=[];readonly List<TableLayoutPanel> pages=[];
     readonly CheckBox animations=new(){Text="Animações e transições",Dock=DockStyle.Fill,AccessibleName="Animações e transições"},focus=new(){Text="Modo foco",Dock=DockStyle.Fill,AccessibleName="Modo foco"};
+    readonly CheckBox pointillism=new(){Text="Arte em pontinhos",Dock=DockStyle.Fill,AccessibleName="Arte em pontinhos"};
     readonly CheckBox bottomBar=new(){Text="Mostrar barra inferior",Dock=DockStyle.Fill,AccessibleName="Mostrar barra inferior"};
     readonly TextBox accent=new(){Dock=DockStyle.Fill,MaxLength=7,AccessibleName="Cor hexadecimal"};readonly Label wallpaper=new(){Dock=DockStyle.Fill,AutoEllipsis=true};
     Palette palette=Palette.Create(true,Color.SteelBlue);bool syncing;int activePage;readonly Tween pageMotion=new();
@@ -29,6 +30,7 @@ public sealed class AppearancePanel : Panel,IThemed
         Row(layout,bottomBar,38);bottomBar.CheckedChanged+=(_,_)=>{if(!syncing)Commit(()=>store.Settings.ShowBottomBar=bottomBar.Checked);};
         Row(layout,animations,38);Row(layout,focus,38);animations.CheckedChanged+=(_,_)=>{if(!syncing)Commit(()=>store.Settings.Animations=animations.Checked);};focus.CheckedChanged+=(_,_)=>{if(!syncing)Commit(()=>store.Settings.FocusMode=focus.Checked);};
         var bg=pages[2];Heading(bg,"Arte e plano de fundo");Options(bg,new[]{"Arte","Suave","Sem arte","Personalizado"}.Select(v=>(v,(Func<bool>)(()=>store.Settings.Background==v),(Action)(()=>{if(v=="Personalizado"&&string.IsNullOrEmpty(store.Settings.Wallpaper)){upload();return;}store.Settings.Background=v;}))).ToArray(),2);
+        Row(bg,pointillism,38);pointillism.CheckedChanged+=(_,_)=>{if(!syncing)Commit(()=>store.Settings.PointillistBackground=pointillism.Checked);};
         Row(bg,wallpaper,40);var imageActions=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2,RowCount=1};imageActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,60));imageActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,40));imageActions.RowStyles.Add(new RowStyle(SizeType.Percent,100));var add=new SoftButton{Text="Escolher imagem",Glyph="plus",Dock=DockStyle.Fill,AccessibleName="Escolher imagem"};add.Click+=(_,_)=>{upload();Sync();};var remove=new SoftButton{Text="Remover",Dock=DockStyle.Fill,AccessibleName="Remover imagem"};remove.Click+=(_,_)=>Commit(()=>{store.Settings.Wallpaper="";store.Settings.Background="Sem arte";});imageActions.Controls.Add(add,0,0);imageActions.Controls.Add(remove,1,0);Row(bg,imageActions,42);
         Heading(bg,"Cor de destaque");var swatches=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=5,RowCount=1};swatches.RowStyles.Add(new RowStyle(SizeType.Percent,100));foreach(var (hex,index) in new[]{"#8FBBEF","#A9C9EF","#5D96D5","#C4D2E2","#F2F5FA"}.Select((s,i)=>(s,i))){swatches.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,20));var b=new AccentSwatch(hex){Dock=DockStyle.Fill,AccessibleName="Destaque "+hex};choices.Add((b,()=>store.Settings.Accent.Equals(hex,StringComparison.OrdinalIgnoreCase)));b.Click+=(_,_)=>Commit(()=>store.Settings.Accent=hex);swatches.Controls.Add(b,index,0);}Row(bg,swatches,46);Row(bg,accent,34);
         accent.TextChanged+=(_,_)=>{if(syncing)return;if(!IsHex(accent.Text)){status.Text="Use # seguido de 6 dígitos (ex.: #8FBBEF)";return;}Commit(()=>store.Settings.Accent=accent.Text,keepText:true);};
@@ -54,7 +56,7 @@ public sealed class AppearancePanel : Panel,IThemed
     }
     internal void Sync(bool keepText=false)
     {
-        syncing=true;try{foreach(var (b,test) in choices){b.Selected=test();b.Invalidate();}bottomBar.Checked=store.Settings.ShowBottomBar;animations.Checked=store.Settings.Animations;focus.Checked=store.Settings.FocusMode;if(!keepText)accent.Text=store.Settings.Accent;wallpaper.Text=string.IsNullOrEmpty(store.Settings.Wallpaper)?"Imagem do navegador ou fundo simples":Path.GetFileName(store.Settings.Wallpaper);}finally{syncing=false;}
+        syncing=true;try{foreach(var (b,test) in choices){b.Selected=test();b.Invalidate();}pointillism.Checked=store.Settings.PointillistBackground;bottomBar.Checked=store.Settings.ShowBottomBar;animations.Checked=store.Settings.Animations;focus.Checked=store.Settings.FocusMode;if(!keepText)accent.Text=store.Settings.Accent;wallpaper.Text=string.IsNullOrEmpty(store.Settings.Wallpaper)?"Imagem do navegador ou fundo simples":Path.GetFileName(store.Settings.Wallpaper);}finally{syncing=false;}
     }
     internal void SelectPage(int page,bool animate=true)
     {

@@ -6,7 +6,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>0.10.0</Version>
+    <Version>0.11.0</Version>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <PublishSingleFile>true</PublishSingleFile>
@@ -25,7 +25,7 @@
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
   </ItemGroup>
   <Target Name="GenerateApplicationIcon" BeforeTargets="PrepareForBuild" Condition="$([MSBuild]::IsOSPlatform('Windows'))">
-    <Exec Command="dotnet run --project &quot;$(MSBuildProjectDirectory)/../tools/IconBuilder/IconBuilder.csproj&quot; -c Release -- &quot;$(MSBuildProjectDirectory)/Assets/clean-logo.png&quot; &quot;$(MSBuildProjectDirectory)/kay.ico&quot;" />
+    <Exec Command="dotnet run --project &quot;$(MSBuildProjectDirectory)/../tools/IconBuilder/IconBuilder.csproj&quot; -c Release -- &quot;$(MSBuildProjectDirectory)/Assets/clean-emblem.png&quot; &quot;$(MSBuildProjectDirectory)/kay.ico&quot;" />
   </Target>
   <Target Name="RemoveUnusedWpfReference" BeforeTargets="ResolveAssemblyReferences">
     <ItemGroup>

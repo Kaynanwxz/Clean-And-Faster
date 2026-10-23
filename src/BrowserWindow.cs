@@ -10,6 +10,7 @@ public sealed class BrowserTab
     public string Url = "kay://new";
     public string Title = "Nova aba";
     public DateTime LastActive = DateTime.UtcNow;
+    public string AppId="";
     public bool Suspended;
     public bool Pinned;
     public WebView2? View;
@@ -61,6 +62,7 @@ public sealed partial class BrowserWindow : Form
     }
     void ApplyTheme(Control c)
     {
+        if (c is AppsPanel appsPanel) { appsPanel.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent)); return; }
         if (c is AppearancePanel appearancePanel) { appearancePanel.SetPalette(Colors); return; }
         if (c is AssistantPanel ai) { ai.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent)); return; }
         if (c is HomeBoard home) { home.SetPalette(Colors); return; }
@@ -200,6 +202,7 @@ public sealed partial class BrowserWindow : Form
     void NavigateCurrent(string input)
     {
         if (Current is not { } t) return;
+        t.AppId="";
         var url = Navigation.Resolve(input, store.Settings.Search);
         if (url == "kay://new") { t.View?.Dispose(); t.View = null; t.Url = url; ShowHome(t); SaveSession(); return; }
         t.Url = url;

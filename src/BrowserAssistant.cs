@@ -32,6 +32,7 @@ public sealed partial class BrowserWindow
             assistant=new();assistant.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));rightDock.Controls.Add(assistant);
             assistant.SendRequested+=()=>_ = AskAssistant();assistant.StopRequested+=()=>aiCancellation?.Cancel();assistant.SetupRequested+=ConfigureAssistant;assistant.CaptureRequested+=()=>_ = ShowAiCapture();assistant.ResetRequested+=aiConversation.Clear;RefreshAiConnectionLabel();assistant.CloseRequested+=ToggleAssistant;assistant.ExpandRequested+=()=>{assistantWide=!assistantWide;AnimateRightPanel(assistant,true);};
         }
+        if(appsOpen){appsOpen=false;apps!.Visible=false;}
         if(appearanceOpen){appearanceOpen=false;if(appearance!=null)appearance.Visible=false;}
         assistantOpen=!assistantOpen;
         if(!assistantOpen)aiCancellation?.Cancel();else {assistant.Visible=true;assistant.BringToFront();}

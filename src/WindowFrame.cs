@@ -40,9 +40,9 @@ public sealed partial class BrowserWindow
         var close=IconButton("close","Fechar navegador",Close);close.Danger=true;windows.Controls.Add(close,2,0);
         title.Controls.Add(windows,1,0);
         Resize+=(_,_)=>{maximize.Glyph=WindowState==FormWindowState.Maximized?"restore":"max";maximize.Invalidate();};
-        var bar=new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=11, RowCount=1, Margin=Padding.Empty, Padding=new Padding(12,8,12,10), Tag="surface" };
+        var bar=new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=12, RowCount=1, Margin=Padding.Empty, Padding=new Padding(12,8,12,10), Tag="surface" };
         navigationRow = bar; bar.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        for(int i=0;i<11;i++)bar.ColumnStyles.Add(new ColumnStyle(i==4?SizeType.Percent:SizeType.Absolute,i==4?100:42));
+        for(int i=0;i<12;i++)bar.ColumnStyles.Add(new ColumnStyle(i==4?SizeType.Percent:SizeType.Absolute,i==4?100:42));
         void Add(string glyph,int col,string tip,Action action)=>bar.Controls.Add(IconButton(glyph,tip,action),col,0);
         Add("back",0,"Voltar · Alt+←",()=>{if(Current?.View?.CanGoBack==true)Current.View.GoBack();});
         Add("forward",1,"Avançar · Alt+→",()=>{if(Current?.View?.CanGoForward==true)Current.View.GoForward();});
@@ -64,6 +64,7 @@ public sealed partial class BrowserWindow
         Add("memory",6,"Controle de memória",ShowMemory);
         Add("download",7,"Downloads · Ctrl+J",ShowDownloads);
         Add("menu",8,"Menu do Clean Browser",ShowMenu);
+        Add("apps",11,"Seus apps",ShowApps);
         Add("spark",10,"Assistente IA · Ctrl+Shift+I",ToggleAssistant);
         bar.ColumnStyles[9].Width = 112;
         var updateButton = IconButton("update", "Atualizar o navegador", () => _ = CheckUpdate());

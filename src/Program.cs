@@ -25,6 +25,11 @@ internal static class Program
             catch (Exception ex) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "update-failure.json"), ex.ToString()); Environment.ExitCode = 1; }
             return;
         }
+        if(args.Contains("--apps-check"))
+        {
+            AppContext.SetData("KayBrowser.DiagnosticsRoot",Path.Combine(Path.GetTempPath(),"kay-apps-check-"+Guid.NewGuid().ToString("N")));
+            Environment.ExitCode=WebAppsCompatibility.Run();return;
+        }
         if (args.Contains("--layout-check") || args.Contains("--render-check"))
         {
             AppContext.SetData("KayBrowser.DiagnosticsRoot", Path.Combine(Path.GetTempPath(), "kay-layout-check-" + Guid.NewGuid().ToString("N")));

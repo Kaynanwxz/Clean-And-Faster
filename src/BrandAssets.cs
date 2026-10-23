@@ -10,7 +10,7 @@ public static class BrandAssets
             typeof(BrandAssets).Assembly.GetManifestResourceNames().Where(x=>x.EndsWith("."+name)).Select(x=>typeof(BrandAssets).Assembly.GetManifestResourceStream(x)).FirstOrDefault()??throw new IOException("Arte não encontrada: "+name);
         using var source=Image.FromStream(stream);
         // Share a single decode across tabs. Preserve the original wallpaper pixels.
-        int width=name=="clean-logo.png"?Math.Min(source.Width,256):source.Width;int height=source.Height*width/source.Width;
+        int width=name=="clean-emblem.png"?Math.Min(source.Width,256):source.Width;int height=source.Height*width/source.Width;
         var bitmap=new Bitmap(width,height);using var g=Graphics.FromImage(bitmap);g.InterpolationMode=System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;g.DrawImage(source,0,0,width,height);return bitmap;
     }
     static Bitmap? wallpaper;static string wallpaperPath="";
@@ -27,7 +27,7 @@ public static class BrandAssets
         }
         catch(Exception e)when(e is IOException or ArgumentException or OutOfMemoryException){wallpaper?.Dispose();wallpaper=null;return null;}
     }
-    public static readonly Bitmap Logo=Load("clean-logo.png");
+    public static readonly Bitmap Logo=Load("clean-emblem.png");
     public static readonly Bitmap Sea=Load("apollo-sea.png");
     public static Rectangle Cover(Size image,Rectangle viewport)
     {

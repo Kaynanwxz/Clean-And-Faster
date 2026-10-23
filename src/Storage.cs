@@ -7,7 +7,9 @@ public record Bookmark(string Title, string Url);
 public record DownloadRecord(string Name, string Path, string State);
 public sealed class Preferences
 {
+    public List<WebAppLink> Apps { get; set; } = WebApps.Defaults();
     public bool Animations { get; set; } = true;
+    public bool PointillistBackground { get; set; } = true;
     public bool ShowBottomBar { get; set; } // Absent in existing profiles: hidden until explicitly enabled.
     public string AiModel { get; set; } = "gpt-5.4-mini";
     public string AiProvider { get; set; } = "OpenAI";
@@ -53,6 +55,7 @@ public sealed class Storage
         Settings = Read("settings.json", new Preferences());
         bool migrated=Settings.AppearanceRevision<VisualPresets.DefaultRevision;
         if(migrated){VisualPresets.ApplyDefault(Settings);Settings.AppearanceRevision=VisualPresets.DefaultRevision;}
+        Settings.Apps=WebApps.Sanitize(Settings.Apps);
         Settings.Shortcuts ??= [];
         Settings.Shortcuts=Settings.Shortcuts.Where(s=>s!=null&&Navigation.IsWebUrl(s.Url)&&!string.IsNullOrWhiteSpace(s.Name)).DistinctBy(s=>s.Id).Take(20).ToList();
         Settings.Workspaces ??= [];
