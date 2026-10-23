@@ -47,4 +47,5 @@ passed += await AiTests.Run();
 passed += await IntegratedAiTests.Run();
 passed += WorkspaceTests.Run();
 passed += LayoutTests.Run();
+passed += WebAppsTests.Run();
 Console.WriteLine($"PASS: {passed} verificações de navegação, persistência, atualização e IA.");

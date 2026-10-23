@@ -10,6 +10,7 @@ public sealed partial class BrowserWindow
     {
         CloseBrowserMenu(false);
         if(appearanceOpen){appearanceOpen=false;AnimateRightPanel(appearance!,false);return;}
+        if(appsOpen){appsOpen=false;apps!.Visible=false;}
         if(assistantOpen){assistantOpen=false;aiCancellation?.Cancel();assistant!.Visible=false;}
         if(appearance==null){appearance=new(store,ApplyPersonalization,ChooseWallpaper);appearance.CloseRequested+=ShowAppearance;rightDock.Controls.Add(appearance);}
         appearance.Sync();appearanceOpen=true;AnimateRightPanel(appearance,true);

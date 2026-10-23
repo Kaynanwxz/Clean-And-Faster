@@ -8,8 +8,8 @@ namespace KayBrowser;
 public record Palette(Color Background, Color Surface, Color Elevated, Color Text, Color Muted, Color Line, Color Accent)
 {
     public static Palette Create(bool light, Color accent) => light
-        ? new(Color.FromArgb(249,251,254), Color.White, Color.FromArgb(233,240,249), Color.FromArgb(9,34,65), Color.FromArgb(86,109,140), Color.FromArgb(213,225,240), accent)
-        : new(Color.FromArgb(5,25,49), Color.FromArgb(9,37,69), Color.FromArgb(24,58,96), Color.FromArgb(239,246,255), Color.FromArgb(164,189,218), Color.FromArgb(39,69,104), accent);
+        ? new(Color.FromArgb(247,248,250), Color.White, Color.FromArgb(234,238,244), Color.FromArgb(9,34,65), Color.FromArgb(86,109,140), Color.FromArgb(213,225,240), accent)
+        : new(Color.FromArgb(24,28,36), Color.FromArgb(31,37,47), Color.FromArgb(44,53,67), Color.FromArgb(239,246,255), Color.FromArgb(164,189,218), Color.FromArgb(39,69,104), accent);
 }
 public interface IThemed { void SetPalette(Palette colors); }
 public static class Shapes
@@ -31,6 +31,7 @@ public static class Glyphs
         void Path(params PointF[] points)=>g.DrawLines(p,points);
         switch(name)
         {
+            case "apps": g.DrawRectangle(p,3,3,7,7);g.DrawRectangle(p,14,3,7,7);g.DrawRectangle(p,3,14,7,7);g.DrawRectangle(p,14,14,7,7);break;
             case "camera": g.DrawRectangle(p,3,6,18,14);g.DrawEllipse(p,8,9,8,8);Path(new(7,6),new(9,3),new(15,3),new(17,6));break;
             case "back": Path(new(14,5),new(7,12),new(14,19)); Line(7,12,21,12); break;
             case "forward": Path(new(10,5),new(17,12),new(10,19)); Line(3,12,17,12); break;

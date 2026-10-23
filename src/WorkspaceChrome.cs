@@ -9,7 +9,7 @@ public sealed partial class BrowserWindow
     readonly Label brandCaption=new(){Text="Clean Browser",TextAlign=ContentAlignment.MiddleLeft,Dock=DockStyle.Fill,Padding=new Padding(46,0,0,0),Font=new Font("Georgia",14)};
     readonly Panel rightDock=new(){Dock=DockStyle.Fill,Margin=Padding.Empty};
     bool refreshingWorkspaces;
-    bool RightOpen=>assistantOpen||appearanceOpen;
+    bool RightOpen=>assistantOpen||appearanceOpen||appsOpen;
     string WorkspaceId=>store.Settings.ActiveWorkspace;
     IEnumerable<BrowserTab> WorkspaceTabs=>tabs.Where(t=>t.Page.WorkspaceId==WorkspaceId);
     void InitializeWorkspaceChrome()

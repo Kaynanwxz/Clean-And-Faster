@@ -32,6 +32,18 @@ Se configurou um servidor alternativo, use **Atualizar → Canal de atualizaçã
 
 Os dados permanecem em `%LOCALAPPDATA%\KayBrowser`. A atualização não apaga histórico, favoritos, configurações ou perfil de sites. A meta é atualizar todo o código do aplicativo por troca do executável; a atualização do motor WebView2 continua sendo gerenciada pela Microsoft.
 
+## Apps e visual (0.11.0)
+
+Use o botão de quatro quadrados **Seus apps**, na barra, ou **Menu → Organizar → Seus apps**. Spotify, YouTube, Notion, Gmail e GitHub já aparecem no catálogo. Clique para abrir em uma aba do Clean Browser e faça login no próprio site. **Adicionar outro app** aceita nome e endereço HTTPS; o botão direito remove do catálogo. O catálogo não cria WebViews nem acessa os sites até você abrir um app. Reabrir procura a aba já existente no espaço atual. Você pode manter vários apps em abas, com o controle de memória normal do navegador, que preserva abas reproduzindo áudio.
+
+As sessões usam o mesmo perfil WebView2 persistente do navegador. Remover do catálogo não faz logout nem apaga a conta; encerre a sessão pelo site quando quiser. Fechar o painel não fecha a aba nem para a música. Não há coleta de senha pelo catálogo, integração com API/IA, sincronização das contas ou controle do Spotify instalado no Windows.
+
+O novo emblema mantém vela/estátua e azul-marinho, azul glacial e prata, com silhueta transparente e tamanhos Windows de 16 a 256 px. Executável, janela, abas e nova aba usam a mesma identidade. As superfícies ficaram mais neutras, preservando os temas e a cor de destaque escolhidos.
+
+A arte padrão agora usa **pontilhismo**: pontos antialias são desenhados no tamanho físico da página, inclusive em 4K, com um cache compartilhado para reduzir trabalho e memória entre abas. A composição original é preservada. A fonte histórica continua em 1440 × 576: não se afirma que ela ganhou detalhes fotográficos; a nitidez nova vem da renderização dos pontos, sem ampliar um bitmap de pontinhos. Em **Personalizar → Fundo → Arte em pontinhos** você pode desativar o efeito. Fundos personalizados permanecem com seus pixels originais.
+
+Validação local: 3.767 verificações lógicas; 29 verificações novas de apps/painéis/editor/abas/cookie de teste/remoção/pontilhismo, além das verificações existentes de IA e layout. Os sites públicos de Spotify, YouTube e Notion abriram no executável com perfil isolado, e o teste de disponibilidade Widevine retornou suporte no runtime instalado. Isso não testa login de contas pessoais, reprodução autenticada de músicas, edição de páginas privadas ou todos os provedores. O diagnóstico opcional `dist/CleanBrowser.exe --apps-check` consulta apenas páginas públicas em perfil temporário e grava app-compatibility.json. A CI de Windows e o smoke test do atualizador são obrigatórios antes de considerar a entrega concluída.
+
 ## Clean AI integrado (0.10.0)
 
 Abra **Clean AI → Conectar IA**. Escolha OpenAI, OpenRouter ou Personalizada, informe o modelo e a chave da sua API, use **Testar conexão** e salve. O teste faz um pedido curto à API e pode consumir crédito. Endereços personalizados terminam em /responses ou /chat/completions; HTTP só é aceito no próprio computador. Não é preciso instalar outro aplicativo, extensão ou SDK.

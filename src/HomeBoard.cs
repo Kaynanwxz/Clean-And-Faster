@@ -81,8 +81,8 @@ public sealed class HomeBoard : Panel,IThemed
         if(!store.Settings.FocusMode&&store.Settings.Background!="Sem arte")
         {
             Image? wallpaper=store.Settings.Background=="Personalizado"?BrandAssets.Wallpaper(store.Settings.Wallpaper):null;
-            Image art=wallpaper??BrandAssets.Sea;
-            BrandAssets.DrawArt(g,art,BrandAssets.Cover(art.Size,ClientRectangle),store.Settings.Background=="Suave"?.20f:small?.30f:.53f);
+            Image art=wallpaper??(store.Settings.PointillistBackground?PointillistArt.Render(ClientSize):BrandAssets.Sea);
+            BrandAssets.DrawArt(g,art,BrandAssets.Cover(art.Size,ClientRectangle),store.Settings.Background=="Suave"?.36f:wallpaper==null&&store.Settings.PointillistBackground?1f:small?.30f:.53f);
         }
         using var heading=new Font("Georgia",small?25:store.Settings.HomeLayout=="Editorial"?38:32,FontStyle.Regular);
         using var smallFont=new Font("Segoe UI",small?8:9,FontStyle.Regular);

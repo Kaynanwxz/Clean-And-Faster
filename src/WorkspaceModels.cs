@@ -15,7 +15,7 @@ public static class VisualPresets
     public const int DefaultRevision=2;
     public static void ApplyDefault(Preferences p)
     {
-        Apply(p,DefaultName);p.Accent="#8FBBEF";p.ShowShortcuts=true;p.FrequentShortcuts=true;p.FocusMode=false;p.Animations=true;
+        Apply(p,DefaultName);p.PointillistBackground=true;p.Accent="#8FBBEF";p.ShowShortcuts=true;p.FrequentShortcuts=true;p.FocusMode=false;p.Animations=true;
     }
     public static readonly VisualPreset[] All = [
         new("Egeu Noturno","Escuro",false,"Editorial","Arte"),

@@ -9,7 +9,7 @@ public static class BrandMarks
     public static string? ShortName(string url)
     {
         if(!Uri.TryCreate(url,UriKind.Absolute,out var uri))return null;string h=uri.IdnHost.ToLowerInvariant();
-        return Is(h,"google.com")||Is(h,"google.com.br")?"Google":Is(h,"github.com")?"GitHub":Is(h,"youtube.com")||h=="youtu.be"?"YouTube":null;
+        return Is(h,"google.com")||Is(h,"google.com.br")?"Google":Is(h,"open.spotify.com")?"Spotify":Is(h,"notion.so")||Is(h,"notion.com")?"Notion":Is(h,"github.com")?"GitHub":Is(h,"youtube.com")||h=="youtu.be"?"YouTube":null;
     }
     public static bool Draw(Graphics g,string url,Rectangle bounds,Color ink)
     {
@@ -19,7 +19,11 @@ public static class BrandMarks
             g.SmoothingMode=SmoothingMode.AntiAlias;g.TranslateTransform(bounds.X,bounds.Y);
             g.ScaleTransform(bounds.Width/(name=="GitHub"?16f:24f),bounds.Height/(name=="GitHub"?16f:24f));
             void Fill(GraphicsPath shape,Color color){using var brush=new SolidBrush(color);g.FillPath(brush,shape);}
-            if(name=="GitHub")Fill(GitHub,ink);
+            if(name=="Spotify")
+            {using var green=new SolidBrush(Color.FromArgb(30,215,96));g.FillEllipse(green,0,0,24,24);using var line=new Pen(Color.FromArgb(15,28,22),1.7f){StartCap=LineCap.Round,EndCap=LineCap.Round};g.DrawArc(line,4,7,16,8,204,129);g.DrawArc(line,5,11,14,6,207,126);g.DrawArc(line,6,15,12,5,210,120);}
+            else if(name=="Notion")
+            {using var paper=new SolidBrush(Color.White);using var frame=new Pen(Color.FromArgb(28,28,28),1.5f);g.FillRectangle(paper,2,2,20,20);g.DrawRectangle(frame,2,2,20,20);using var letter=new Font("Georgia",14,FontStyle.Bold,GraphicsUnit.Pixel);using var black=new SolidBrush(Color.FromArgb(28,28,28));g.DrawString("N",letter,black,4.5f,3.5f);}
+            else if(name=="GitHub")Fill(GitHub,ink);
             else if(name=="Google")
             {Fill(GoogleBlue,Color.FromArgb(66,133,244));Fill(GoogleGreen,Color.FromArgb(52,168,83));Fill(GoogleYellow,Color.FromArgb(251,188,5));Fill(GoogleRed,Color.FromArgb(234,67,53));}
             else

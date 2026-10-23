@@ -43,7 +43,7 @@ public sealed partial class BrowserWindow
                 if(!menuOpen)ShowMenu();lastMenuCommand=null;browserMenu!.ClickCommand(command.Id);await Settle(command.Id=="extensions"?900:100);if(command.Id=="extensions"){var deadline=DateTime.UtcNow.AddSeconds(8);while(!dialogs.Contains("Extensões · por pasta")&&DateTime.UtcNow<deadline)await Settle(100);}
                 Check(lastMenuCommand==command.Id,"Botão de menu: "+command.Id);
                 if(command.Id is "zoom-in" or "zoom-out")CloseBrowserMenu(false);
-                if(appearanceOpen)ShowAppearance();if(assistantOpen)ToggleAssistant();if(fullscreen)Fullscreen();
+                if(appsOpen)ShowApps();if(appearanceOpen)ShowAppearance();if(assistantOpen)ToggleAssistant();if(fullscreen)Fullscreen();
             }
             Check(dialogs.Contains("Histórico")&&dialogs.Contains("Favoritos")&&dialogs.Contains("Downloads desta sessão"),"Histórico, favoritos e downloads abriram");
             Check(dialogs.Contains("Espaços de trabalho")&&dialogs.Contains("Biblioteca · leitura, fontes e notas")&&dialogs.Contains("Memória e abas"),"Organização e memória abriram");
@@ -59,7 +59,7 @@ public sealed partial class BrowserWindow
             foreach(string bg in new[]{"Arte","Suave","Sem arte"}){panel.ClickChoice(bg);Check(store.Settings.Background==bg,"Fundo por botão: "+bg);}
             foreach(string hex in new[]{"#8FBBEF","#A9C9EF","#5D96D5","#C4D2E2","#F2F5FA"}){panel.ClickChoice("Destaque "+hex);Check(store.Settings.Accent==hex,"Cor por botão: "+hex);}
             string before=store.Settings.Accent;panel.SetAccentForDiagnostic("#XX0000");Check(store.Settings.Accent==before,"Cor inválida não altera configuração");panel.SetAccentForDiagnostic("#123ABC");Check(new Storage().Settings.Accent=="#123ABC","Cor digitada salva imediatamente");
-            panel.SelectPage(1,false);var flags=AppearancePanel.Descendants(panel).OfType<CheckBox>().ToArray();foreach(var flag in flags){bool old=flag.Checked;flag.Checked=!old;bool actual=flag.AccessibleName switch{"Modo foco"=>store.Settings.FocusMode,"Mostrar barra inferior"=>store.Settings.ShowBottomBar,"Animações e transições"=>store.Settings.Animations,_=>throw new InvalidOperationException("Checkbox sem verificação: "+flag.AccessibleName)};Check(actual==flag.Checked,"Alternar "+flag.Text);if(flag.AccessibleName=="Mostrar barra inferior")Check(new Storage().Settings.ShowBottomBar==flag.Checked,"Barra inferior persiste pela opção da interface");flag.Checked=old;}
+            panel.SelectPage(1,false);var flags=AppearancePanel.Descendants(panel).OfType<CheckBox>().ToArray();foreach(var flag in flags){bool old=flag.Checked;flag.Checked=!old;bool actual=flag.AccessibleName switch{"Modo foco"=>store.Settings.FocusMode,"Arte em pontinhos"=>store.Settings.PointillistBackground,"Mostrar barra inferior"=>store.Settings.ShowBottomBar,"Animações e transições"=>store.Settings.Animations,_=>throw new InvalidOperationException("Checkbox sem verificação: "+flag.AccessibleName)};Check(actual==flag.Checked,"Alternar "+flag.Text);if(flag.AccessibleName=="Arte em pontinhos")Check(new Storage().Settings.PointillistBackground==flag.Checked,"Pontilhismo persiste pela interface");if(flag.AccessibleName=="Mostrar barra inferior")Check(new Storage().Settings.ShowBottomBar==flag.Checked,"Barra inferior persiste pela opção da interface");flag.Checked=old;}
             store.Settings.Animations=false;Motion.Enabled=false;cancelPickers=true;
             panel.ClickChoice("Personalizado");await Settle();panel.ClickChoice("Escolher imagem");await Settle();Check(string.IsNullOrEmpty(store.Settings.Wallpaper),"Cancelar seletor de imagem preserva fundo");
             string imageFixture=Path.Combine(Storage.Root,"wallpaper-fixture.png");using(var bitmap=new Bitmap(75,35)){using(var g=Graphics.FromImage(bitmap))g.Clear(Color.Coral);bitmap.Save(imageFixture,System.Drawing.Imaging.ImageFormat.Png);}
@@ -70,7 +70,7 @@ public sealed partial class BrowserWindow
             for(int i=0;i<3;i++){panel.SelectPage(i,false);await Settle();SaveChromeScreenshot("layout-appearance-section-"+i+".png");}
             AppearancePanel.Descendants(panel).OfType<Button>().Single(b=>b.AccessibleName=="Fechar aparência").PerformClick();await Settle();Check(!appearanceOpen,"Botão fechar aparência");
             // Exercise every navigation toolbar button except the intentional exit; modal dialogs auto-cancel.
-            foreach(var button in AppearancePanel.Descendants(navigationRow!).OfType<Button>().ToArray()){button.PerformClick();await Settle(150);Check(true,"Barra: "+button.AccessibleName);if(menuOpen)CloseBrowserMenu(false);if(assistantOpen)ToggleAssistant();}
+            foreach(var button in AppearancePanel.Descendants(navigationRow!).OfType<Button>().ToArray()){button.PerformClick();await Settle(150);Check(true,"Barra: "+button.AccessibleName);if(menuOpen)CloseBrowserMenu(false);if(appsOpen)ShowApps();if(assistantOpen)ToggleAssistant();}
             // AI buttons: no paid calls, file writes outside the isolated fixture, or real credentials.
             ToggleAssistant();await Settle();assistant!.Prompt="";
             foreach(var button in AppearancePanel.Descendants(assistant).OfType<Button>().Where(b=>b.Enabled).ToArray())

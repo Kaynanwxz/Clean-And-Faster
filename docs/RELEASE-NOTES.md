@@ -1,14 +1,15 @@
-# Clean Browser 0.10.0 — IA integrada
+# Clean Browser 0.11.0 — Apps e identidade visual
 
-- Converse com sua IA dentro do Clean Browser, com contexto entre mensagens, texto selecionável, cópia e Nova conversa.
-- Conecte OpenAI, OpenRouter ou uma API compatível. Configuração nativa em três passos, teste de conexão e chave protegida pelo Windows, vinculada ao endereço do provedor.
-- Mostre uma aba, uma janela específica ou uma tela. Confira a prévia, recorte o que quiser e anexe à conversa sem instalar ferramentas de captura.
-- A captura permanece visível na conversa até remover, trocar ou iniciar uma nova conversa. Só é enviada ao clicar em Enviar; não há vídeo ao vivo nem gravação contínua.
-- Contexto de páginas/abas e ações aprovadas são opcionais. O painel acompanha os temas claro e escuro do navegador.
-- Sem SDK pesado, servidor intermediário ou novo aplicativo. Imagens são limitadas proporcionalmente a 1920 px no envio e não são gravadas no disco pelo recurso.
+- Novo emblema de vela e estátua com fundo transparente, azul-marinho, azul glacial e prata. Mesmo símbolo no executável, janela, abas e nova aba, empacotado em dez tamanhos Windows de 16 a 256 px.
+- Superfícies mais neutras para combinar com aplicativos Windows, preservando personalização e cores de destaque existentes.
+- Fundo padrão em pontilhismo: pontos nítidos desenhados para o tamanho da página, inclusive 4K, com cache compartilhado. Composição original preservada; imagens personalizadas não são convertidas. Opção Arte em pontinhos em Personalizar → Fundo.
+- Seus apps na barra e no menu: Spotify, YouTube, Notion, Gmail e GitHub; adicione outros endereços HTTPS e remova pelo botão direito.
+- Cada app abre em uma aba do próprio navegador. Reabrir reutiliza a aba do app no espaço atual; logins usam o perfil persistente existente. O catálogo não carrega sites em segundo plano.
+- Abrir, fechar e trocar painéis preserva as abas. Fechar o catálogo não interrompe áudio. Remover um item não apaga sua conta nem faz logout.
+- Sem novo motor, SDK de apps ou servidor intermediário. Dados, atalhos, preferências e chaves de IA são preservados.
 
 ## Usar
 
-Atualize pelo botão Atualizar → Atualizar e reiniciar. Abra Clean AI, clique em Conectar IA, escolha o provedor, informe modelo/chave, teste e salve. Para compartilhar, use Mostrar tela ou janela → Capturar → Usar esta imagem → Enviar.
+Atualize em **Atualizar → Atualizar e reiniciar**. Abra **Seus apps** pelo botão de quatro quadrados, escolha o serviço e entre no site. Use **Adicionar outro app** para outros sites.
 
-A integração nativa usa a API do provedor escolhido. Conta/assinatura do ChatGPT não conecta esta conversa automaticamente nem substitui uma chave de API. Custos, modelos disponíveis, suporte a imagens e ferramentas dependem do provedor. Janelas protegidas/minimizadas podem impedir captura; use a aba ou tela e confira a prévia. Não inclui voz/vídeo em tempo real nem controle de outros aplicativos do Windows.
+São apps web dentro do navegador; esta versão não dá acesso desses serviços à IA. Login, autenticação adicional, reprodução protegida e funcionalidades dependem do serviço e do WebView2 instalado. Sites públicos e disponibilidade de DRM foram verificados em perfil de teste; contas pessoais e reprodução autenticada não foram validadas.
