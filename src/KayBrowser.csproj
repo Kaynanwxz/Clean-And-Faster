@@ -6,7 +6,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>0.8.1</Version>
+    <Version>0.9.0</Version>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <PublishSingleFile>true</PublishSingleFile>
@@ -20,9 +20,13 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets/*.png" />
+    <EmbeddedResource Include="kay.ico" LogicalName="CleanBrowser.kay.ico" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
   </ItemGroup>
+  <Target Name="GenerateApplicationIcon" BeforeTargets="PrepareForBuild" Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <Exec Command="dotnet run --project &quot;$(MSBuildProjectDirectory)/../tools/IconBuilder/IconBuilder.csproj&quot; -c Release -- &quot;$(MSBuildProjectDirectory)/Assets/clean-logo.png&quot; &quot;$(MSBuildProjectDirectory)/kay.ico&quot;" />
+  </Target>
   <Target Name="RemoveUnusedWpfReference" BeforeTargets="ResolveAssemblyReferences">
     <ItemGroup>
       <Reference Remove="@(Reference)" Condition="'%(Reference.Filename)' == 'Microsoft.Web.WebView2.Wpf'" />

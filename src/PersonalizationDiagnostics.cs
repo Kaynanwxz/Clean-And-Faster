@@ -32,6 +32,7 @@ public sealed partial class BrowserWindow
         int count=store.Settings.Shortcuts.Count;var link=store.Settings.Shortcuts[0];ShortcutCommand("right",link);Check(store.Settings.Shortcuts[1].Id==link.Id,"Reordenação de atalho falhou.");ShortcutCommand("left",link);Check(store.Settings.Shortcuts[0].Id==link.Id,"Reordenação inversa falhou.");Check(store.Settings.Shortcuts.Count==count,"Reordenação perdeu atalhos.");
         store.Library.Add(new("diag-note","Nota de teste","","note","Teste de persistência",DateTime.UtcNow));store.SaveLibrary();Check(new Storage().Library.Any(e=>e.Id=="diag-note"),"Nota não persistiu.");
         store.Library.RemoveAll(e=>e.Id=="diag-note");store.SaveLibrary();
-        VisualPresets.Apply(store.Settings,"Copiloto Azul");ApplyPersonalization();ToggleAssistant();Application.DoEvents();SaveChromeScreenshot("layout-final.png");
+        VisualPresets.ApplyDefault(store.Settings);if(assistantOpen)ToggleAssistant();ApplyPersonalization();Application.DoEvents();SaveChromeScreenshot("layout-final.png");
+        VerifyVisualAssets();
     }
 }

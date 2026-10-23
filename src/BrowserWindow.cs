@@ -36,7 +36,8 @@ public sealed partial class BrowserWindow : Form
     public BrowserWindow(bool diagnostics = false)
     {
         Text = "Clean Browser"; Width = 1440; Height = 920; MinimumSize = new Size(900, 600);
-        if (Environment.ProcessPath is { } exe) Icon = Icon.ExtractAssociatedIcon(exe);
+        Icon = BrandAssets.ApplicationIcon;
+        FormClosed+=(_,_)=>Icon?.Dispose();
         StartPosition = FormStartPosition.CenterScreen; Font = new Font("Segoe UI", 10); KeyPreview = true;
         DoubleBuffered = true;
         InitializeChrome();
@@ -61,7 +62,7 @@ public sealed partial class BrowserWindow : Form
     void ApplyTheme(Control c)
     {
         if (c is AppearancePanel appearancePanel) { appearancePanel.SetPalette(Colors); return; }
-        if (c is AssistantPanel ai) { ai.SetPalette(BrandAssets.Navy(Accent)); return; }
+        if (c is AssistantPanel ai) { ai.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent)); return; }
         if (c is HomeBoard home) { home.SetPalette(Colors); return; }
         if (c is IThemed themed) themed.SetPalette(Colors);
         else { c.BackColor = c.Tag as string == "surface" ? Colors.Surface : Colors.Background; c.ForeColor = Colors.Text; }

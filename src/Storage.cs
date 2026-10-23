@@ -10,16 +10,16 @@ public sealed class Preferences
     public bool Animations { get; set; } = true;
     public string AiModel { get; set; } = "gpt-5.4-mini";
     public int AppearanceRevision { get; set; }
-    public string Visual { get; set; } = "Copiloto Azul";
-    public string HomeLayout { get; set; } = "Clássico";
+    public string Visual { get; set; } = VisualPresets.DefaultName;
+    public string HomeLayout { get; set; } = "Essencial";
     public string Background { get; set; } = "Arte";
     public string Wallpaper { get; set; } = "";
-    public bool DarkChrome { get; set; } = true;
+    public bool DarkChrome { get; set; }
     public bool VerticalTabs { get; set; }
-    public bool Compact { get; set; }
+    public bool Compact { get; set; } = true;
     public bool FocusMode { get; set; }
     public bool ShowShortcuts { get; set; } = true;
-    public bool FrequentShortcuts { get; set; }
+    public bool FrequentShortcuts { get; set; } = true;
     public string ActiveWorkspace { get; set; } = "";
     public List<Workspace> Workspaces { get; set; } = [];
     public List<ShortcutLink> Shortcuts { get; set; } = [
@@ -48,7 +48,8 @@ public sealed class Storage
     {
         Directory.CreateDirectory(Root);
         Settings = Read("settings.json", new Preferences());
-        if(Settings.AppearanceRevision<1){VisualPresets.Apply(Settings,"Copiloto Azul");Settings.Accent="#8FBBEF";Settings.AppearanceRevision=1;}
+        bool migrated=Settings.AppearanceRevision<VisualPresets.DefaultRevision;
+        if(migrated){VisualPresets.ApplyDefault(Settings);Settings.AppearanceRevision=VisualPresets.DefaultRevision;}
         Settings.Shortcuts ??= [];
         Settings.Shortcuts=Settings.Shortcuts.Where(s=>s!=null&&Navigation.IsWebUrl(s.Url)&&!string.IsNullOrWhiteSpace(s.Name)).DistinctBy(s=>s.Id).Take(20).ToList();
         Settings.Workspaces ??= [];
@@ -61,6 +62,7 @@ public sealed class Storage
         History = Read<List<Visit>>("history.json", []);
         Bookmarks = Read<List<Bookmark>>("bookmarks.json", []);
         Library = Read<List<LibraryEntry>>("library.json", []).Where(e=>e!=null&&e.Kind is "reading" or "source" or "note").Take(500).ToList();
+        if(migrated)SaveSettings();
     }
     static T Read<T>(string name, T fallback)
     {
