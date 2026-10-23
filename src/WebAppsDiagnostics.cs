@@ -28,10 +28,14 @@ public sealed partial class BrowserWindow
             var loaded=new TaskCompletionSource<bool>();void Ready(object? s,CoreWebView2NavigationCompletedEventArgs e){if(e.IsSuccess)loaded.TrySetResult(true);}
             core.NavigationCompleted+=Ready;try{core.Navigate(app.Url);await loaded.Task.WaitAsync(TimeSpan.FromSeconds(12));}finally{core.NavigationCompleted-=Ready;}
             Check((await core.ExecuteScriptAsync("document.querySelector('h1').textContent")).Contains("Teste Clean AI"),"App mostra conteúdo local real");
-            var cookie=core.CookieManager.CreateCookie("clean_app_probe","saved","clean-ai.test","/");cookie.IsSecure=true;cookie.IsHttpOnly=true;cookie.Expires=DateTime.UtcNow.AddDays(1);core.CookieManager.AddOrUpdateCookie(cookie);
+            async Task<bool> HasCookie(CoreWebView2 browser)
+            {
+                for(int attempt=0;attempt<40;attempt++){if((await browser.CookieManager.GetCookiesAsync(app.Url)).Any(c=>c.Name=="clean_app_probe"&&c.Value=="saved"))return true;await Task.Delay(50);}return false;
+            }
+            var cookie=core.CookieManager.CreateCookie("clean_app_probe","saved","clean-ai.test","/");cookie.IsSecure=true;cookie.IsHttpOnly=true;cookie.Expires=DateTime.UtcNow.AddDays(1);core.CookieManager.AddOrUpdateCookie(cookie);Check(await HasCookie(core),"Cookie de teste confirmado pelo processo do navegador antes de fechar a aba");
             tabStrip.SelectedTab=first.Page;await Activate(first);await OpenWebApp(app);Check(Current==opened&&tabs.Count==before+1,"Reabrir reutiliza aba sem duplicar");
             ShowApps();ShowApps();Check(ReferenceEquals(Current!.View,opened.View)&&!opened.View.IsDisposed,"Fechar painel preserva app e reprodução");
-            CloseTab(opened);opened=null;await OpenWebApp(app);opened=Current!;Check((await opened.View!.CoreWebView2.CookieManager.GetCookiesAsync(app.Url)).Any(c=>c.Name=="clean_app_probe"&&c.Value=="saved"),"Sessão persistente é reutilizada em outro WebView");
+            CloseTab(opened);opened=null;await OpenWebApp(app);opened=Current!;Check(await HasCookie(opened.View!.CoreWebView2),"Sessão persistente é reutilizada em outro WebView");
             var tile=AppearancePanel.Descendants(apps).OfType<Button>().Single(b=>b.AccessibleName=="Abrir app Teste local");tile.ContextMenuStrip!.Items[0].PerformClick();Check(!store.Settings.Apps.Any(a=>a.Id==app.Id)&&!new Storage().Settings.Apps.Any(a=>a.Id==app.Id),"Remover app persiste");Check(!opened.View.IsDisposed,"Remover catálogo não encerra sessão");
             foreach(bool light in new[]{true,false}){var p=Palette.Create(light,Accent);apps.SetPalette(p);Check(apps.BackColor==p.Background,"Apps acompanha paleta");}
             var dots=PointillistArt.Render(new Size(3840,2160));Check(dots.Size==new Size(3840,2160),"Pontos renderizados em resolução 4K");Check(ReferenceEquals(dots,PointillistArt.Render(dots.Size)),"Cache compartilhado evita imagens por aba");
