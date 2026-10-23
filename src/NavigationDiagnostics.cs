@@ -60,12 +60,12 @@ public sealed partial class BrowserWindow
         };
         driver.Start();try{await ShowExtensions();}finally{driver.Stop();}
         if(failure!=null)throw failure;Check(stage==4&&!(await core.Profile.GetBrowserExtensionsAsync()).Any(e=>e.Id==extension.Id),"Extensão de teste removida do perfil");
-        int canceled=0,downloadCount=downloads.Count;var downloadEvent=new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        int canceled=0,downloadCount=downloads.Count;var pickerClosed=new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);var downloadEvent=new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         void Downloaded(object? sender,CoreWebView2DownloadStartingEventArgs args)=>downloadEvent.TrySetResult(true);
         core.DownloadStarting+=Downloaded;using(var cancelPicker=new System.Windows.Forms.Timer{Interval=30})
         {
-            cancelPicker.Tick+=(_,_)=>{var h=GetForegroundWindow();var name=new System.Text.StringBuilder(64);GetClassName(h,name,64);if(name.ToString()=="#32770"){canceled++;SendMessage(h,0x10,IntPtr.Zero,IntPtr.Zero);}foreach(var f in Application.OpenForms.Cast<Form>().OfType<AppDialog>().ToArray())f.Close();};cancelPicker.Start();
-            try{await core.ExecuteScriptAsync("(()=>{const a=document.createElement('a');a.href='data:text/plain,diagnostic';a.download='diagnostic.txt';document.body.append(a);a.click();})()");await downloadEvent.Task.WaitAsync(TimeSpan.FromSeconds(12));await Task.Delay(300);}
+            cancelPicker.Tick+=(_,_)=>{var h=GetForegroundWindow();var name=new System.Text.StringBuilder(64);GetClassName(h,name,64);if(name.ToString()=="#32770"){canceled++;SendMessage(h,0x10,IntPtr.Zero,IntPtr.Zero);pickerClosed.TrySetResult(true);}foreach(var f in Application.OpenForms.Cast<Form>().OfType<AppDialog>().ToArray())f.Close();};cancelPicker.Start();
+            try{await core.ExecuteScriptAsync("(()=>{const a=document.createElement('a');a.href='data:text/plain,diagnostic';a.download='diagnostic.txt';document.body.append(a);a.click();})()");await downloadEvent.Task.WaitAsync(TimeSpan.FromSeconds(12));await pickerClosed.Task.WaitAsync(TimeSpan.FromSeconds(12));await Task.Delay(100);}
             finally{cancelPicker.Stop();core.DownloadStarting-=Downloaded;}
         }
         Check(canceled>0&&downloads.Count==downloadCount,"Cancelar download real não trava nem salva arquivo");
