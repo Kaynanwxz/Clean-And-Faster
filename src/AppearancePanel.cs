@@ -7,7 +7,7 @@ public sealed class AppearancePanel : Panel,IThemed
     readonly Panel viewport=new(){Dock=DockStyle.Fill,AutoScroll=true,Margin=Padding.Empty};
     readonly List<ChoiceButton> navigation=[];readonly List<(ChoiceButton Button,Func<bool> Selected)> choices=[];readonly List<TableLayoutPanel> pages=[];
     readonly CheckBox animations=new(){Text="Animações e transições",Dock=DockStyle.Fill,AccessibleName="Animações e transições"},focus=new(){Text="Modo foco",Dock=DockStyle.Fill,AccessibleName="Modo foco"};
-    readonly CheckBox pointillism=new(){Text="Arte em pontinhos",Dock=DockStyle.Fill,AccessibleName="Arte em pontinhos"};
+    readonly CheckBox pointillism=new(){Text="Pontilhismo anterior (opcional)",Dock=DockStyle.Fill,AccessibleName="Arte em pontinhos"};
     readonly CheckBox bottomBar=new(){Text="Mostrar barra inferior",Dock=DockStyle.Fill,AccessibleName="Mostrar barra inferior"};
     readonly TextBox accent=new(){Dock=DockStyle.Fill,MaxLength=7,AccessibleName="Cor hexadecimal"};readonly Label wallpaper=new(){Dock=DockStyle.Fill,AutoEllipsis=true};
     Palette palette=Palette.Create(true,Color.SteelBlue);bool syncing;int activePage;readonly Tween pageMotion=new();
