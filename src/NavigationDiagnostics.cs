@@ -17,13 +17,23 @@ public sealed partial class BrowserWindow
         }
         await Navigate(()=>core.Navigate("https://clean-ai.test/index.html"));await Navigate(()=>core.Navigate("https://clean-ai.test/next.html"));
         await Navigate(()=>Toolbar("Voltar").PerformClick());Check(core.Source.EndsWith("index.html"),"Botão voltar navega na fixture");await Navigate(()=>Toolbar("Avançar").PerformClick());Check(core.Source.EndsWith("next.html"),"Botão avançar navega na fixture");await Navigate(()=>Toolbar("Recarregar").PerformClick());Check(core.DocumentTitle=="Segunda página","Botão recarregar conclui navegação");
-        await core.ExecuteScriptAsync("window.cleanDismissalClicks=0;document.addEventListener('click',()=>window.cleanDismissalClicks++)");
+        await core.ExecuteScriptAsync("window.cleanDismissalClicks=0;window.cleanDismissalInput=0;document.addEventListener('click',()=>window.cleanDismissalClicks++);document.addEventListener('mousedown',()=>window.cleanDismissalInput++);document.addEventListener('mouseup',()=>window.cleanDismissalInput++)");
         for(int i=0;i<4;i++)
         {
             ShowMenu();await Task.Delay(80);var point=tab.View.PointToScreen(new Point(30,100));Cursor.Position=point;mouse_event(2,0,0,0,UIntPtr.Zero);mouse_event(4,0,0,0,UIntPtr.Zero);await Task.Delay(120);Check(!menuOpen&&!closing,"Clique no WebView fecha menu sem encerrar app "+i);
             Check(await core.ExecuteScriptAsync("window.cleanDismissalClicks")=="0","Clique de dispensa não chega à página WebView "+i);
+            Check(await core.ExecuteScriptAsync("window.cleanDismissalInput")=="0","Pressionar e soltar fora não chegam à página WebView "+i);
         }
         Check(tabStrip.Enabled,"Entrada da página é restaurada após dispensar menu");
+        ShowMenu();await Task.Delay(80);Cursor.Position=tab.View.PointToScreen(new Point(30,100));
+        try
+        {
+            mouse_event(2,0,0,0,UIntPtr.Zero);await Task.Delay(120);
+            Check(!menuOpen&&!tabStrip.Enabled,"Página continua protegida enquanto botão externo está pressionado");
+        }
+        finally{mouse_event(4,0,0,0,UIntPtr.Zero);}
+        await Task.Delay(120);Check(tabStrip.Enabled,"Soltar botão restaura entrada sem temporizador contínuo");
+        Check(await core.ExecuteScriptAsync("window.cleanDismissalInput+window.cleanDismissalClicks")=="0","Gesto externo prolongado não chega ao conteúdo web");
         await Task.Delay(SystemInformation.DoubleClickTime+80);
         Cursor.Position=tab.View.PointToScreen(new Point(30,100));mouse_event(2,0,0,0,UIntPtr.Zero);mouse_event(4,0,0,0,UIntPtr.Zero);await Task.Delay(100);
         Check(await core.ExecuteScriptAsync("window.cleanDismissalClicks")=="1","Clique intencional seguinte chega normalmente à página");

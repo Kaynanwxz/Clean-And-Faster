@@ -53,7 +53,15 @@ public sealed partial class BrowserWindow
     readonly List<string> menuTrace=[];
     BrowserMenuPanel? browserMenu;Form? menuPopup;bool menuOpen;readonly Tween menuMotion=new();MenuDismissFilter? menuFilter;string? lastMenuCommand;
     int menuSession;
+    readonly System.Windows.Forms.Timer menuInputRelease=new(){Interval=16};
+    [DllImport("user32.dll")]static extern short GetAsyncKeyState(int key);
     bool MenuVisible=>menuPopup is {IsDisposed:false,Visible:true};
+    void RestoreMenuPageInput()
+    {
+        if(closing||IsDisposed||MenuVisible){menuInputRelease.Stop();return;}
+        if(((GetAsyncKeyState(1)|GetAsyncKeyState(2)|GetAsyncKeyState(4))&0x8000)!=0){menuInputRelease.Start();return;}
+        menuInputRelease.Stop();tabStrip.Enabled=true;
+    }
     BrowserCommand[] MenuCommands()=>[
         new("new-tab","Nova aba","Ctrl+T","plus",0,()=>_ = AddTab("kay://new")),new("ai","Clean AI","Ctrl+Shift+I","spark",0,ToggleAssistant),new("history","Histórico","Ctrl+H","history",0,ShowHistory),new("bookmarks","Favoritos","","star",0,ShowBookmarks),new("downloads","Downloads","Ctrl+J","download",0,ShowDownloads),new("reading","Lista de leitura","","code",0,()=>ShowLibrary("reading")),
         new("workspaces","Espaços de trabalho","","globe",1,ManageWorkspaces),new("sources","Fontes salvas","","globe",1,()=>ShowLibrary("source")),new("notes","Documentos e notas","","code",1,()=>ShowLibrary("note")),new("memory","Memória e abas","","memory",1,ShowMemory),new("extensions","Extensões","","extension",1,()=>_ = ShowExtensions()),
@@ -74,13 +82,14 @@ public sealed partial class BrowserWindow
             menuPopup.FormClosing+=(_,e)=>{if(!closing&&e.CloseReason==CloseReason.UserClosing){e.Cancel=true;CloseBrowserMenu(false);}};
             Resize+=(_,_)=>{if(menuOpen){menuMotion.Stop();PositionBrowserMenu();}};
             menuFilter=new MenuDismissFilter(this);Application.AddMessageFilter(menuFilter);
-            FormClosed+=(_,_)=>{CloseBrowserMenu(false);Application.RemoveMessageFilter(menuFilter);menuMotion.Dispose();menuPopup.Dispose();};
+            menuInputRelease.Tick+=(_,_)=>RestoreMenuPageInput();
+            FormClosed+=(_,_)=>{CloseBrowserMenu(false);Application.RemoveMessageFilter(menuFilter);menuMotion.Dispose();menuInputRelease.Dispose();menuPopup.Dispose();};
         }
         menuSession++;menuOpen=true;
         // WebView2 handles mouse input in another process, outside IMessageFilter.
         // Disable its native parent while the menu is visible so Windows routes the
         // dismissal gesture to this UI thread instead of the page underneath.
-        tabStrip.Enabled=false;
+        menuInputRelease.Stop();tabStrip.Enabled=false;
         browserMenu.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));browserMenu.RefreshZoom(Current?.View?.ZoomFactor??1);PositionBrowserMenu();browserMenu.Visible=true;
         var target=MenuLocation();if(!menuPopup!.Visible)menuPopup.Show(this);else menuPopup.Activate();browserMenu.FocusMenu();
         menuMotion.Start(target.X+Ui(18),target.X,x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},230);
@@ -95,9 +104,9 @@ public sealed partial class BrowserWindow
     void CloseBrowserMenu(bool animate=true)
     {
         menuSession++;menuOpen=false;
-        if(!MenuVisible){tabStrip.Enabled=true;return;}
-        if(!animate){menuMotion.Stop();menuPopup!.Hide();browserMenu!.Visible=false;tabStrip.Enabled=true;return;}
-        menuMotion.Start(menuPopup!.Left,menuPopup.Left+Ui(18),x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},180,()=>{if(!menuOpen&&!menuPopup.IsDisposed){menuPopup.Hide();browserMenu!.Visible=false;tabStrip.Enabled=true;}});
+        if(!MenuVisible){RestoreMenuPageInput();return;}
+        if(!animate){menuMotion.Stop();menuPopup!.Hide();browserMenu!.Visible=false;RestoreMenuPageInput();return;}
+        menuMotion.Start(menuPopup!.Left,menuPopup.Left+Ui(18),x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},180,()=>{if(!menuOpen&&!menuPopup.IsDisposed){menuPopup.Hide();browserMenu!.Visible=false;RestoreMenuPageInput();}});
     }
     void QueueBrowserMenuDismissal()
     {
