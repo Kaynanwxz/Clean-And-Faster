@@ -61,7 +61,7 @@ public sealed partial class BrowserWindow
     {
         if(!menuPageBlocked)return;
         if(closing||IsDisposed||MenuVisible){menuInputRelease.Stop();return;}
-        if(((GetAsyncKeyState(1)|GetAsyncKeyState(2)|GetAsyncKeyState(4))&0x8000)!=0){menuInputRelease.Start();return;}
+        if((GetAsyncKeyState(1)&0x8000)!=0||(GetAsyncKeyState(2)&0x8000)!=0||(GetAsyncKeyState(4)&0x8000)!=0){menuInputRelease.Start();return;}
         menuInputRelease.Stop();menuFilter?.ResetGesture();menuPageBlocked=false;tabStrip.Enabled=true;
         bool focus=menuRestorePageFocus;menuRestorePageFocus=false;
         if(focus&&Form.ActiveForm==this&&Current?.View is {IsDisposed:false} view)view.Focus();

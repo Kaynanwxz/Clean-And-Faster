@@ -1,0 +1,56 @@
+CLEAN BROWSER
+
+Windows 10/11 x64, com Microsoft Edge WebView2 Runtime atualizado.
+O .NET ja esta incluido no executavel.
+
+PRIMEIRO USO
+Baixe CleanBrowser.exe na secao Releases e abra com dois cliques.
+Guarde em uma pasta em que seu usuario possa escrever.
+
+JA USA KAY 0.3.1 OU ANTERIOR?
+Na versao antiga, abra Menu > Personalizar.
+Em Atualizacoes pelo GitHub, informe:
+Kaynanwxz/Clean-And-Faster
+Salve e clique em Atualizar (ou Menu > Verificar atualizacoes).
+O app baixa e reinicia na versao nova. Nao precisa extrair outro ZIP.
+Se sua versao nao conseguir iniciar, baixe o exe da release e substitua
+apenas o exe antigo com o navegador fechado.
+
+PROXIMAS VERSOES
+Clique no botao Atualizar > Atualizar e reiniciar.
+A partir da 0.4.0, o canal oficial ja vem selecionado.
+
+SEUS DADOS
+Historico, favoritos, configuracoes e perfil de sites permanecem em
+%LOCALAPPDATA%\KayBrowser. Nao apague essa pasta para atualizar.
+
+O login Google exige um OAuth Client Desktop; nao inclui Chrome Sync.
+Extensoes locais dependem das APIs suportadas pelo WebView2.
+Meta de RAM flexivel, sem limite rigido por processo.
+
+PERSONALIZAR A VERSAO 0.7
+Na nova aba clique Personalizar, ou Menu > Personalizar aparencia.
+Abra Visuais, Layout ou Fundo. As escolhas sao salvas automaticamente.
+Pode mudar tema, barra, cor, fundo, abas laterais, densidade e animacoes.
+F8: modo foco. Ctrl+Shift+I: abrir/fechar Clean AI.
+
+ATALHOS
+Adicionar atalho: informe nome e endereco HTTP/HTTPS.
+Botao direito: editar/remover/mover. Arraste para reordenar.
+Pode escolher Meus atalhos, Mais visitados ou Ocultar em Personalizar.
+
+ORGANIZACAO
+Menu > Espacos de trabalho: criar, renomear e trocar grupos de abas.
+Menu > Lista de leitura / Fontes / Notas e documentos: biblioteca local.
+Fontes sao links salvos por voce; nao tem verificacao automatica.
+Notas aceitam TXT/Markdown e exportam TXT; nao e editor Office.
+Espacos compartilham o mesmo perfil de sites e cookies.
+
+CLEAN AI
+Configure sua propria chave da API OpenAI; uso cobrado na conta da API.
+Compartilhamento de pagina/abas e opcional; cada acao requer aprovacao.
+Nao conecta automaticamente esta conversa do ChatGPT ao seu computador.
+
+MENU 0.8
+Navegar, Organizar e Mais agrupam os comandos. Clique fora ou Escape
+fecha apenas o menu. Aparencia e Atualizar ficam no rodape.

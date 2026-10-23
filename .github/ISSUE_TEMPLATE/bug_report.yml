@@ -1,0 +1,23 @@
+name: Problema no navegador
+description: Relatar erro, falha visual ou atualização que não funcionou.
+title: '[Bug] '
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Versão do Clean Browser
+      placeholder: 'Ex.: 0.4.0'
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Windows, escala e monitores
+      placeholder: 'Ex.: Windows 11, escala 125%, um monitor'
+  - type: textarea
+    id: steps
+    attributes:
+      label: Como reproduzir
+      description: Descreva o esperado, o que aconteceu e os passos. Não inclua dados pessoais.
+    validations:
+      required: true
