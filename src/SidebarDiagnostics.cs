@@ -21,16 +21,17 @@ public sealed partial class BrowserWindow
         var exit=probe.windowButtons!.Controls.OfType<Button>().Single(b=>b.AccessibleName=="Fechar navegador");
         Click(exit);await Task.Delay(120);
         Check(!probe.IsDisposed&&!probe.closing,"Clique fora sobre Fechar descarta apenas menu, sem encerrar navegador");
-        Check(!probe.menuOpen&&!probe.MenuVisible,"Menu fica oculto após clique externo na barra da janela");
+        Check(!probe.menuOpen&&!probe.MenuVisible,"Menu fica oculto ap�s clique externo na barra da janela");
         // A second, intentional click must still work after the dismissal gesture is consumed.
         var maximize=probe.windowButtons.Controls.OfType<Button>().Single(b=>b.AccessibleName=="Maximizar / restaurar");
+        int maximizeClicks=0;maximize.Click+=(_,_)=>maximizeClicks++;
         probe.ShowMenu();await Task.Delay(70);Click(maximize);await Task.Delay(100);
-        Check(probe.WindowState==FormWindowState.Normal&&!probe.menuOpen,"Clique de dispensa não aciona Maximizar por baixo");
+        Check(probe.WindowState==FormWindowState.Normal&&!probe.menuOpen,"Clique de dispensa n�o aciona Maximizar por baixo");
         // Separate intentional clicks from the OS double-click window.
         await Task.Delay(SystemInformation.DoubleClickTime+80);
-        Click(maximize);await Task.Delay(100);Check(probe.WindowState==FormWindowState.Maximized,"Próximo clique intencional continua funcionando");
+        Click(maximize);for(int wait=0;wait<40&&probe.WindowState!=FormWindowState.Maximized;wait++)await Task.Delay(50);Check(probe.WindowState==FormWindowState.Maximized,$"Pr�ximo clique intencional continua funcionando; state={probe.WindowState}; clicks={maximizeClicks}; active={Form.ActiveForm?.Text}; menu={probe.MenuVisible}");
         await Task.Delay(SystemInformation.DoubleClickTime+80);
-        Click(maximize);await Task.Delay(100);
+        Click(maximize);for(int wait=0;wait<40&&probe.WindowState!=FormWindowState.Normal;wait++)await Task.Delay(50);
         foreach(bool animated in new[]{false,true})
         {
             Motion.DiagnosticAnimations=animated;Motion.Enabled=animated;
@@ -38,19 +39,19 @@ public sealed partial class BrowserWindow
             {
                 probe.ShowMenu();await Task.Delay(300);probe.CloseBrowserMenu();
                 Click(exit);await Task.Delay(250);
-                Check(!probe.IsDisposed&&!probe.closing,"Clique durante saída do menu não encerra navegador");
+                Check(!probe.IsDisposed&&!probe.closing,"Clique durante sa�da do menu n�o encerra navegador");
             }
             probe.ShowAppearance();await Task.Delay(340);
             for(int i=0;i<4;i++)
             {
                 Cursor.Position=probe.tabStrip.PointToScreen(new Point(25,100));
                 mouse_event(2,0,0,0,UIntPtr.Zero);mouse_event(4,0,0,0,UIntPtr.Zero);await Task.Delay(50);
-                Check(probe.appearanceOpen&&probe.appearance!.Visible&&!probe.closing,"Clique fora mantém Aparência e navegador abertos; animações="+animated+"; ciclo="+i);
+                Check(probe.appearanceOpen&&probe.appearance!.Visible&&!probe.closing,"Clique fora mant�m Apar�ncia e navegador abertos; anima��es="+animated+"; ciclo="+i);
             }
             using(var external=new Form{Size=new Size(120,80),StartPosition=FormStartPosition.Manual,Location=new Point(0,0)})
             {
                 external.Show();external.Activate();await Task.Delay(80);
-                Check(probe.appearanceOpen&&!probe.closing,"Perda de foco preserva Aparência");external.Close();probe.Activate();
+                Check(probe.appearanceOpen&&!probe.closing,"Perda de foco preserva Apar�ncia");external.Close();probe.Activate();
             }
             // Open advanced settings through the actual menu route while Appearance remains open.
             int stage=0;Exception? error=null;var done=new TaskCompletionSource<bool>();
@@ -59,32 +60,32 @@ public sealed partial class BrowserWindow
             {
                 try
                 {
-                    var dialog=Application.OpenForms.Cast<Form>().OfType<AppDialog>().LastOrDefault(f=>f.Text=="Configurações avançadas");
+                    var dialog=Application.OpenForms.Cast<Form>().OfType<AppDialog>().LastOrDefault(f=>f.Text=="Configura��es avan�adas");
                     if(dialog==null)return;
                     if(stage++==0){Click(exit);return;}
-                    Check(dialog.Visible&&!dialog.IsDisposed&&!probe.closing,"Clique fora mantém Configurações abertas; animações="+animated);
+                    Check(dialog.Visible&&!dialog.IsDisposed&&!probe.closing,"Clique fora mant�m Configura��es abertas; anima��es="+animated);
                     var combo=AppearancePanel.Descendants(dialog).OfType<ComboBox>().First();
                     if(stage==2){combo.DroppedDown=true;return;}
                     if(stage==3){Click(dialog);return;}
-                    Check(dialog.Visible&&!probe.closing,"Dispensar lista de Configurações não fecha a janela");
+                    Check(dialog.Visible&&!probe.closing,"Dispensar lista de Configura��es n�o fecha a janela");
                     driver.Stop();dialog.Close();done.TrySetResult(true);
                 }
                 catch(Exception e){error=e;driver.Stop();foreach(var f in Application.OpenForms.Cast<Form>().OfType<AppDialog>().ToArray())f.Close();done.TrySetResult(false);}
             };
             driver.Start();probe.ShowMenu();probe.browserMenu!.ClickCommand("settings");
             await done.Task.WaitAsync(TimeSpan.FromSeconds(10));if(error!=null)throw error;
-            Check(probe.appearanceOpen&&!probe.closing,"Fechar Configurações preserva lateral de Aparência");
+            Check(probe.appearanceOpen&&!probe.closing,"Fechar Configura��es preserva lateral de Apar�ncia");
             probe.ShowAppearance();await Task.Delay(300);
             probe.ToggleAssistant();await Task.Delay(340);
             Cursor.Position=probe.tabStrip.PointToScreen(new Point(25,100));mouse_event(2,0,0,0,UIntPtr.Zero);mouse_event(4,0,0,0,UIntPtr.Zero);await Task.Delay(70);
-            Check(probe.assistantOpen&&probe.assistant!.Visible&&!probe.closing,"Clique fora mantém IA e navegador abertos; animações="+animated);
+            Check(probe.assistantOpen&&probe.assistant!.Visible&&!probe.closing,"Clique fora mant�m IA e navegador abertos; anima��es="+animated);
             probe.ShowMenu();await Task.Delay(300);
             Click(probe.address);await Task.Delay(100);
-            Check(probe.assistantOpen&&!probe.menuOpen,"Dispensar menu na barra de endereço preserva IA");
+            Check(probe.assistantOpen&&!probe.menuOpen,"Dispensar menu na barra de endere�o preserva IA");
             probe.ToggleAssistant();await Task.Delay(300);
         }
         Motion.DiagnosticAnimations=null;Motion.Enabled=false;
-        Click(exit);await Task.Delay(100);Check(probe.IsDisposed,"Fechar navegador funciona após dispensar painéis");Activate();
+        Click(exit);await Task.Delay(100);Check(probe.IsDisposed,"Fechar navegador funciona ap�s dispensar pain�is");Activate();
         return checks.ToArray();
     }
 }
