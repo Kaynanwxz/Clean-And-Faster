@@ -188,7 +188,7 @@ public sealed partial class TabRibbon : Control,IThemed
     int TabWidth=>Math.Clamp((Width-D(102))/Math.Max(1,Pages.Length),D(106),D(218));
     int Capacity=>Vertical?Math.Max(1,(Height-D(54))/D(44)):Math.Max(1,(Width-D(102))/Math.Max(1,TabWidth));
     bool Compact=>Vertical&&Width<D(100);
-    public TabRibbon(BrowserTabs tabs){owner=tabs;Dock=DockStyle.Fill;AccessibleName="Abas � role para navegar";SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);}
+    public TabRibbon(BrowserTabs tabs){owner=tabs;Dock=DockStyle.Fill;AccessibleName="Abas · role para navegar";SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);}
     public void SetPalette(Palette p){colors=p;BackColor=p.Background;Invalidate();}
     Rectangle TargetTabRect(int i)=>i<first||i>=first+Capacity?Rectangle.Empty:Vertical?new(D(6),D(5)+(i-first)*D(44),Math.Max(1,Width-D(12)),D(40)):new(D(48)+(i-first)*TabWidth,D(5),TabWidth-D(4),Math.Max(D(24),Height-D(10)));
     public Rectangle GetTabRect(int i)=>i<0||i>=Pages.Length?Rectangle.Empty:AnimatedTabRect(Pages[i],TargetTabRect(i));
@@ -216,7 +216,7 @@ public sealed partial class TabRibbon : Control,IThemed
         Glyphs.Draw(g,"plus",new(Plus.X+D(7),Plus.Y+(Plus.Height-D(18))/2,D(18),D(18)),colors.Text);
         if(Vertical&&!Compact){using var f=new Font("Segoe UI",9);TextRenderer.DrawText(g,"Nova aba",f,new Rectangle(Plus.X+D(32),Plus.Y,Math.Max(1,Plus.Width-D(34)),Plus.Height),colors.Text,TextFormatFlags.VerticalCenter);}
     }
-    protected override void OnMouseMove(MouseEventArgs e){int old=hover;bool oldPlus=overPlus;hover=-1;for(int i=first;i<Math.Min(Pages.Length,first+Capacity);i++)if(GetTabRect(i).Contains(e.Location))hover=i;overPlus=Plus.Contains(e.Location);if(old!=hover||oldPlus!=overPlus){tips.SetToolTip(this,hover>=0?Pages[hover].Caption+" � bot�o do meio fecha":"Nova aba");Invalidate();}base.OnMouseMove(e);}
+    protected override void OnMouseMove(MouseEventArgs e){int old=hover;bool oldPlus=overPlus;hover=-1;for(int i=first;i<Math.Min(Pages.Length,first+Capacity);i++)if(GetTabRect(i).Contains(e.Location))hover=i;overPlus=Plus.Contains(e.Location);if(old!=hover||oldPlus!=overPlus){tips.SetToolTip(this,hover>=0?Pages[hover].Caption+" · botão do meio fecha":"Nova aba");Invalidate();}base.OnMouseMove(e);}
     protected override void OnMouseLeave(EventArgs e){hover=-1;overPlus=false;Invalidate();base.OnMouseLeave(e);}
     protected override void OnMouseDown(MouseEventArgs e)
     {
@@ -232,6 +232,7 @@ public sealed partial class TabRibbon : Control,IThemed
 public static class NativeFrame
 {
     [DllImport("user32.dll")]static extern bool ReleaseCapture();
+    [DllImport("user32.dll")]static extern bool ShowWindow(IntPtr hwnd,int command);
     [DllImport("user32.dll")]internal static extern IntPtr SendMessage(IntPtr hwnd,int message,IntPtr wParam,IntPtr lParam);
     [DllImport("dwmapi.dll")]public static extern int DwmSetWindowAttribute(IntPtr hwnd,int attribute,ref int value,int size);
     public static void WindowCommand(Form form,int command)
@@ -239,7 +240,8 @@ public static class NativeFrame
         if(form.IsDisposed||!form.IsHandleCreated)return;
         int disabled=Motion.Allowed?0:1;
         DwmSetWindowAttribute(form.Handle,3,ref disabled,sizeof(int));
-        SendMessage(form.Handle,0x112,new IntPtr(command),IntPtr.Zero);
+        ReleaseCapture();
+        ShowWindow(form.Handle,command switch{0xF030=>3,0xF020=>6,0xF120=>9,_=>throw new ArgumentOutOfRangeException(nameof(command))});
     }
     public static void ToggleMaximize(Form form)=>WindowCommand(form,form.WindowState==FormWindowState.Maximized?0xF120:0xF030);
     public static void Drag(Form form){ReleaseCapture();SendMessage(form.Handle,0xA1,new IntPtr(2),IntPtr.Zero);}
