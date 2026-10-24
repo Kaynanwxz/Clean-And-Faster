@@ -1,15 +1,15 @@
-# Clean Browser 0.12.1 — Janela e transições revisadas
+# Clean Browser 0.12.2 — Estabilidade e recuperação
 
-- Moldura da janela compatível com o gerenciamento de tamanho do Windows, sem simular um estilo de borda diferente do configurado no aplicativo.
-- A janela inicial e o tamanho mínimo respeitam a área útil disponível, evitando abrir fora da tela em monitores menores.
-- Área maximizada calculada no monitor atual; redimensionamento e restauração preservam o enquadramento e os botões.
-- F11 retorna ao tamanho e ao estado anteriores, inclusive quando a janela já estava maximizada.
-- Redução de flashes das barras durante o redimensionamento.
-- Fundo já preparado em cache compartilhado, sem redimensionar a gravura a cada quadro da animação.
-- Criação de aba sem ativação duplicada; transições graduais de 280 ms para abas e 240 ms para o menu.
-- Botão de nova aba acompanha a borda das abas durante toda a transição, sem sobrepor os títulos ou o botão de fechar.
-- Sessão remota não desativa automaticamente os efeitos. A opção do aplicativo e a preferência de reduzir movimento do Windows continuam respeitadas.
-- Validação ampliada com quadros intermediários capturados na janela sintética real, Ctrl+T/Ctrl+W, menu, ciclos de maximizar/restaurar, minimizar, F11 e redimensionamento.
-- Arte aprovada, cores, histórico e dados dos sites preservados.
+- Laterais abrem e fecham sem reservar ou remover toda a largura de uma vez; interrupções e redimensionamento encerram a transição com geometria coerente.
+- Maximização acompanha a área útil do monitor atual; sair da tela cheia restaura o estado e a posição anteriores.
+- Falhas de gravação preservam os dados em memória e permitem novas tentativas; fechar com alterações pendentes exige confirmação.
+- Suspensão revalida a aba após a espera e retoma a aba que passou a estar ativa.
+- Downloads atualizam o estado enquanto a lista está aberta.
+- Abas com falha do motor exibem uma ação para reabrir o endereço.
+- Links mailto, tel, sms, spotify e discord iniciados pelo usuário podem abrir o aplicativo associado, com confirmação.
+- O atualizador testa a abertura do executável com perfil isolado antes do reinício normal e restaura a cópia anterior se essa etapa falhar. A proteção passa a valer para atualizações iniciadas nesta versão.
+- Downloads antigos de atualização são limpos após sete dias, sem seguir links de diretório.
+- Documentação distingue a gravura atual da arte histórica.
+- Arte aprovada, cores e dados pessoais preservados.
 
-Atualização pelo próprio navegador: **Atualizar → Atualizar e reiniciar**.
+Atualize em **Atualizar → Atualizar e reiniciar**.

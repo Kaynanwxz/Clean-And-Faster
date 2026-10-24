@@ -54,11 +54,35 @@ public static class Updater
         if (json.Length > 65536) throw new IOException("Resposta de atualização inválida.");
         return UpdateManifest.Parse(json, new Uri(url), CurrentVersion);
     }
+    public static void CleanupOldDownloads()
+    {
+        var root=Path.Combine(Storage.Root,"Updates");
+        if(!Directory.Exists(root))return;
+        try
+        {
+            foreach(var dir in new DirectoryInfo(root).GetDirectories())
+            {
+                if(!Guid.TryParseExact(dir.Name,"N",out _)||
+                   (dir.Attributes&FileAttributes.ReparsePoint)!=0||
+                   dir.LastWriteTimeUtc>DateTime.UtcNow.AddDays(-7))continue;
+                try
+                {
+                    // Delete only files owned by the updater, never recurse through links.
+                    foreach(var file in dir.GetFiles())
+                        if(file.Name=="KayBrowser.exe"&&(file.Attributes&FileAttributes.ReparsePoint)==0)file.Delete();
+                    if(!dir.EnumerateFileSystemInfos().Any())dir.Delete();
+                }
+                catch(Exception ex)when(ex is IOException or UnauthorizedAccessException){}
+            }
+        }
+        catch(Exception ex)when(ex is IOException or UnauthorizedAccessException){}
+    }
     public static async Task Install(ReleaseUpdate update, IProgress<int>? progress = null, CancellationToken cancellation = default, bool diagnostics = false)
     {
         using var http = Client();
         string expected = update.Sha256 ?? (await http.GetStringAsync(update.HashUrl!, cancellation)).Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)[0];
         if (!Regex.IsMatch(expected, @"\A[0-9a-fA-F]{64}\z")) throw new IOException("SHA-256 da release inválido.");
+        CleanupOldDownloads();
         var dir = Path.Combine(Storage.Root, "Updates", Guid.NewGuid().ToString("N")); Directory.CreateDirectory(dir);
         string downloaded = Path.Combine(dir, "KayBrowser.exe");
         using (var response = await http.GetAsync(update.ExeUrl, HttpCompletionOption.ResponseHeadersRead, cancellation))
@@ -79,23 +103,44 @@ public static class Updater
         string probe = Path.Combine(Path.GetDirectoryName(target)!, ".kay-update-probe"); File.WriteAllText(probe, ""); File.Delete(probe);
         static string Quote(string value) => "'" + value.Replace("'", "''") + "'";
         string restartArgs = diagnostics ? "--update-receipt" : "";
+        string healthToken=Guid.NewGuid().ToString("N");
         string script = $$"""
         $ErrorActionPreference = 'Stop'
         $target = {{Quote(target)}}
         $source = {{Quote(downloaded)}}
         $backup = $target + '.previous'
+        $receipt = Join-Path (Split-Path $target) '.clean-health-{{healthToken}}.json'
+        $probeProcess = $null
+        $restarted = $null
+        $backedUp = $false
         Wait-Process -Id {{Environment.ProcessId}} -ErrorAction SilentlyContinue
         Start-Sleep -Milliseconds 700
         try {
           Copy-Item -LiteralPath $target -Destination $backup -Force
+          $backedUp = $true
           Copy-Item -LiteralPath $source -Destination $target -Force
+          $probeProcess = Start-Process -FilePath $target -ArgumentList '--startup-check','{{healthToken}}' -WindowStyle Hidden -PassThru
+          if (!$probeProcess.WaitForExit(60000)) { Stop-Process -Id $probeProcess.Id -Force; throw 'A nova versão não confirmou a abertura em 60 segundos.' }
+          if ($probeProcess.ExitCode -ne 0 -or !(Test-Path -LiteralPath $receipt)) { throw 'A nova versão falhou no teste de abertura.' }
+          $health = Get-Content -LiteralPath $receipt -Raw | ConvertFrom-Json
+          if ($health.version -ne {{Quote(update.Version)}} -or $health.status -ne 'healthy') { throw 'Confirmação de versão inválida.' }
           $restartArgs = {{Quote(restartArgs)}}
-          if ($restartArgs) { Start-Process -FilePath $target -ArgumentList $restartArgs }
-          else { Start-Process -FilePath $target }
+          if ($restartArgs) { $restarted = Start-Process -FilePath $target -ArgumentList $restartArgs -WindowStyle Normal -PassThru }
+          else {
+            $restarted = Start-Process -FilePath $target -WindowStyle Normal -PassThru
+            if ($restarted.WaitForExit(4000)) { throw 'A nova versão encerrou durante a inicialização.' }
+          }
         } catch {
-          if (Test-Path -LiteralPath $backup) { Copy-Item -LiteralPath $backup -Destination $target -Force }
+          if ($null -ne $probeProcess -and !$probeProcess.HasExited) { Stop-Process -Id $probeProcess.Id -Force -ErrorAction SilentlyContinue; $probeProcess.WaitForExit() }
+          if ($null -ne $restarted -and !$restarted.HasExited) { Stop-Process -Id $restarted.Id -Force -ErrorAction SilentlyContinue; $restarted.WaitForExit() }
+          if ($backedUp -and (Test-Path -LiteralPath $backup)) {
+            Copy-Item -LiteralPath $backup -Destination $target -Force
+            if (!{{(diagnostics?"$true":"$false")}}) { Start-Process -FilePath $target -WindowStyle Normal }
+          }
           Add-Type -AssemblyName System.Windows.Forms
           [System.Windows.Forms.MessageBox]::Show('Atualizacao falhou. A versao anterior foi preservada. ' + $_.Exception.Message, 'Clean Browser')
+        } finally {
+          if (Test-Path -LiteralPath $receipt) { Remove-Item -LiteralPath $receipt -Force -ErrorAction SilentlyContinue }
         }
         """;
         var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));

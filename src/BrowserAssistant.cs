@@ -20,8 +20,8 @@ public sealed partial class BrowserWindow
         pageHost.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));pageHost.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,0));pageHost.RowStyles.Add(new RowStyle(SizeType.Percent,100));
         InitializeWorkspaceChrome();
         pageHost.Controls.Add(browserSurface,0,0);pageHost.Controls.Add(rightDock,1,0);
-        pageHost.Resize+=(_,_)=>{if(RightOpen&&!assistantTween.Running)pageHost.ColumnStyles[1].Width=AssistantWidth;};
-        rightDock.Resize+=(_,_)=>{foreach(Control p in rightDock.Controls)p.SetBounds(assistantTween.Running?p.Left:0,0,rightDock.ClientSize.Width,rightDock.ClientSize.Height);};
+        pageHost.Resize+=(_,_)=>{if(IsHandleCreated)SettleRightPanel();};
+        rightDock.Resize+=(_,_)=>{foreach(Control p in rightDock.Controls)p.SetBounds(0,0,AssistantWidth,rightDock.ClientSize.Height);};
     }
     int AssistantWidth=>Math.Min(Ui(assistantWide&&assistantOpen?560:390),pageHost.ClientSize.Width/2);
     void ToggleAssistant()

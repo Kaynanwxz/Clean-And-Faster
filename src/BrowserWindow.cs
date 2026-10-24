@@ -28,7 +28,7 @@ public sealed partial class BrowserWindow : Form
     readonly Label status = new() { Dock = DockStyle.Bottom, Height = 27, TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(12, 0, 0, 0) };
     readonly System.Windows.Forms.Timer memoryTimer = new() { Interval = 15000 };
     CoreWebView2Environment? environment;
-    bool closing, memoryBusy;
+    bool closing, memoryBusy, storageNoticeQueued;
     BrowserTab? Current => tabs.FirstOrDefault(x => x.Page == tabStrip.SelectedTab);
     Color Back => Palette.Create(store.Settings.Theme=="Claro",Accent).Background;
     Color Ink => Palette.Create(store.Settings.Theme=="Claro",Accent).Text;
@@ -48,7 +48,13 @@ public sealed partial class BrowserWindow : Form
         tabStrip.CloseRequested += page => CloseTab(tabs.FirstOrDefault(t => t.Page == page));
         KeyDown += Shortcut;
         if (!diagnostics) Shown += async (_, _) => await Start();
-        FormClosing += (_, _) => { closing = true; memoryTimer.Stop(); DisposeAssistant(); SaveSession(); foreach (var t in tabs) t.View?.Dispose(); };
+        store.WriteFailed+=ShowStorageFailure;
+        Shown+=(_,_)=>{if(store.HasPendingWrites)ShowStorageFailure(store.LastWriteError);};
+        FormClosing += (_, e) => {
+            SaveSession();
+            if(!store.RetryPendingWrites()&&ShowNotice("Há dados ainda não salvos. Verifique o espaço e a permissão da pasta. Fechar mesmo assim e descartar as alterações pendentes?","Dados não salvos",MessageBoxButtons.YesNo)!=DialogResult.Yes){e.Cancel=true;return;}
+            closing=true;memoryTimer.Stop();DisposeAssistant();foreach(var t in tabs)t.View?.Dispose();
+        };
         memoryTimer.Tick += async (_, _) => await ManageMemory();
         Motion.Enabled = store.Settings.Animations;
         ApplyTheme(this);
@@ -136,7 +142,7 @@ public sealed partial class BrowserWindow : Form
             core.NavigationStarting += (_, e) =>
             {
                 if (t == snapshotTab) ResetSnapshot();
-                if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank") { e.Cancel = true;string blocked=e.Uri[..Math.Min(e.Uri.Length,180)];BeginInvoke(()=>{if(!closing)ShowNotice("Link externo bloqueado: "+blocked,"Clean Browser");});return; }
+                if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank") { e.Cancel=true;QueueExternalLink(e.Uri,e.IsUserInitiated);return; }
                 status.Text = "Carregando… " + new Uri(e.Uri).Host;
             };
             core.SourceChanged += (_, _) => { if (Navigation.IsWebUrl(core.Source)) t.Url = core.Source; UpdateChrome(t); };
@@ -153,7 +159,7 @@ public sealed partial class BrowserWindow : Form
                 if(t.Page.WorkspaceId!=WorkspaceId)return;
                 string popupWorkspace=WorkspaceId;
                 using var deferral = e.GetDeferral();
-                if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank") return;
+                if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank"){QueueExternalLink(e.Uri,e.IsUserInitiated);return;}
                 await AddTab("kay://new");
                 if (Current is { } child&&child.Page.WorkspaceId==popupWorkspace)
                 {
@@ -181,14 +187,14 @@ public sealed partial class BrowserWindow : Form
                     status.Text="Download: "+record.Name;
                 }});
             };
-            core.ProcessFailed += (_, e) => { status.Text = "Motor interrompido: " + e.ProcessFailedKind + ". Reabra esta aba pelo menu de memória."; };
+            core.ProcessFailed += (_, e) => QueueFailedViews(t,view,e.ProcessFailedKind==CoreWebView2ProcessFailedKind.BrowserProcessExited);
             if (navigate)
             {
                 if (Navigation.IsWebUrl(t.Url)) core.Navigate(t.Url);
                 else core.Navigate("about:blank");
             }
         }
-        catch (Exception ex) { view.Dispose(); t.View = null; status.Text = "Falha ao criar aba: " + ex.Message; }
+        catch (Exception ex) { if(t.View==view)RenderFailedTab(t,view);else view.Dispose();status.Text="Falha ao criar aba: "+ex.Message; }
     }
     void UpdateChrome(BrowserTab t)
     {
@@ -262,10 +268,35 @@ public sealed partial class BrowserWindow : Form
     }
     void ShowDownloads()
     {
-        using var f = Dialog("Downloads desta sessão"); var list = List("Arquivo", "Local", "Estado");
-        foreach (var d in downloads) list.Items.Add(new ListViewItem([d.Name, d.Path, d.State]) { Tag = d.Path });
-        var open = Button("Mostrar na pasta", () => { if (list.SelectedItems.Count > 0) { var p = (string)list.SelectedItems[0].Tag!; if (File.Exists(p)) Process.Start(new ProcessStartInfo("explorer.exe", "/select,\"" + p + "\"") { UseShellExecute = true }); } }); open.Dock = DockStyle.Bottom;
-        f.Controls.Add(list); f.Controls.Add(open); f.ShowDialog(this);
+        using var f=Dialog("Downloads desta sessão");var list=List("Arquivo","Local","Estado");
+        void Render()
+        {
+            list.BeginUpdate();
+            try
+            {
+                while(list.Items.Count>downloads.Count)list.Items.RemoveAt(list.Items.Count-1);
+                for(int i=0;i<downloads.Count;i++)
+                {
+                    var d=downloads[i];
+                    if(i>=list.Items.Count)list.Items.Add(new ListViewItem([d.Name,d.Path,d.State]){Tag=d.Path});
+                    else {var row=list.Items[i];row.SubItems[2].Text=d.State;row.Tag=d.Path;}
+                }
+            }
+            finally{list.EndUpdate();}
+        }
+        using var refresh=new System.Windows.Forms.Timer{Interval=500};
+        refresh.Tick+=(_,_)=>Render();
+        var open=Button("Mostrar na pasta",()=>{
+            if(list.SelectedItems.Count>0){var p=(string)list.SelectedItems[0].Tag!;if(File.Exists(p))Process.Start(new ProcessStartInfo("explorer.exe","/select,\""+p+"\""){UseShellExecute=true});}
+        });open.Dock=DockStyle.Bottom;
+        f.Controls.Add(list);f.Controls.Add(open);Render();refresh.Start();f.ShowDialog(this);
+    }
+    void ShowStorageFailure(string message)
+    {
+        status.Text=message;
+        if(storageNoticeQueued||!IsHandleCreated||closing)return;
+        storageNoticeQueued=true;
+        BeginInvoke(()=>{if(!closing&&!IsDisposed&&store.HasPendingWrites)ShowNotice(message,"Alterações aguardando gravação");});
     }
     void Find()
     {
@@ -281,15 +312,16 @@ public sealed partial class BrowserWindow : Form
         {
             beforeFullscreenState=WindowState;
             beforeFullscreenBounds=WindowState==FormWindowState.Normal?Bounds:RestoreBounds;
-            var monitor=Screen.FromControl(this).Bounds;
-            fullscreen=true;WindowState=FormWindowState.Normal;Bounds=monitor;
+            fullscreen=true;WindowState=FormWindowState.Normal;
+            RefreshMonitorBounds();ApplyChromeMetrics();Bounds=Screen.FromControl(this).Bounds;
         }
         else
         {
             fullscreen=false;WindowState=FormWindowState.Normal;
-            Bounds=beforeFullscreenBounds;WindowState=beforeFullscreenState;
+            RefreshMonitorBounds();Bounds=beforeFullscreenBounds;ApplyChromeMetrics();
+            WindowState=beforeFullscreenState;
         }
-        ApplyChromeMetrics();
+        SettleRightPanel();
     }
     void Shortcut(object? sender, KeyEventArgs e)
     {
@@ -326,13 +358,16 @@ public sealed partial class BrowserWindow : Form
         memoryBusy = true;
         try
         {
+            if(store.RetryPendingWrites())storageNoticeQueued=false;
             var mb = MemoryMb();
             foreach (var t in tabs.Where(t => t != Current && !t.Pinned && t.View != null).OrderBy(t => t.LastActive).ToArray())
             {
-                if (t.View?.CoreWebView2 is not { } core || core.IsDocumentPlayingAudio) continue;
+                if (t==Current || !tabs.Contains(t) || t.Suspended || t.View?.CoreWebView2 is not { } core || core.IsDocumentPlayingAudio) continue;
                 if (DateTime.UtcNow - t.LastActive < TimeSpan.FromMinutes(store.Settings.IdleMinutes) && mb < store.Settings.MemoryBudgetMb) continue;
                 t.View.Visible = false;
-                t.Suspended = await core.TrySuspendAsync();
+                var view=t.View;
+                await FinishSuspension(t,view,core,core.TrySuspendAsync());
+                mb=MemoryMb();
                 UpdateChrome(t);
             }
             status.Text = $"{MemoryMb():N0} MB em uso · meta {store.Settings.MemoryBudgetMb:N0} MB · {tabs.Count(t => t.Suspended)} abas suspensas · {tabs.Count} abas";

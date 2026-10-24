@@ -16,6 +16,8 @@ public sealed partial class BrowserWindow
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScaleDimensions = new SizeF(96, 96);
         Padding = new Padding(1);
+        RefreshMonitorBounds();
+        LocationChanged+=(_,_)=>RefreshMonitorBounds();
         chromeLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         chromeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,48));
         chromeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,64));
@@ -125,10 +127,17 @@ public sealed partial class BrowserWindow
     }
     Action? positionAddress;
     void OnLocationResize(object? sender, EventArgs e) => positionAddress?.Invoke();
+    void RefreshMonitorBounds()
+    {
+        var screen=Screen.FromControl(this);
+        var area=fullscreen?screen.Bounds:screen.WorkingArea;
+        if(MaximizedBounds!=area)MaximizedBounds=area;
+    }
     protected override void OnDpiChanged(DpiChangedEventArgs e)
     {
         base.OnDpiChanged(e);
-        if (IsHandleCreated) BeginInvoke(ApplyChromeMetrics);
+        RefreshMonitorBounds();
+        if (IsHandleCreated) BeginInvoke(()=>{ApplyChromeMetrics();SettleRightPanel();});
     }
     void SetNativeTheme()
     {

@@ -15,18 +15,29 @@ public sealed partial class BrowserWindow
         if(appearance==null){appearance=new(store,ApplyPersonalization,ChooseWallpaper);appearance.CloseRequested+=ShowAppearance;rightDock.Controls.Add(appearance);}
         appearance.Sync();appearanceOpen=true;AnimateRightPanel(appearance,true);
     }
+    void SetRightPanelWidth(float width)
+    {
+        pageHost.ColumnStyles[1].Width=Math.Clamp(width,0,AssistantWidth);
+        foreach(Control child in rightDock.Controls)
+            child.SetBounds(0,0,AssistantWidth,rightDock.ClientSize.Height);
+    }
+    void SettleRightPanel()
+    {
+        assistantTween.Stop();
+        SetRightPanelWidth(RightOpen?AssistantWidth:0);
+        ApplyWorkspaceMetrics();
+    }
     void AnimateRightPanel(Control panel,bool open)
     {
         assistantTween.Stop();panel.Dock=DockStyle.None;
-        int target=AssistantWidth;
-        if(open)
-        {
-            pageHost.ColumnStyles[1].Width=target;panel.SetBounds(target,0,target,rightDock.ClientSize.Height);panel.Visible=true;panel.BringToFront();ApplyWorkspaceMetrics();
-        }
-        assistantTween.Start(open?target:panel.Left,open?0:target,x=>{if(!panel.IsDisposed)panel.Left=(int)x;},open?270:200,()=>{
+        float from=pageHost.ColumnStyles[1].Width;
+        int target=open?AssistantWidth:0;
+        panel.SetBounds(0,0,AssistantWidth,rightDock.ClientSize.Height);
+        panel.Visible=true;panel.BringToFront();
+        assistantTween.Start(from,target,SetRightPanelWidth,open?240:180,()=>{
             if(panel.IsDisposed)return;
-            if(!open){panel.Visible=false;if(!RightOpen)pageHost.ColumnStyles[1].Width=0;}
-            else panel.SetBounds(0,0,rightDock.ClientSize.Width,rightDock.ClientSize.Height);
+            if(!open)panel.Visible=false;
+            SetRightPanelWidth(RightOpen?AssistantWidth:0);
             ApplyWorkspaceMetrics();
         });
     }

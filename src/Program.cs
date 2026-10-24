@@ -9,6 +9,24 @@ internal static class Program
     {
         SetCurrentProcessExplicitAppUserModelID("TheKay.CleanBrowser");
         ApplicationConfiguration.Initialize();
+        int probeIndex=Array.IndexOf(args,"--startup-check");
+        if(probeIndex>=0)
+        {
+            if(probeIndex+1>=args.Length||!Guid.TryParseExact(args[probeIndex+1],"N",out _)){Environment.ExitCode=1;return;}
+            string token=args[probeIndex+1];
+            AppContext.SetData("KayBrowser.DiagnosticsRoot",Path.Combine(Path.GetTempPath(),"kay-startup-check-"+token));
+            using var probe=new BrowserWindow(diagnostics:true);
+            probe.Shown+=async(_,_)=>{
+                try
+                {
+                    if(!await probe.VerifyStartup().WaitAsync(TimeSpan.FromSeconds(45)))throw new IOException("WebView2 indisponível.");
+                    File.WriteAllText(Path.Combine(AppContext.BaseDirectory,".clean-health-"+token+".json"),System.Text.Json.JsonSerializer.Serialize(new{version=Updater.CurrentVersion.ToString(3),status="healthy"}));
+                }
+                catch{Environment.ExitCode=1;}
+                finally{probe.Close();}
+            };
+            Application.Run(probe);return;
+        }
         if (args.Contains("--update-receipt"))
         {
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "update-receipt.json"), System.Text.Json.JsonSerializer.Serialize(new { version = Updater.CurrentVersion.ToString(3), process = Environment.ProcessPath, status = "restarted" })); return;
