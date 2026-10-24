@@ -134,6 +134,9 @@ public sealed partial class BrowserWindow
     }
     protected override void WndProc(ref Message m)
     {
+        // Keep WS_CAPTION for compositor transitions without drawing a second title bar.
+        if(m.Msg==0x85){m.Result=IntPtr.Zero;return;} // WM_NCPAINT
+        if(m.Msg==0x317)m.LParam=new IntPtr(m.LParam.ToInt64()&~2L); // WM_PRINT: omit PRF_NONCLIENT
         if(m.Msg==0x21&&MenuVisible) // WM_MOUSEACTIVATE is sent, not queued: IMessageFilter cannot catch it.
         {
             menuFilter?.SuppressGesture((int)((m.LParam.ToInt64()>>16)&0xffff));
