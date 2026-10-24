@@ -52,7 +52,7 @@ public sealed partial class BrowserWindow : Form
         Shown+=(_,_)=>{if(store.HasPendingWrites)ShowStorageFailure(store.LastWriteError);};
         FormClosing += (_, e) => {
             SaveSession();
-            if(!store.RetryPendingWrites()&&ShowNotice("H� dados ainda n�o salvos. Verifique o espa�o e a permiss�o da pasta. Fechar mesmo assim e descartar as altera��es pendentes?","Dados n�o salvos",MessageBoxButtons.YesNo)!=DialogResult.Yes){e.Cancel=true;return;}
+            if(!store.RetryPendingWrites()&&ShowNotice("Há dados ainda não salvos. Verifique o espaço e a permissão da pasta. Fechar mesmo assim e descartar as alterações pendentes?","Dados não salvos",MessageBoxButtons.YesNo)!=DialogResult.Yes){e.Cancel=true;return;}
             closing=true;memoryTimer.Stop();DisposeAssistant();foreach(var t in tabs)t.View?.Dispose();
         };
         memoryTimer.Tick += async (_, _) => await ManageMemory();
@@ -96,7 +96,7 @@ public sealed partial class BrowserWindow : Form
         }
         catch (Exception ex)
         {
-            ShowNotice("N�o foi poss�vel iniciar o motor WebView2. Instale ou atualize o Microsoft Edge WebView2 Runtime.\n\n" + ex.Message, "Clean Browser");
+            ShowNotice("Não foi possível iniciar o motor WebView2. Instale ou atualize o Microsoft Edge WebView2 Runtime.\n\n" + ex.Message, "Clean Browser");
             Process.Start(new ProcessStartInfo("https://developer.microsoft.com/microsoft-edge/webview2/") { UseShellExecute = true });
         }
     }
@@ -106,7 +106,7 @@ public sealed partial class BrowserWindow : Form
         var t = new BrowserTab { Url = Navigation.Resolve(url, store.Settings.Search) };
         t.Page.WorkspaceId=WorkspaceId;tabs.Add(t); tabStrip.TabPages.Add(t.Page);
         if (activate) { tabStrip.SelectedTab = t.Page; if(t.Loading is {} loading)await loading; }
-        else { t.Page.Caption = "	 " + new Uri(url).Host; }
+        else { t.Page.Caption = "○ " + new Uri(url).Host; }
         SaveSession();
     }
     async Task Activate(BrowserTab t)
@@ -143,14 +143,14 @@ public sealed partial class BrowserWindow : Form
             {
                 if (t == snapshotTab) ResetSnapshot();
                 if (!Navigation.IsWebUrl(e.Uri) && e.Uri != "about:blank") { e.Cancel=true;QueueExternalLink(e.Uri,e.IsUserInitiated);return; }
-                status.Text = "Carregando. " + new Uri(e.Uri).Host;
+                status.Text = "Carregando… " + new Uri(e.Uri).Host;
             };
             core.SourceChanged += (_, _) => { if (Navigation.IsWebUrl(core.Source)) t.Url = core.Source; UpdateChrome(t); };
             core.DocumentTitleChanged += (_, _) => { if (!string.IsNullOrWhiteSpace(core.DocumentTitle)) t.Title = core.DocumentTitle; UpdateChrome(t); };
             core.NavigationCompleted += (_, e) =>
             {
                 if (e.IsSuccess) { store.Record(t.Title, t.Url); SaveSession(); }
-                else status.Text = "Falha de navega��o: " + e.WebErrorStatus;
+                else status.Text = "Falha de navegação: " + e.WebErrorStatus;
                 UpdateChrome(t);
             };
             core.NewWindowRequested += async (_, e) =>
@@ -172,7 +172,7 @@ public sealed partial class BrowserWindow : Form
             {
                 e.SavesInProfile=false;var deferred=e.GetDeferral();
                 BeginInvoke(()=>{using(deferred){if(closing||view.IsDisposed){e.State=CoreWebView2PermissionState.Deny;return;}
-                    e.State=ShowNotice($"{e.Uri}\n\nPermitir {e.PermissionKind}?","Permiss�o do site",MessageBoxButtons.YesNo)==DialogResult.Yes?CoreWebView2PermissionState.Allow:CoreWebView2PermissionState.Deny;
+                    e.State=ShowNotice($"{e.Uri}\n\nPermitir {e.PermissionKind}?","Permissão do site",MessageBoxButtons.YesNo)==DialogResult.Yes?CoreWebView2PermissionState.Allow:CoreWebView2PermissionState.Deny;
                 }});
             };
             core.DownloadStarting += (_, e) =>
@@ -200,10 +200,10 @@ public sealed partial class BrowserWindow : Form
     {
         if (closing || !tabs.Contains(t)) return;
         tabStrip.Header.Invalidate();
-        t.Page.Caption = (t.Pinned ? "? " : t.Suspended ? "? " : "") + (t.Title.Length > 24 ? t.Title[..24] + "." : t.Title);
+        t.Page.Caption = (t.Pinned ? "◆ " : t.Suspended ? "◌ " : "") + (t.Title.Length > 24 ? t.Title[..24] + "…" : t.Title);
         if (Current != t) return;
         address.Text = t.Url == "kay://new" ? "" : t.Url;
-        Text = t.Title + " � Clean Browser";
+        Text = t.Title + " · Clean Browser";
     }
     void NavigateCurrent(string input)
     {
@@ -233,7 +233,7 @@ public sealed partial class BrowserWindow : Form
         foreach (Control control in t.Page.Controls.Cast<Control>().ToArray()) control.Dispose();
         t.Page.Controls.Clear();
         var home = new HomeBoard(store,NavigateCurrent,ShowAppearance,ShowMemory,ShortcutCommand,kind=>{if(kind=="favorites")ShowBookmarks();else ShowLibrary(kind);},id=>_ = SwitchWorkspace(id),ToggleFocus);
-        home.SetPalette(Colors); t.Page.Controls.Add(home);home.AnimateIn(); UpdateChrome(t);if(Current==t)status.Text="Clean Browser � Pronto para explorar";
+        home.SetPalette(Colors); t.Page.Controls.Add(home);home.AnimateIn(); UpdateChrome(t);if(Current==t)status.Text="Clean Browser · Pronto para explorar";
     }
     void BookmarkCurrent()
     {
@@ -248,19 +248,19 @@ public sealed partial class BrowserWindow : Form
     ListView List(params string[] columns)
     {
         var list = new ListView { Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true, BackColor = Back, ForeColor = Ink };
-        foreach (var c in columns) list.Columns.Add(c, c == "Endere�o" ? 440 : 220); return list;
+        foreach (var c in columns) list.Columns.Add(c, c == "Endereço" ? 440 : 220); return list;
     }
     void ShowHistory()
     {
-        using var f = Dialog("Hist�rico"); var list = List("P�gina", "Endere�o", "Data"); var filter = new TextBox { Dock = DockStyle.Top, PlaceholderText = "Filtrar hist�rico." };
+        using var f = Dialog("Histórico"); var list = List("Página", "Endereço", "Data"); var filter = new TextBox { Dock = DockStyle.Top, PlaceholderText = "Filtrar histórico…" };
         void Render() { list.Items.Clear(); foreach (var v in store.History.Where(v => (v.Title + v.Url).Contains(filter.Text, StringComparison.OrdinalIgnoreCase)).Take(1000)) list.Items.Add(new ListViewItem([v.Title, v.Url, v.At.ToString("g")]) { Tag = v.Url }); }
         filter.TextChanged += (_, _) => Render(); list.DoubleClick += (_, _) => { if (list.SelectedItems.Count > 0) { NavigateCurrent((string)list.SelectedItems[0].Tag!); f.Close(); } };
-        var clear = Button("Apagar hist�rico", () => { if (ShowNotice("Apagar todo o hist�rico?", "Clean Browser", MessageBoxButtons.YesNo) == DialogResult.Yes) { store.History.Clear(); store.SaveHistory(); Render(); } }); clear.Dock = DockStyle.Bottom;
+        var clear = Button("Apagar histórico", () => { if (ShowNotice("Apagar todo o histórico?", "Clean Browser", MessageBoxButtons.YesNo) == DialogResult.Yes) { store.History.Clear(); store.SaveHistory(); Render(); } }); clear.Dock = DockStyle.Bottom;
         f.Controls.Add(list); f.Controls.Add(filter); f.Controls.Add(clear); Render(); f.ShowDialog(this);
     }
     void ShowBookmarks()
     {
-        using var f = Dialog("Favoritos"); var list = List("P�gina", "Endere�o");
+        using var f = Dialog("Favoritos"); var list = List("Página", "Endereço");
         void Render() { list.Items.Clear(); foreach (var b in store.Bookmarks) list.Items.Add(new ListViewItem([b.Title, b.Url]) { Tag = b }); }
         list.DoubleClick += (_, _) => { if (list.SelectedItems.Count > 0) { NavigateCurrent(((Bookmark)list.SelectedItems[0].Tag!).Url); f.Close(); } };
         var remove = Button("Remover selecionado", () => { if (list.SelectedItems.Count > 0) { store.Bookmarks.Remove((Bookmark)list.SelectedItems[0].Tag!); store.SaveBookmarks(); Render(); } }); remove.Dock = DockStyle.Bottom;
@@ -268,7 +268,7 @@ public sealed partial class BrowserWindow : Form
     }
     void ShowDownloads()
     {
-        using var f=Dialog("Downloads desta sess�o");var list=List("Arquivo","Local","Estado");
+        using var f=Dialog("Downloads desta sessão");var list=List("Arquivo","Local","Estado");
         void Render()
         {
             list.BeginUpdate();
@@ -296,11 +296,11 @@ public sealed partial class BrowserWindow : Form
         status.Text=message;
         if(storageNoticeQueued||!IsHandleCreated||closing)return;
         storageNoticeQueued=true;
-        BeginInvoke(()=>{if(!closing&&!IsDisposed&&store.HasPendingWrites)ShowNotice(message,"Altera��es aguardando grava��o");});
+        BeginInvoke(()=>{if(!closing&&!IsDisposed&&store.HasPendingWrites)ShowNotice(message,"Alterações aguardando gravação");});
     }
     void Find()
     {
-        using var f = Dialog("Buscar nesta p�gina", 460, 160); var text = new TextBox { Dock = DockStyle.Top };
+        using var f = Dialog("Buscar nesta página", 460, 160); var text = new TextBox { Dock = DockStyle.Top };
         var find = Button("Buscar", () => { if (Current?.View?.CoreWebView2 is { } c && text.Text.Length > 0) _ = c.ExecuteScriptAsync("window.find(" + System.Text.Json.JsonSerializer.Serialize(text.Text) + ")"); }); find.Dock = DockStyle.Bottom;
         f.Controls.Add(text); f.Controls.Add(find); f.AcceptButton = find; f.ShowDialog(this);
     }
@@ -370,15 +370,15 @@ public sealed partial class BrowserWindow : Form
                 mb=MemoryMb();
                 UpdateChrome(t);
             }
-            status.Text = $"{MemoryMb():N0} MB em uso � meta {store.Settings.MemoryBudgetMb:N0} MB � {tabs.Count(t => t.Suspended)} abas suspensas � {tabs.Count} abas";
+            status.Text = $"{MemoryMb():N0} MB em uso · meta {store.Settings.MemoryBudgetMb:N0} MB · {tabs.Count(t => t.Suspended)} abas suspensas · {tabs.Count} abas";
         }
-        catch (Exception ex) { status.Text = "Mem�ria: " + ex.Message; }
+        catch (Exception ex) { status.Text = "Memória: " + ex.Message; }
         finally { memoryBusy = false; }
     }
     void ShowMemory()
     {
-        using var f = Dialog("Mem�ria e abas"); var list = List("Aba", "Estado", "�ltimo uso");
-        var note = new Label { Dock = DockStyle.Top, Height = 64, Text = $"RAM total estimada: {MemoryMb()} MB � meta: {store.Settings.MemoryBudgetMb} MB\nAbas com �udio e abas protegidas n�o s�o suspensas automaticamente. Descarregar perde formul�rios n�o salvos." };
+        using var f = Dialog("Memória e abas"); var list = List("Aba", "Estado", "Último uso");
+        var note = new Label { Dock = DockStyle.Top, Height = 64, Text = $"RAM total estimada: {MemoryMb()} MB · meta: {store.Settings.MemoryBudgetMb} MB\nAbas com áudio e abas protegidas não são suspensas automaticamente. Descarregar perde formulários não salvos." };
         void Render() { list.Items.Clear(); foreach (var t in tabs) list.Items.Add(new ListViewItem([t.Title, t.Pinned ? "Protegida" : t.View == null ? "Descarregada" : t.Suspended ? "Suspensa" : "Ativa", t.LastActive.ToLocalTime().ToString("t")]) { Tag = t }); }
         var actions = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 55 };
         actions.Controls.Add(Button("Proteger / desproteger", () => { if (list.SelectedItems.Count > 0) { var t = (BrowserTab)list.SelectedItems[0].Tag!; t.Pinned = !t.Pinned; UpdateChrome(t); Render(); } }));
@@ -386,8 +386,8 @@ public sealed partial class BrowserWindow : Form
         {
             if (list.SelectedItems.Count == 0) return;
             var t = (BrowserTab)list.SelectedItems[0].Tag!;
-            if (t == Current || t.Pinned) { ShowNotice("Selecione uma aba em segundo plano e sem prote��o."); return; }
-            if (ShowNotice("A p�gina ser� recarregada ao voltar. Descartar formul�rios e estado n�o salvos?", "Clean Browser", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+            if (t == Current || t.Pinned) { ShowNotice("Selecione uma aba em segundo plano e sem proteção."); return; }
+            if (ShowNotice("A página será recarregada ao voltar. Descartar formulários e estado não salvos?", "Clean Browser", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
             t.View?.Dispose(); t.View = null; t.Suspended = false; foreach(Control c in t.Page.Controls.Cast<Control>().ToArray())c.Dispose();t.Page.Controls.Clear(); Render();
         }));
         f.Controls.Add(list); f.Controls.Add(note); f.Controls.Add(actions); Render(); f.ShowDialog(this);
@@ -397,30 +397,30 @@ public sealed partial class BrowserWindow : Form
         if (Current == null||environment==null) return;
         using var temporary=new WebView2{Size=new Size(1,1),Location=new Point(-100,-100),Visible=false};
         var core=Current.View?.CoreWebView2;
-        if(core==null){Controls.Add(temporary);try{await temporary.EnsureCoreWebView2Async(environment);core=temporary.CoreWebView2;}catch(Exception ex){await Task.Yield();ShowNotice("N�o foi poss�vel carregar extens�es: "+ex.Message);return;}}
+        if(core==null){Controls.Add(temporary);try{await temporary.EnsureCoreWebView2Async(environment);core=temporary.CoreWebView2;}catch(Exception ex){await Task.Yield();ShowNotice("Não foi possível carregar extensões: "+ex.Message);return;}}
         var profile = core?.Profile;
         if (profile == null) return;
-        using var f = Dialog("Extens�es � por pasta"); var list = List("Nome", "ID", "Estado");
-        var help = new Label { Dock = DockStyle.Top, Height = 64, Text = "Instale extens�es descompactadas com manifest.json. Compatibilidade depende das APIs do WebView2.\nN�o h� instala��o direta pela Chrome Web Store; extens�es com bot�o/popup podem n�o funcionar." };
+        using var f = Dialog("Extensões · por pasta"); var list = List("Nome", "ID", "Estado");
+        var help = new Label { Dock = DockStyle.Top, Height = 64, Text = "Instale extensões descompactadas com manifest.json. Compatibilidade depende das APIs do WebView2.\nNão há instalação direta pela Chrome Web Store; extensões com botão/popup podem não funcionar." };
         async Task Render()
         {
             list.Items.Clear(); foreach (var x in await profile.GetBrowserExtensionsAsync()) list.Items.Add(new ListViewItem([x.Name, x.Id, x.IsEnabled ? "Ativa" : "Desativada"]) { Tag = x });
         }
         var actions = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 55 };
-        var add = Button("Instalar pasta.", () => { }); add.Click += async (_, _) =>
+        var add = Button("Instalar pasta…", () => { }); add.Click += async (_, _) =>
         {
-            using var picker = new FolderBrowserDialog { Description = "Selecione a pasta da extens�o com manifest.json" };
+            using var picker = new FolderBrowserDialog { Description = "Selecione a pasta da extensão com manifest.json" };
             if (picker.ShowDialog(f) != DialogResult.OK) return;
             try
             {
-                if (!File.Exists(Path.Combine(picker.SelectedPath, "manifest.json"))) throw new IOException("A pasta n�o cont�m manifest.json.");
-                if (ShowNotice("Extens�es podem acessar os sites visitados. Instalar esta extens�o?", "Clean Browser", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+                if (!File.Exists(Path.Combine(picker.SelectedPath, "manifest.json"))) throw new IOException("A pasta não contém manifest.json.");
+                if (ShowNotice("Extensões podem acessar os sites visitados. Instalar esta extensão?", "Clean Browser", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
                 // Keep a durable app-owned copy: WebView2 references the installed folder.
                 var target = Path.Combine(Storage.Root, "Extensions", Guid.NewGuid().ToString("N"));
                 CopyExtension(picker.SelectedPath, target);
                 await profile.AddBrowserExtensionAsync(target); await Render();
             }
-            catch (Exception ex) { ShowNotice(ex.Message, "Extens�o n�o instalada"); }
+            catch (Exception ex) { ShowNotice(ex.Message, "Extensão não instalada"); }
         };
         var toggle = Button("Ativar / desativar", () => { }); toggle.Click += async (_, _) => { try { if (list.SelectedItems.Count > 0) { var x = (CoreWebView2BrowserExtension)list.SelectedItems[0].Tag!; await x.EnableAsync(!x.IsEnabled); await Render(); } } catch (Exception ex) { ShowNotice(ex.Message); } };
         var remove = Button("Remover", () => { }); remove.Click += async (_, _) => { try { if (list.SelectedItems.Count > 0) { var x = (CoreWebView2BrowserExtension)list.SelectedItems[0].Tag!; await x.RemoveAsync(); await Render(); } } catch (Exception ex) { ShowNotice(ex.Message); } };
@@ -430,32 +430,32 @@ public sealed partial class BrowserWindow : Form
     static void CopyExtension(string source, string destination)
     {
         if (Path.GetFullPath(destination).StartsWith(Path.TrimEndingDirectorySeparator(Path.GetFullPath(source)) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-            throw new IOException("Escolha somente a pasta espec�fica da extens�o, fora da pasta de dados do Clean Browser.");
+            throw new IOException("Escolha somente a pasta específica da extensão, fora da pasta de dados do Clean Browser.");
         Directory.CreateDirectory(destination);
         foreach (var file in Directory.EnumerateFiles(source)) if ((File.GetAttributes(file) & FileAttributes.ReparsePoint) == 0) File.Copy(file, Path.Combine(destination, Path.GetFileName(file)));
         foreach (var dir in Directory.EnumerateDirectories(source)) if ((File.GetAttributes(dir) & FileAttributes.ReparsePoint) == 0) CopyExtension(dir, Path.Combine(destination, Path.GetFileName(dir)));
     }
     void ShowSettings()
     {
-        using var f = Dialog("Configura��es avan�adas", 720, 650);
+        using var f = Dialog("Configurações avançadas", 720, 650);
         var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, Padding = new Padding(20), AutoScroll = true }; grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 240)); grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         void Row(string label, Control c) { int row = grid.RowCount++; grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); grid.Controls.Add(new Label { Text = label, AutoSize = true, Padding = new Padding(0, 7, 0, 0) }, 0, row); c.Dock = DockStyle.Fill; grid.Controls.Add(c, 1, row); }
         ComboBox Choice(string[] options, string value) { var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList }; c.Items.AddRange(options); c.SelectedItem = value; if (c.SelectedIndex < 0) c.SelectedIndex = 0; return c; }
         var theme = Choice(["Escuro", "Claro"], store.Settings.Theme); Row("Tema", theme);
-        var animations = new CheckBox { Checked = store.Settings.Animations, Text = "Transi��es suaves" }; Row("Anima��es", animations);
+        var animations = new CheckBox { Checked = store.Settings.Animations, Text = "Transições suaves" }; Row("Animações", animations);
         var accent = new TextBox { Text = store.Settings.Accent }; Row("Cor de destaque (#A8E6CF)", accent);
         var engine = Choice(["Google", "DuckDuckGo", "Bing"], store.Settings.Search); Row("Buscador", engine);
-        var idle = new NumericUpDown { Minimum = 1, Maximum = 60, Value = store.Settings.IdleMinutes }; Row("Suspender ap�s (minutos)", idle);
+        var idle = new NumericUpDown { Minimum = 1, Maximum = 60, Value = store.Settings.IdleMinutes }; Row("Suspender após (minutos)", idle);
         var budget = new NumericUpDown { Minimum = 256, Maximum = 32768, Increment = 128, Value = store.Settings.MemoryBudgetMb }; Row("Meta de RAM total (MB)", budget);
-        var restore = new CheckBox { Checked = store.Settings.RestoreTabs, Text = "Restaurar endere�os ao abrir" }; Row("Sess�o", restore);
+        var restore = new CheckBox { Checked = store.Settings.RestoreTabs, Text = "Restaurar endereços ao abrir" }; Row("Sessão", restore);
         var client = new TextBox { Text = store.Settings.GoogleClientId }; Row("Google OAuth Client ID (Desktop)", client);
         var secret = new TextBox { Text = store.Settings.GoogleClientSecret, UseSystemPasswordChar = true }; Row("Google OAuth Client secret", secret);
-        var repo = new TextBox { Text = store.Settings.UpdateRepository, PlaceholderText = "seu-usuario/seu-repositorio" }; Row("Atualiza��es pelo GitHub", repo);
+        var repo = new TextBox { Text = store.Settings.UpdateRepository, PlaceholderText = "seu-usuario/seu-repositorio" }; Row("Atualizações pelo GitHub", repo);
         Row("Dados locais", Button("Abrir pasta de dados", () => Process.Start(new ProcessStartInfo(Storage.Root) { UseShellExecute = true })));
-        var save = Button("Salvar personaliza��o", () =>
+        var save = Button("Salvar personalização", () =>
         {
-            try { _ = ColorTranslator.FromHtml(accent.Text); } catch { ShowNotice("Use uma cor v�lida, como #A8E6CF."); return; }
-            if (repo.Text.Length > 0 && !Updater.ValidRepository(repo.Text)) { ShowNotice("Reposit�rio deve ser usuario/nome."); return; }
+            try { _ = ColorTranslator.FromHtml(accent.Text); } catch { ShowNotice("Use uma cor válida, como #A8E6CF."); return; }
+            if (repo.Text.Length > 0 && !Updater.ValidRepository(repo.Text)) { ShowNotice("Repositório deve ser usuario/nome."); return; }
             var p = store.Settings; p.Animations = animations.Checked; Motion.Enabled = p.Animations; p.Theme = theme.Text; p.Accent = accent.Text; p.Search = engine.Text; p.IdleMinutes = (int)idle.Value; p.MemoryBudgetMb = (int)budget.Value; p.RestoreTabs = restore.Checked; p.GoogleClientId = client.Text.Trim(); p.GoogleClientSecret = secret.Text.Trim(); p.UpdateRepository = repo.Text.Trim(); store.SaveSettings();
             ApplyPersonalization();f.Close();
         }); save.Dock = DockStyle.Bottom; f.Controls.Add(grid); f.Controls.Add(save); f.ShowDialog(this);
@@ -467,13 +467,13 @@ public sealed partial class BrowserWindow : Form
             var user = GoogleLogin.ReadProfile();
             if (user != null)
             {
-                if (ShowNotice($"Conectado como {user.Name}\n{user.Email}\n\nSair da conta local? Isso n�o encerra sess�es dos sites.", "Conta Google", MessageBoxButtons.YesNo) == DialogResult.Yes) GoogleLogin.SignOut();
+                if (ShowNotice($"Conectado como {user.Name}\n{user.Email}\n\nSair da conta local? Isso não encerra sessões dos sites.", "Conta Google", MessageBoxButtons.YesNo) == DialogResult.Yes) GoogleLogin.SignOut();
                 return;
             }
-            if (string.IsNullOrWhiteSpace(store.Settings.GoogleClientId)) { ShowNotice("Cadastre um OAuth Client do tipo Desktop no Google Cloud e informe o ID e o secret em Configura��es avan�adas.\n\nO login identifica seu perfil local. N�o sincroniza senhas, favoritos ou sess�es do Chrome.", "Configura��o necess�ria"); ShowSettings(); return; }
-            status.Text = "Aguardando login no navegador padr�o.";
+            if (string.IsNullOrWhiteSpace(store.Settings.GoogleClientId)) { ShowNotice("Cadastre um OAuth Client do tipo Desktop no Google Cloud e informe o ID e o secret em Configurações avançadas.\n\nO login identifica seu perfil local. Não sincroniza senhas, favoritos ou sessões do Chrome.", "Configuração necessária"); ShowSettings(); return; }
+            status.Text = "Aguardando login no navegador padrão…";
             user = await GoogleLogin.SignIn(store.Settings.GoogleClientId, store.Settings.GoogleClientSecret);
-            status.Text = "Ol�, " + user.Name; ShowNotice("Conta conectada: " + user.Email, "Clean Browser");
+            status.Text = "Olá, " + user.Name; ShowNotice("Conta conectada: " + user.Email, "Clean Browser");
         }
         catch (Exception ex) { ShowNotice(ex.Message, "Login Google"); }
     }
@@ -484,4 +484,3 @@ public sealed partial class BrowserWindow : Form
         return Task.CompletedTask;
     }
 }
-
