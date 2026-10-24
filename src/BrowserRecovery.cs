@@ -89,7 +89,7 @@ public sealed partial class BrowserWindow
             if(ShowNotice("Abrir este link no aplicativo associado do Windows?\n\n"+url[..Math.Min(url.Length,500)],"Abrir aplicativo externo",MessageBoxButtons.YesNo)!=DialogResult.Yes)return;
             try{Process.Start(new ProcessStartInfo(url){UseShellExecute=true});}
             catch(Exception ex)when(ex is System.ComponentModel.Win32Exception or InvalidOperationException)
-            {ShowNotice("N�o foi poss�vel abrir o aplicativo. "+ex.Message);}
+            {ShowNotice("Não foi possível abrir o aplicativo. "+ex.Message);}
         });
     }
     void QueueFailedViews(BrowserTab tab,WebView2 failedView,bool browserExited)
@@ -109,11 +109,10 @@ public sealed partial class BrowserWindow
         var body=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=1,RowCount=3,Padding=new Padding(Ui(30))};
         body.RowStyles.Add(new RowStyle(SizeType.Percent,50));body.RowStyles.Add(new RowStyle(SizeType.Absolute,Ui(55)));body.RowStyles.Add(new RowStyle(SizeType.Percent,50));
         body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));
-        body.Controls.Add(new Label{Dock=DockStyle.Fill,TextAlign=ContentAlignment.BottomCenter,Text="O conte�do desta aba foi interrompido.\nVoc� pode reabrir o endere�o. Dados n�o salvos da p�gina podem ter sido perdidos."},0,0);
+        body.Controls.Add(new Label{Dock=DockStyle.Fill,TextAlign=ContentAlignment.BottomCenter,Text="O conteúdo desta aba foi interrompido.\nVocê pode reabrir o endereço. Dados não salvos da página podem ter sido perdidos."},0,0);
         var retry=Button("Reabrir aba",()=>{if(!closing&&tabs.Contains(tab)){tabStrip.SelectedTab=tab.Page;_ = CreateView(tab);}});
         retry.Dock=DockStyle.Fill;body.Controls.Add(retry,0,1);ApplyTheme(body);tab.Page.Controls.Add(body);
-        status.Text="Aba interrompida - use Reabrir aba para recuperar o conte�do.";
+        status.Text="Aba interrompida — use Reabrir aba para recuperar o conteúdo.";
         UpdateChrome(tab);
     }
 }
-
