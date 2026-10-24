@@ -19,7 +19,7 @@ internal static class Program
             probe.Shown+=async(_,_)=>{
                 try
                 {
-                    if(!await probe.VerifyStartup().WaitAsync(TimeSpan.FromSeconds(45)))throw new IOException("WebView2 indispon�vel.");
+                    if(!await probe.VerifyStartup().WaitAsync(TimeSpan.FromSeconds(45)))throw new IOException("WebView2 indisponível.");
                     File.WriteAllText(Path.Combine(AppContext.BaseDirectory,".clean-health-"+token+".json"),System.Text.Json.JsonSerializer.Serialize(new{version=Updater.CurrentVersion.ToString(3),status="healthy"}));
                 }
                 catch{Environment.ExitCode=1;}
@@ -37,7 +37,7 @@ internal static class Program
             try
             {
                 using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(4));
-                var update = Updater.Check(Distribution.DefaultRepository, deadline.Token).GetAwaiter().GetResult() ?? throw new InvalidOperationException("Nenhuma vers�o mais nova para o teste.");
+                var update = Updater.Check(Distribution.DefaultRepository, deadline.Token).GetAwaiter().GetResult() ?? throw new InvalidOperationException("Nenhuma versão mais nova para o teste.");
                 Updater.Install(update, cancellation: deadline.Token, diagnostics: true).GetAwaiter().GetResult();
             }
             catch (Exception ex) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "update-failure.json"), ex.ToString()); Environment.ExitCode = 1; }
@@ -55,9 +55,9 @@ internal static class Program
             catch(Exception ex) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"layout-check.json"), System.Text.Json.JsonSerializer.Serialize(new { status="FAIL", error=ex.ToString() })); Environment.ExitCode=1; }
             return;
         }
-        Application.ThreadException += (_, e) => UiMessage.Show(Form.ActiveForm, Palette.Create(false, Color.MediumAquamarine), e.Exception.Message, "Clean Browser � ocorreu um erro");
+        Application.ThreadException += (_, e) => UiMessage.Show(Form.ActiveForm, Palette.Create(false, Color.MediumAquamarine), e.Exception.Message, "Clean Browser · ocorreu um erro");
         using var mutex = new Mutex(true, "Local\\KayBrowser.Main", out var first);
-        if (!first) { UiMessage.Show(null, Palette.Create(false, Color.MediumAquamarine), "O Clean Browser j� est� aberto."); return; }
+        if (!first) { UiMessage.Show(null, Palette.Create(false, Color.MediumAquamarine), "O Clean Browser já está aberto."); return; }
         Application.Run(new BrowserWindow());
     }
 }
