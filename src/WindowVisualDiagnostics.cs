@@ -27,7 +27,7 @@ public sealed partial class BrowserWindow
             probe.Show();probe.Activate();await probe.AddTab("kay://new");await Task.Delay(420);
             string directory=Path.Combine(AppContext.BaseDirectory,"visual-evidence");Directory.CreateDirectory(directory);
             bool ci=Environment.GetEnvironmentVariable("GITHUB_ACTIONS")=="true";
-            void Capture(string name,bool ribbon=false)
+            string Capture(string name,bool ribbon=false)
             {
                 var area=probe.Bounds;if(ribbon)area.Height=Math.Min(area.Height,probe.Ui(58));
                 using var bitmap=new Bitmap(area.Width,area.Height,PixelFormat.Format32bppArgb);
@@ -44,7 +44,8 @@ public sealed partial class BrowserWindow
                     try{Check(PrintWindow(probe.Handle,dc,2),"native window can render its frame");}finally{g.ReleaseHdc(dc);}
                     using var target=Graphics.FromImage(bitmap);target.DrawImageUnscaled(full,Point.Empty);
                 }
-                bitmap.Save(Path.Combine(directory,name+".png"),ImageFormat.Png);
+                string path=Path.Combine(directory,name+".png");bitmap.Save(path,ImageFormat.Png);
+                return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path)));
             }
             void ClientMatchesWindow(string state)
             {
@@ -70,6 +71,10 @@ public sealed partial class BrowserWindow
                 await Task.Delay(120);
             }
             ClientMatchesWindow("normal");Capture("window-normal");
+            string titleBefore=Capture("title-before",true);
+            probe.Text="Synthetic native title repaint regression";
+            string titleAfter=Capture("title-after",true);
+            Check(titleBefore==titleAfter,"changing the native title never paints a second caption over the tabs");
             int originalTabs=probe.tabs.Count;
             await Record("tab-open",()=>probe.Shortcut(probe,new KeyEventArgs(Keys.Control|Keys.T)),()=>probe.tabStrip.Header.TabMotionProgress,true);
             Check(probe.tabs.Count==originalTabs+1,"Ctrl+T opens one real tab");
