@@ -137,15 +137,19 @@ public sealed partial class BrowserWindow
             m.Result=new IntPtr(2);return; // MA_ACTIVATEANDEAT: focus the browser, discard the dismissal click.
         }
         const int WM_NCCALCSIZE=0x83,WM_NCHITTEST=0x84;
-        if(m.Msg==WM_NCCALCSIZE){m.Result=IntPtr.Zero;return;}
-        if(m.Msg==0x24) // WM_GETMINMAXINFO: use the monitor under this window, never a cached primary monitor.
+        if(m.Msg==WM_NCCALCSIZE)
         {
-            base.WndProc(ref m);
-            var monitor=Screen.FromHandle(Handle);var area=fullscreen?monitor.Bounds:monitor.WorkingArea;
-            var limits=Marshal.PtrToStructure<FrameLimits>(m.LParam);
-            limits.MaxPosition=new Point(area.Left-monitor.Bounds.Left,area.Top-monitor.Bounds.Top);
-            limits.MaxSize=area.Size;limits.MinTrack=MinimumSize;
-            Marshal.StructureToPtr(limits,m.LParam,false);m.Result=IntPtr.Zero;return;
+            // A maximized sizeable HWND retains invisible resize borders outside the
+            // work area. Keep our custom client inside the visible monitor surface.
+            if(IsZoomed(Handle)&&!fullscreen)
+            {
+                var proposed=Marshal.PtrToStructure<FrameRect>(m.LParam);
+                var area=Screen.FromHandle(Handle).WorkingArea;
+                proposed.Left=Math.Max(proposed.Left,area.Left);proposed.Top=Math.Max(proposed.Top,area.Top);
+                proposed.Right=Math.Min(proposed.Right,area.Right);proposed.Bottom=Math.Min(proposed.Bottom,area.Bottom);
+                Marshal.StructureToPtr(proposed,m.LParam,false);
+            }
+            m.Result=IntPtr.Zero;return;
         }
         if(m.Msg==0x85){m.Result=IntPtr.Zero;return;} // Our entire frame is client-rendered.
         if(m.Msg==WM_NCHITTEST&&WindowState!=FormWindowState.Maximized&&!fullscreen)
@@ -165,12 +169,13 @@ public sealed partial class BrowserWindow
         if (m.Msg is 0xAE or 0xAF) { m.Result = IntPtr.Zero; return; }
         base.WndProc(ref m);
     }
+    [DllImport("user32.dll")]static extern bool IsZoomed(IntPtr window);
     [StructLayout(LayoutKind.Sequential)]
-    struct FrameLimits { public Point Reserved;public Size MaxSize;public Point MaxPosition;public Size MinTrack,MaxTrack; }
+    struct FrameRect { public int Left,Top,Right,Bottom; }
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e);
-        using var line=new Pen(Colors.Line);e.Graphics.DrawRectangle(line,0,0,Width-1,Height-1);
+        using var line=new Pen(Colors.Line);e.Graphics.DrawRectangle(line,0,0,ClientSize.Width-1,ClientSize.Height-1);
     }
 }
 

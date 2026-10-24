@@ -29,7 +29,7 @@ public sealed partial class BrowserWindow
             bool ci=Environment.GetEnvironmentVariable("GITHUB_ACTIONS")=="true";
             Bitmap ReadPixels(bool ribbon=false)
             {
-                var area=probe.Bounds;if(ribbon)area.Height=Math.Min(area.Height,probe.Ui(58));
+                var area=probe.RectangleToScreen(probe.ClientRectangle);if(ribbon)area.Height=Math.Min(area.Height,probe.Ui(58));
                 var bitmap=new Bitmap(area.Width,area.Height,PixelFormat.Format32bppArgb);
                 if(ci)
                 {
@@ -55,8 +55,13 @@ public sealed partial class BrowserWindow
             void ClientMatchesWindow(string state)
             {
                 Check(GetClientRect(probe.Handle,out var rect),state+" client rectangle is available");
-                Check(rect.Right==probe.Width&&rect.Bottom==probe.Height,state+" has no hidden caption or offscreen client inset");
-                Check(probe.PointToScreen(Point.Empty)==probe.Location,state+" client origin matches visible window origin");
+                if(probe.WindowState==FormWindowState.Maximized)
+                    Check(probe.RectangleToScreen(probe.ClientRectangle)==Screen.FromHandle(probe.Handle).WorkingArea,state+" client matches the visible work area, excluding invisible resize borders");
+                else
+                {
+                    Check(rect.Right==probe.Width&&rect.Bottom==probe.Height,state+" has no hidden caption or offscreen client inset");
+                    Check(probe.PointToScreen(Point.Empty)==probe.Location,state+" client origin matches visible window origin");
+                }
                 Check(probe.chromeLayout.Bounds==probe.DisplayRectangle,state+" chrome fills the client surface");
                 Check(probe.locationBox!.ClientRectangle.Contains(probe.address.Bounds),state+" address fits its surface");
             }
@@ -100,7 +105,7 @@ public sealed partial class BrowserWindow
             {
                 maximize.PerformClick();await Task.Delay(400);
                 Check(probe.WindowState==FormWindowState.Maximized,"caption button maximizes");
-                Check(probe.Bounds==Screen.FromHandle(probe.Handle).WorkingArea,"maximized frame exactly fills current work area");
+                Check(probe.RectangleToScreen(probe.ClientRectangle)==Screen.FromHandle(probe.Handle).WorkingArea,"maximized frame exactly fills current work area");
                 ClientMatchesWindow("maximized");if(cycle==0)Capture("window-maximized");
                 maximize.PerformClick();await Task.Delay(400);
                 Check(probe.WindowState==FormWindowState.Normal&&probe.Bounds==normal,"caption restore retains the original bounds");
@@ -119,7 +124,7 @@ public sealed partial class BrowserWindow
                 Check(probe.WindowState==FormWindowState.Normal&&probe.Bounds==normal,"F11 returns to the original normal window");
             }
             maximize.PerformClick();await Task.Delay(350);probe.Fullscreen();await Task.Delay(150);probe.Fullscreen();await Task.Delay(350);
-            Check(probe.WindowState==FormWindowState.Maximized&&probe.Bounds==Screen.FromHandle(probe.Handle).WorkingArea,"F11 returns to a previously maximized window");
+            Check(probe.WindowState==FormWindowState.Maximized&&probe.RectangleToScreen(probe.ClientRectangle)==Screen.FromHandle(probe.Handle).WorkingArea,"F11 returns to a previously maximized window");
             maximize.PerformClick();await Task.Delay(350);
             foreach(var size in new[]{new Size(920,620),new Size(980,700),new Size(900,600)})
             {
