@@ -1,11 +1,15 @@
-# Clean Browser 0.12.0 — Animações suaves
+# Clean Browser 0.12.1 — Janela e transições revisadas
 
-- Abas abrem com expansão e entrada discreta; ao fechar, recolhem e desaparecem suavemente enquanto as demais se reposicionam.
-- O botão de nova aba acompanha o movimento; geometria de clique acompanha o desenho, inclusive em abas laterais.
-- Conteúdo de abas fechadas é liberado imediatamente. Cliques rápidos, rolagem e redimensionamento encerram ou retomam as transições sem deixar animações em repouso.
-- Menu com fade e deslocamento vertical curto. Fechamento externo continua imediato para preservar foco e o próximo clique.
-- Maximizar, restaurar e minimizar usam transições nativas do Windows, mantendo o visual próprio do navegador e a posição de restauração.
-- Os efeitos respeitam Animações e transições e a preferência do Windows por reduzir movimento. A duração das transições da janela é controlada pelo sistema.
-- Arte aprovada, cores, abas, histórico e dados dos sites preservados.
+- Moldura da janela compatível com o gerenciamento de tamanho do Windows, sem simular um estilo de borda diferente do configurado no aplicativo.
+- A janela inicial e o tamanho mínimo respeitam a área útil disponível, evitando abrir fora da tela em monitores menores.
+- Área maximizada calculada no monitor atual; redimensionamento e restauração preservam o enquadramento e os botões.
+- F11 retorna ao tamanho e ao estado anteriores, inclusive quando a janela já estava maximizada.
+- Redução de flashes das barras durante o redimensionamento.
+- Fundo já preparado em cache compartilhado, sem redimensionar a gravura a cada quadro da animação.
+- Criação de aba sem ativação duplicada; transições graduais de 280 ms para abas e 240 ms para o menu.
+- Botão de nova aba acompanha a borda das abas durante toda a transição, sem sobrepor os títulos ou o botão de fechar.
+- Sessão remota não desativa automaticamente os efeitos. A opção do aplicativo e a preferência de reduzir movimento do Windows continuam respeitadas.
+- Validação ampliada com quadros intermediários capturados na janela sintética real, Ctrl+T/Ctrl+W, menu, ciclos de maximizar/restaurar, minimizar, F11 e redimensionamento.
+- Arte aprovada, cores, histórico e dados dos sites preservados.
 
-Atualize em **Atualizar → Atualizar e reiniciar**.
+Atualização pelo próprio navegador: **Atualizar → Atualizar e reiniciar**.

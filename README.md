@@ -32,6 +32,14 @@ Se configurou um servidor alternativo, use **Atualizar → Canal de atualizaçã
 
 Os dados permanecem em `%LOCALAPPDATA%\KayBrowser`. A atualização não apaga histórico, favoritos, configurações ou perfil de sites. A meta é atualizar todo o código do aplicativo por troca do executável; a atualização do motor WebView2 continua sendo gerenciada pela Microsoft.
 
+## Janela e transições revisadas (0.12.1)
+
+A moldura usa o estado de borda real do Windows Forms, com área de trabalho calculada no monitor atual. F11 restaura o estado e o tamanho anteriores. As barras usam desenho com buffer para reduzir flashes no redimensionamento. A abertura de uma aba executa uma única ativação.
+
+Abas usam uma curva gradual de 280 ms; o menu, 240 ms. Sessões remotas deixam de desativar os efeitos automaticamente; a preferência de reduzir movimento do sistema e a opção do aplicativo continuam respeitadas.
+
+A validação Windows registra quadros intermediários da janela sintética em primeiro plano (somente na CI), incluindo os comandos reais Ctrl+T/Ctrl+W e menu. Confere também área cliente, ciclos de minimizar/maximizar/restaurar, F11 e redimensionamento. Esses registros complementam os testes lógicos; não equivalem a testar todo hardware ou todas as escalas de tela.
+
 ## Animações suaves (0.12.0)
 
 Abas entram com expansão curta e saem com recolhimento; as abas vizinhas e o botão de nova aba acompanham o movimento. Fechar uma aba libera seu conteúdo imediatamente, sem esperar a animação. O menu abre com fade e deslocamento vertical discreto; fechar pelo botão usa uma saída breve. O clique externo continua dispensando o menu imediatamente, preservando foco e o próximo clique.

@@ -194,8 +194,8 @@ public sealed partial class TabRibbon : Control,IThemed
     public Rectangle GetTabRect(int i)=>i<0||i>=Pages.Length?Rectangle.Empty:AnimatedTabRect(Pages[i],TargetTabRect(i));
     Rectangle Plus=>AnimatedPlus;
     Rectangle TargetPlus=>Vertical?new(D(7),Math.Min(Height-D(42),D(8)+Math.Min(Pages.Length-first,Capacity)*D(44)),Math.Max(1,Width-D(14)),D(34)):new(Math.Min(D(48)+Math.Min(Pages.Length-first,Capacity)*TabWidth,Width-D(38)),(Height-D(30))/2,D(30),D(30));
-    public void EnsureSelectedVisible(){int oldFirst=first;int selected=Array.IndexOf(Pages,owner.SelectedTab);first=Math.Clamp(first,0,Math.Max(0,Pages.Length-1));if(selected>=0){if(selected<first)first=selected;if(selected>=first+Capacity)first=selected-Capacity+1;}if(first!=oldFirst)FinishTabMotion();}
-    protected override void OnResize(EventArgs e){FinishTabMotion();EnsureSelectedVisible();base.OnResize(e);}
+    public void EnsureSelectedVisible(){int oldFirst=first;int selected=Array.IndexOf(Pages,owner.SelectedTab);first=Math.Clamp(first,0,Math.Max(0,Pages.Length-1));if(selected>=0){if(selected<first)first=selected;if(selected>=first+Capacity)first=selected-Capacity+1;}if(first!=oldFirst)FinishTabMotion("scroll");}
+    protected override void OnResize(EventArgs e){FinishTabMotion("resize");EnsureSelectedVisible();base.OnResize(e);}
     protected override void OnPaint(PaintEventArgs e)
     {
         var g=e.Graphics;g.Clear(colors.Background);g.SmoothingMode=System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -210,7 +210,7 @@ public sealed partial class TabRibbon : Control,IThemed
             float target=Vertical?rect.Y:rect.X;
             if(previous!=owner.SelectedTab){if(previous==null)marker=target;previous=owner.SelectedTab;selectionTween.Start(marker,target,v=>{marker=v;Invalidate();});}
             else if(!selectionTween.Running)marker=target;
-            using var pen=new Pen(colors.Accent,D(2));if(Vertical)g.DrawLine(pen,D(5),marker+D(10),D(5),marker+rect.Height-D(10));else g.DrawLine(pen,marker+D(12),rect.Bottom-1,marker+rect.Width-D(12),rect.Bottom-1);
+            if(Vertical?rect.Height>=D(20):rect.Width>=D(24)){using var pen=new Pen(colors.Accent,D(2));if(Vertical)g.DrawLine(pen,D(5),marker+D(10),D(5),marker+rect.Height-D(10));else g.DrawLine(pen,marker+D(12),rect.Bottom-1,marker+rect.Width-D(12),rect.Bottom-1);}
         }
         if(overPlus){using var path=Shapes.Round(Plus,D(8));using var fill=new SolidBrush(colors.Elevated);g.FillPath(fill,path);}
         Glyphs.Draw(g,"plus",new(Plus.X+D(7),Plus.Y+(Plus.Height-D(18))/2,D(18),D(18)),colors.Text);
@@ -232,8 +232,7 @@ public sealed partial class TabRibbon : Control,IThemed
 public static class NativeFrame
 {
     [DllImport("user32.dll")]static extern bool ReleaseCapture();
-    [DllImport("user32.dll")]static extern bool ShowWindow(IntPtr hwnd,int command);
-    [DllImport("user32.dll")]internal static extern IntPtr SendMessage(IntPtr hwnd,int message,IntPtr wParam,IntPtr lParam);
+        [DllImport("user32.dll")]internal static extern IntPtr SendMessage(IntPtr hwnd,int message,IntPtr wParam,IntPtr lParam);
     [DllImport("dwmapi.dll")]public static extern int DwmSetWindowAttribute(IntPtr hwnd,int attribute,ref int value,int size);
     public static void WindowCommand(Form form,int command)
     {
@@ -241,8 +240,14 @@ public static class NativeFrame
         int disabled=Motion.Allowed?0:1;
         DwmSetWindowAttribute(form.Handle,3,ref disabled,sizeof(int));
         ReleaseCapture();
-        ShowWindow(form.Handle,command switch{0xF030=>3,0xF020=>6,0xF120=>9,_=>throw new ArgumentOutOfRangeException(nameof(command))});
+        form.WindowState=command switch{0xF030=>FormWindowState.Maximized,0xF020=>FormWindowState.Minimized,0xF120=>FormWindowState.Normal,_=>throw new ArgumentOutOfRangeException(nameof(command))};
     }
     public static void ToggleMaximize(Form form)=>WindowCommand(form,form.WindowState==FormWindowState.Maximized?0xF120:0xF030);
     public static void Drag(Form form){ReleaseCapture();SendMessage(form.Handle,0xA1,new IntPtr(2),IntPtr.Zero);}
+}
+
+// Avoid background erase flashes while managed chrome lays out during native window resizing.
+public sealed class BufferedTableLayoutPanel : TableLayoutPanel
+{
+    public BufferedTableLayoutPanel(){DoubleBuffered=true;ResizeRedraw=true;}
 }

@@ -36,7 +36,7 @@ public sealed class HomeBoard : Panel,IThemed
         foreach(var w in store.Settings.Workspaces){var b=new SoftButton{Text=w.Name,Glyph="globe",Width=146,Height=48,Margin=new Padding(5),AccessibleName="Espaço "+w.Name};b.Click+=(_,_)=>selectWorkspace(w.Id);spaces.Controls.Add(b);}
     }
     internal void RefreshSettings(Palette p){RefreshSpaces();SetPalette(p);}
-    internal void AnimateIn(){entrance.Start(18,0,v=>{entranceOffset=(int)v;LayoutContent();Invalidate();},260);}
+    internal void AnimateIn(){entrance.Start(18,0,v=>{int next=(int)Math.Round(v);if(next==entranceOffset)return;entranceOffset=next;LayoutContent();Invalidate();},260);}
     protected override void Dispose(bool disposing){if(disposing)entrance.Dispose();base.Dispose(disposing);}
     public void SetPalette(Palette unused)
     {
@@ -83,7 +83,7 @@ public sealed class HomeBoard : Panel,IThemed
         {
             Image? wallpaper=store.Settings.Background=="Personalizado"?BrandAssets.Wallpaper(store.Settings.Wallpaper):null;
             Image art=wallpaper??(store.Settings.Background=="Personalizado"?BrandAssets.Sea:store.Settings.PointillistBackground?PointillistArt.Render(ClientSize):BrandAssets.Engraving);
-            BrandAssets.DrawArt(g,art,BrandAssets.Cover(art.Size,ClientRectangle),store.Settings.Background=="Suave"?.36f:wallpaper==null?1f:small?.30f:.53f);
+            HomeBackdrop.Draw(g,art,ClientRectangle,store.Settings.Background=="Suave"?.36f:wallpaper==null?1f:small?.30f:.53f,colors.Background);
         }
         using var heading=new Font("Georgia",small?25:store.Settings.HomeLayout=="Editorial"?38:32,FontStyle.Regular);
         using var smallFont=new Font("Segoe UI",small?8:9,FontStyle.Regular);

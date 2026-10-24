@@ -2,6 +2,11 @@ namespace KayBrowser;
 
 public sealed partial class BrowserWindow
 {
+    static async Task WaitForTransition(Func<bool> finished)
+    {
+        var deadline=System.Diagnostics.Stopwatch.StartNew();
+        do{await Task.Delay(20);}while(!finished()&&deadline.ElapsedMilliseconds<2000);
+    }
     internal async Task<int> VerifyCleanMotion()
     {
         int checks=0;
@@ -19,26 +24,26 @@ public sealed partial class BrowserWindow
             strip.TabPages.Add(a);strip.TabPages.Add(b);strip.SelectedTab=b;
             Check(strip.Header.TabMotionRunning,"opening starts a timer");
             int entryWidth=strip.GetTabRect(1).Width;
-            await Task.Delay(280);
+            await WaitForTransition(()=>!strip.Header.TabMotionRunning);
             Check(!strip.Header.TabMotionRunning&&strip.GetTabRect(1).Width>entryWidth,"opening expands and stops");
-            var c=new BrowserPage{Caption="Third"};strip.TabPages.Add(c);strip.SelectedTab=c;await Task.Delay(260);
+            var c=new BrowserPage{Caption="Third"};strip.TabPages.Add(c);strip.SelectedTab=c;await WaitForTransition(()=>!strip.Header.TabMotionRunning);
             strip.TabPages.Remove(b);b.Dispose();
             Check(strip.TabCount==2&&strip.Header.ExitingTabCount==1,"closed content removed immediately while visual exits");
             Check(strip.Header.TabMotionRunning,"closing starts a timer");
-            await Task.Delay(260);
+            await WaitForTransition(()=>!strip.Header.TabMotionRunning);
             Check(!strip.Header.TabMotionRunning&&strip.Header.ExitingTabCount==0,"closing releases visual and timer");
             Check(!strip.GetTabRect(0).IntersectsWith(strip.GetTabRect(1)),"final tabs do not overlap");
             for(int i=0;i<16;i++){var page=new BrowserPage{Caption="Rapid "+i};strip.TabPages.Add(page);strip.TabPages.Remove(page);page.Dispose();}
-            await Task.Delay(260);
+            await WaitForTransition(()=>!strip.Header.TabMotionRunning);
             Check(!strip.Header.TabMotionRunning&&strip.Header.ExitingTabCount==0&&strip.TabCount==2,"rapid open-close settles without resurrecting pages");
             strip.Header.Vertical=true;strip.Header.Dock=DockStyle.Left;strip.Header.Width=180;
-            var vertical=new BrowserPage{Caption="Vertical"};strip.TabPages.Add(vertical);await Task.Delay(260);
+            var vertical=new BrowserPage{Caption="Vertical"};strip.TabPages.Add(vertical);await WaitForTransition(()=>!strip.Header.TabMotionRunning);
             Check(!strip.Header.TabMotionRunning&&!strip.GetTabRect(2).IsEmpty,"vertical entry settles");
-            strip.TabPages.Remove(vertical);vertical.Dispose();await Task.Delay(260);
+            strip.TabPages.Remove(vertical);vertical.Dispose();await WaitForTransition(()=>!strip.Header.TabMotionRunning);
             Check(!strip.GetTabRect(0).IntersectsWith(strip.GetTabRect(1)),"vertical close reflows");
             var resized=new BrowserPage{Caption="Resize"};strip.TabPages.Add(resized);host.Height+=30;await Task.Delay(50);
             Check(!strip.Header.TabMotionRunning,"resize settles geometry immediately");
-            strip.TabPages.Remove(resized);resized.Dispose();await Task.Delay(260);
+            strip.TabPages.Remove(resized);resized.Dispose();await WaitForTransition(()=>!strip.Header.TabMotionRunning);
             Motion.DiagnosticAnimations=false;
             var reduced=new BrowserPage{Caption="Reduced motion"};strip.TabPages.Add(reduced);
             Check(!strip.Header.TabMotionRunning,"system reduced motion skips entry");
@@ -52,19 +57,19 @@ public sealed partial class BrowserWindow
             strip.Header.Vertical=false;strip.Header.Dock=DockStyle.Top;strip.Header.Height=48;
             var crowded=Enumerable.Range(0,18).Select(i=>new BrowserPage{Caption="Overflow "+i}).ToArray();
             foreach(var page in crowded){strip.TabPages.Add(page);strip.SelectedTab=page;}
-            await Task.Delay(260);
+            await WaitForTransition(()=>!strip.Header.TabMotionRunning);
             var selectedRect=strip.GetTabRect(strip.TabPages.IndexOf(strip.SelectedTab!));
             Check(!selectedRect.IsEmpty&&strip.Header.ClientRectangle.Contains(selectedRect),"overflow keeps selected tab visible");
             Check(!strip.Header.TabMotionRunning,"automatic ribbon scroll clears stale animation geometry");
             host.Close();
             ShowMenu();
             Check(menuMotion.Running&&menuPopup!.Opacity<1,"menu begins with fade");
-            await Task.Delay(260);
+            await WaitForTransition(()=>!menuMotion.Running);
             Check(!menuMotion.Running&&menuPopup!.Opacity==1&&menuPopup.Location==MenuLocation(),"menu ends opaque and aligned");
-            CloseBrowserMenu();await Task.Delay(210);
+            CloseBrowserMenu();await WaitForTransition(()=>!menuMotion.Running&&tabStrip.Enabled);
             Check(!MenuVisible&&!menuMotion.Running&&tabStrip.Enabled,"menu exit restores input");
             for(int i=0;i<8;i++){ShowMenu();CloseBrowserMenu();}
-            ShowMenu();await Task.Delay(260);
+            ShowMenu();await WaitForTransition(()=>!menuMotion.Running);
             Check(menuOpen&&menuPopup!.Opacity==1&&!menuMotion.Running,"reopening during fade settles");
             CloseBrowserMenu(false);
             Check(!MenuVisible&&tabStrip.Enabled,"immediate dismissal leaves no overlay");
