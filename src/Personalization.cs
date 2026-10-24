@@ -15,18 +15,29 @@ public sealed partial class BrowserWindow
         if(appearance==null){appearance=new(store,ApplyPersonalization,ChooseWallpaper);appearance.CloseRequested+=ShowAppearance;rightDock.Controls.Add(appearance);}
         appearance.Sync();appearanceOpen=true;AnimateRightPanel(appearance,true);
     }
+    void SetRightPanelWidth(float width)
+    {
+        pageHost.ColumnStyles[1].Width=Math.Clamp(width,0,AssistantWidth);
+        foreach(Control child in rightDock.Controls)
+            child.SetBounds(0,0,AssistantWidth,rightDock.ClientSize.Height);
+    }
+    void SettleRightPanel()
+    {
+        assistantTween.Stop();
+        SetRightPanelWidth(RightOpen?AssistantWidth:0);
+        ApplyWorkspaceMetrics();
+    }
     void AnimateRightPanel(Control panel,bool open)
     {
         assistantTween.Stop();panel.Dock=DockStyle.None;
-        int target=AssistantWidth;
-        if(open)
-        {
-            pageHost.ColumnStyles[1].Width=target;panel.SetBounds(target,0,target,rightDock.ClientSize.Height);panel.Visible=true;panel.BringToFront();ApplyWorkspaceMetrics();
-        }
-        assistantTween.Start(open?target:panel.Left,open?0:target,x=>{if(!panel.IsDisposed)panel.Left=(int)x;},open?270:200,()=>{
+        float from=pageHost.ColumnStyles[1].Width;
+        int target=open?AssistantWidth:0;
+        panel.SetBounds(0,0,AssistantWidth,rightDock.ClientSize.Height);
+        panel.Visible=true;panel.BringToFront();
+        assistantTween.Start(from,target,SetRightPanelWidth,open?240:180,()=>{
             if(panel.IsDisposed)return;
-            if(!open){panel.Visible=false;if(!RightOpen)pageHost.ColumnStyles[1].Width=0;}
-            else panel.SetBounds(0,0,rightDock.ClientSize.Width,rightDock.ClientSize.Height);
+            if(!open)panel.Visible=false;
+            SetRightPanelWidth(RightOpen?AssistantWidth:0);
             ApplyWorkspaceMetrics();
         });
     }
@@ -48,14 +59,14 @@ public sealed partial class BrowserWindow
     {
         try
         {
-            if(new FileInfo(file).Length>12*1024*1024)throw new IOException("Escolha uma imagem de até 12 MB.");
-            using var source=Image.FromFile(file);if((long)source.Width*source.Height>24000000)throw new IOException("Escolha uma imagem de até 24 megapixels.");
+            if(new FileInfo(file).Length>12*1024*1024)throw new IOException("Escolha uma imagem de at� 12 MB.");
+            using var source=Image.FromFile(file);if((long)source.Width*source.Height>24000000)throw new IOException("Escolha uma imagem de at� 24 megapixels.");
             using var reduced=new Bitmap(source); // Keep original detail; the existing 24 MP limit bounds memory.
             string root=Path.Combine(Storage.Root,"Appearance");Directory.CreateDirectory(root);string path=Path.Combine(root,Guid.NewGuid().ToString("N")+".png");reduced.Save(path,ImageFormat.Png);
             string old=store.Settings.Wallpaper;store.Settings.Wallpaper=path;store.Settings.Background="Personalizado";store.SaveSettings();RefreshHomePages();
             if(old.StartsWith(root+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase))try{File.Delete(old);}catch(IOException){}
         }
-        catch(Exception ex)when(ex is IOException or ArgumentException or OutOfMemoryException){ShowNotice("Não foi possível usar a imagem. "+ex.Message,"Plano de fundo");}
+        catch(Exception ex)when(ex is IOException or ArgumentException or OutOfMemoryException){ShowNotice("N�o foi poss�vel usar a imagem. "+ex.Message,"Plano de fundo");}
     }
     void ShortcutCommand(string action,ShortcutLink? link)
     {
@@ -63,15 +74,15 @@ public sealed partial class BrowserWindow
         if(store.Settings.FrequentShortcuts&&link!=null)
         {
             if(action=="edit"){if(list.Count>=20){ShowNotice("Limite de 20 atalhos. Remova um existente antes de salvar outro.");return;}link=new(Guid.NewGuid().ToString("N"),link.Name,link.Url);}
-            else{ShowNotice("Para controlar ordem e remoção, escolha Meus atalhos em Personalizar.");return;}
+            else{ShowNotice("Para controlar ordem e remo��o, escolha Meus atalhos em Personalizar.");return;}
         }
         if(action=="edit")
         {
             if(link==null&&list.Count>=20){ShowNotice("Limite de 20 atalhos. Edite ou remova um existente.");return;}
             using var f=Dialog(link==null?"Adicionar atalho":"Editar atalho",560,310);var grid=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=1,RowCount=5,Padding=new Padding(20)};grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));foreach(int h in new[]{28,38,28,38,48})grid.RowStyles.Add(new RowStyle(SizeType.Absolute,h));
             var name=new TextBox{Text=link?.Name??"",Dock=DockStyle.Fill,MaxLength=60};var url=new TextBox{Text=link?.Url??"https://",Dock=DockStyle.Fill,MaxLength=4096};var save=new SoftButton{Text="Salvar",Dock=DockStyle.Right,Width=130};save.SetPalette(Colors);
-            save.Click+=(_,_)=>{try{string address=WebLinks.Normalize(url.Text);if(string.IsNullOrWhiteSpace(name.Text))throw new ArgumentException("Dê um nome ao atalho.");var entry=new ShortcutLink(link?.Id??Guid.NewGuid().ToString("N"),name.Text.Trim(),address);if(link==null)list.Add(entry);else{int index=list.FindIndex(s=>s.Id==link.Id);if(index>=0)list[index]=entry;else list.Add(entry);}store.Settings.FrequentShortcuts=false;store.SaveSettings();f.DialogResult=DialogResult.OK;f.Close();RefreshHomePages();}catch(ArgumentException ex){ShowNotice(ex.Message,"Atalho");}};
-            grid.Controls.Add(new Label{Text="Nome",Dock=DockStyle.Fill},0,0);grid.Controls.Add(name,0,1);grid.Controls.Add(new Label{Text="Endereço",Dock=DockStyle.Fill},0,2);grid.Controls.Add(url,0,3);grid.Controls.Add(save,0,4);f.Controls.Add(grid);ApplyTheme(f);f.AcceptButton=save;f.ShowDialog(this);return;
+            save.Click+=(_,_)=>{try{string address=WebLinks.Normalize(url.Text);if(string.IsNullOrWhiteSpace(name.Text))throw new ArgumentException("D� um nome ao atalho.");var entry=new ShortcutLink(link?.Id??Guid.NewGuid().ToString("N"),name.Text.Trim(),address);if(link==null)list.Add(entry);else{int index=list.FindIndex(s=>s.Id==link.Id);if(index>=0)list[index]=entry;else list.Add(entry);}store.Settings.FrequentShortcuts=false;store.SaveSettings();f.DialogResult=DialogResult.OK;f.Close();RefreshHomePages();}catch(ArgumentException ex){ShowNotice(ex.Message,"Atalho");}};
+            grid.Controls.Add(new Label{Text="Nome",Dock=DockStyle.Fill},0,0);grid.Controls.Add(name,0,1);grid.Controls.Add(new Label{Text="Endere�o",Dock=DockStyle.Fill},0,2);grid.Controls.Add(url,0,3);grid.Controls.Add(save,0,4);f.Controls.Add(grid);ApplyTheme(f);f.AcceptButton=save;f.ShowDialog(this);return;
         }
         if(link==null)return;int from=list.FindIndex(x=>x.Id==link.Id);if(from<0)return;
         if(action=="remove")list.RemoveAt(from);
@@ -79,3 +90,4 @@ public sealed partial class BrowserWindow
         store.SaveSettings();RefreshHomePages();
     }
 }
+
