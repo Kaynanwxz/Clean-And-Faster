@@ -153,6 +153,9 @@ public sealed partial class BrowserWindow
             int hit=top&&left?13:top&&right?14:bottom&&left?16:bottom&&right?17:left?10:right?11:top?12:bottom?15:0;
             if(hit!=0){m.Result=new IntPtr(hit);return;}
         }
+        // The caption style is present only for DWM. Interior hits belong to our controls,
+        // including custom caption buttons; default non-client hit testing would steal them.
+        if(m.Msg==WM_NCHITTEST){m.Result=new IntPtr(1);return;}
         // Let Windows update activation without painting its own caption over our chrome.
         if (m.Msg == 0x86) // WM_NCACTIVATE
         {
