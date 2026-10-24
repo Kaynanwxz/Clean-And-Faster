@@ -27,10 +27,10 @@ public sealed partial class BrowserWindow
             probe.Show();probe.Activate();await probe.AddTab("kay://new");await Task.Delay(420);
             string directory=Path.Combine(AppContext.BaseDirectory,"visual-evidence");Directory.CreateDirectory(directory);
             bool ci=Environment.GetEnvironmentVariable("GITHUB_ACTIONS")=="true";
-            string Capture(string name,bool ribbon=false)
+            Bitmap ReadPixels(bool ribbon=false)
             {
                 var area=probe.Bounds;if(ribbon)area.Height=Math.Min(area.Height,probe.Ui(58));
-                using var bitmap=new Bitmap(area.Width,area.Height,PixelFormat.Format32bppArgb);
+                var bitmap=new Bitmap(area.Width,area.Height,PixelFormat.Format32bppArgb);
                 if(ci)
                 {
                     var foreground=GetForegroundWindow();
@@ -44,6 +44,11 @@ public sealed partial class BrowserWindow
                     try{Check(PrintWindow(probe.Handle,dc,2),"native window can render its frame");}finally{g.ReleaseHdc(dc);}
                     using var target=Graphics.FromImage(bitmap);target.DrawImageUnscaled(full,Point.Empty);
                 }
+                return bitmap;
+            }
+            string Capture(string name,bool ribbon=false)
+            {
+                using var bitmap=ReadPixels(ribbon);
                 string path=Path.Combine(directory,name+".png");bitmap.Save(path,ImageFormat.Png);
                 return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path)));
             }
@@ -59,13 +64,16 @@ public sealed partial class BrowserWindow
             {
                 var samples=new List<object>();var distinct=new HashSet<int>();var command=Stopwatch.StartNew();
                 action();double commandMilliseconds=command.Elapsed.TotalMilliseconds;var timer=Stopwatch.StartNew();int frame=0;
+                var frames=new List<(string Name,Bitmap Image)>();
                 do
                 {
                     float value=read();distinct.Add((int)(value*1000));
                     samples.Add(new{ms=timer.Elapsed.TotalMilliseconds,value,tabMotion=probe.tabStrip.Header.TabMotionEndReason,header=probe.tabStrip.Header.Size});
-                    Capture(name+"-"+(frame++).ToString("D2"),ribbon);
+                    frames.Add((name+"-"+(frame++).ToString("D2"),ReadPixels(ribbon)));
                     await Task.Delay(25);
                 }while(timer.ElapsedMilliseconds<380);
+                // PNG compression must not block the UI timer being measured. Encode after sampling.
+                foreach(var captured in frames){using var image=captured.Image;image.Save(Path.Combine(directory,captured.Name+".png"),ImageFormat.Png);}
                 evidence.Add(new{name,commandMilliseconds,frames=frame,distinct=distinct.Count,samples});
                 File.WriteAllText(Path.Combine(directory,"visual-check.json"),JsonSerializer.Serialize(evidence,new JsonSerializerOptions{WriteIndented=true}));
                 Check(distinct.Count>=4,name+" renders several intermediate states through the real command path; "+probe.tabStrip.Header.TabMotionEndReason);
