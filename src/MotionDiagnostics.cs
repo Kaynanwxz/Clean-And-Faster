@@ -64,6 +64,12 @@ public sealed partial class BrowserWindow
             Motion.Enabled=false;ShowMenu();
             Check(!menuMotion.Running&&menuPopup!.Opacity==1,"menu respects disabled animations");
             CloseBrowserMenu(false);Motion.Enabled=true;
+            foreach(Control button in windowButtons!.Controls)
+            {
+                var point=button.PointToScreen(new Point(button.Width/2,button.Height/2));
+                long coordinates=(point.X&0xffffL)|((point.Y&0xffffL)<<16);
+                Check(NativeFrame.SendMessage(Handle,0x84,IntPtr.Zero,new IntPtr(coordinates)).ToInt32()==1,"custom caption buttons retain client hit testing");
+            }
             // Exercise the actual native system-command path used by caption buttons and double click.
             NativeFrame.WindowCommand(this,0xF030);await Task.Delay(350);
             Check(WindowState==FormWindowState.Maximized,"native maximize");

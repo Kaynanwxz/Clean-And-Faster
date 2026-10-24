@@ -232,7 +232,7 @@ public sealed partial class TabRibbon : Control,IThemed
 public static class NativeFrame
 {
     [DllImport("user32.dll")]static extern bool ReleaseCapture();
-    [DllImport("user32.dll")]static extern IntPtr SendMessage(IntPtr hwnd,int message,IntPtr wParam,IntPtr lParam);
+    [DllImport("user32.dll")]internal static extern IntPtr SendMessage(IntPtr hwnd,int message,IntPtr wParam,IntPtr lParam);
     [DllImport("dwmapi.dll")]public static extern int DwmSetWindowAttribute(IntPtr hwnd,int attribute,ref int value,int size);
     public static void WindowCommand(Form form,int command)
     {
