@@ -34,8 +34,8 @@ public sealed partial class BrowserWindow
             var b = new SoftButton { Glyph = glyph, AccessibleName = tip, Dock = DockStyle.Fill, Margin = new Padding(2), TabStop = false };
             b.SetPalette(Colors); b.Click += (_,_) => action(); chromeTips.SetToolTip(b,tip); return b;
         }
-        windows.Controls.Add(IconButton("min","Minimizar",()=>WindowState=FormWindowState.Minimized),0,0);
-        var maximize=IconButton("max","Maximizar / restaurar",()=>WindowState=WindowState==FormWindowState.Maximized?FormWindowState.Normal:FormWindowState.Maximized);
+        windows.Controls.Add(IconButton("min","Minimizar",()=>NativeFrame.WindowCommand(this,0xF020)),0,0);
+        var maximize=IconButton("max","Maximizar / restaurar",()=>NativeFrame.ToggleMaximize(this));
         windows.Controls.Add(maximize,1,0);
         var close=IconButton("close","Fechar navegador",Close);close.Danger=true;windows.Controls.Add(close,2,0);
         title.Controls.Add(windows,1,0);
@@ -124,16 +124,19 @@ public sealed partial class BrowserWindow
     void SetNativeTheme()
     {
         if(!IsHandleCreated)return;
-        int dark=store.Settings.DarkChrome?1:0,round=2;
-        try { NativeFrame.DwmSetWindowAttribute(Handle,20,ref dark,sizeof(int));NativeFrame.DwmSetWindowAttribute(Handle,33,ref round,sizeof(int)); } catch(DllNotFoundException) { }
+        int dark=store.Settings.DarkChrome?1:0,round=2,disabled=Motion.Allowed?0:1;
+        try { NativeFrame.DwmSetWindowAttribute(Handle,20,ref dark,sizeof(int));NativeFrame.DwmSetWindowAttribute(Handle,33,ref round,sizeof(int));NativeFrame.DwmSetWindowAttribute(Handle,3,ref disabled,sizeof(int)); } catch(DllNotFoundException) { }
     }
     protected override void OnHandleCreated(EventArgs e){base.OnHandleCreated(e);SetNativeTheme();}
     protected override CreateParams CreateParams
     {
-        get { var cp=base.CreateParams;cp.Style|=0x000F0000;return cp; }
+        get { var cp=base.CreateParams;cp.Style|=0x00CF0000;return cp; }
     }
     protected override void WndProc(ref Message m)
     {
+        // Keep WS_CAPTION for compositor transitions without drawing a second title bar.
+        if(m.Msg==0x85){m.Result=IntPtr.Zero;return;} // WM_NCPAINT
+        if(m.Msg==0x317)m.LParam=new IntPtr(m.LParam.ToInt64()&~2L); // WM_PRINT: omit PRF_NONCLIENT
         if(m.Msg==0x21&&MenuVisible) // WM_MOUSEACTIVATE is sent, not queued: IMessageFilter cannot catch it.
         {
             menuFilter?.SuppressGesture((int)((m.LParam.ToInt64()>>16)&0xffff));
@@ -150,6 +153,9 @@ public sealed partial class BrowserWindow
             int hit=top&&left?13:top&&right?14:bottom&&left?16:bottom&&right?17:left?10:right?11:top?12:bottom?15:0;
             if(hit!=0){m.Result=new IntPtr(hit);return;}
         }
+        // The caption style is present only for DWM. Interior hits belong to our controls,
+        // including custom caption buttons; default non-client hit testing would steal them.
+        if(m.Msg==WM_NCHITTEST){m.Result=new IntPtr(1);return;}
         // Let Windows update activation without painting its own caption over our chrome.
         if (m.Msg == 0x86) // WM_NCACTIVATE
         {

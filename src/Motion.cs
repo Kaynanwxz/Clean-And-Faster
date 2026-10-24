@@ -23,7 +23,8 @@ public sealed class Tween : IDisposable
     public void Start(float from, float to, Action<float> update, int duration = 180, Action? completed = null)
     {
         Stop();
-        if(!Motion.Allowed || Math.Abs(from-to)<0.1f) { update(to); completed?.Invoke(); return; }
+        if(!Motion.Allowed || duration<=0 || Math.Abs(from-to)<0.001f) { update(to); completed?.Invoke(); return; }
+        update(from);
         long start=Stopwatch.GetTimestamp();
         timer=new() { Interval=16 };
         timer.Tick+=(_,_)=> {

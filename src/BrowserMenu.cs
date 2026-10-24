@@ -85,7 +85,7 @@ public sealed partial class BrowserWindow
             // Keep the popup alive until activation finishes, then hide it on our UI queue.
             menuPopup.Deactivate+=(_,_)=>QueueBrowserMenuDismissal();
             menuPopup.FormClosing+=(_,e)=>{if(!closing&&e.CloseReason==CloseReason.UserClosing){e.Cancel=true;CloseBrowserMenu(false);}};
-            Resize+=(_,_)=>{if(menuOpen){menuMotion.Stop();PositionBrowserMenu();}};
+            Resize+=(_,_)=>{if(menuOpen){menuMotion.Stop();PositionBrowserMenu();if(menuPopup!=null)menuPopup.Opacity=1;}};
             menuFilter=new MenuDismissFilter(this);Application.AddMessageFilter(menuFilter);
             menuInputRelease.Tick+=(_,_)=>RestoreMenuPageInput();
             FormClosed+=(_,_)=>{CloseBrowserMenu(false);Application.RemoveMessageFilter(menuFilter);menuMotion.Dispose();menuInputRelease.Dispose();menuPopup.Dispose();};
@@ -96,8 +96,11 @@ public sealed partial class BrowserWindow
         // dismissal gesture to this UI thread instead of the page underneath.
         menuInputRelease.Stop();menuRestorePageFocus=false;menuPageBlocked=true;tabStrip.Enabled=false;
         browserMenu.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));browserMenu.RefreshZoom(Current?.View?.ZoomFactor??1);PositionBrowserMenu();browserMenu.Visible=true;
-        var target=MenuLocation();if(!menuPopup!.Visible)menuPopup.Show(this);else menuPopup.Activate();browserMenu.FocusMenu();
-        menuMotion.Start(target.X+Ui(18),target.X,x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},230);
+        var target=MenuLocation();menuMotion.Stop();
+        menuPopup!.Opacity=Motion.Allowed?.04:1;
+        menuPopup.Location=new Point(target.X,target.Y-(Motion.Allowed?Ui(8):0));
+        if(!menuPopup.Visible)menuPopup.Show(this);else menuPopup.Activate();browserMenu.FocusMenu();
+        menuMotion.Start(0,1,t=>{if(!menuPopup.IsDisposed){menuPopup.Opacity=.04+.96*t;menuPopup.Location=new Point(target.X,target.Y-(int)Math.Round(Ui(8)*(1-t)));}},180);
     }
     Point MenuLocation()=>PointToScreen(new Point(ClientSize.Width-Ui(366)-Ui(12),fullscreen?Ui(10):navigationRow!.Bottom+Ui(8)));
     void PositionBrowserMenu()
@@ -110,8 +113,9 @@ public sealed partial class BrowserWindow
     {
         menuSession++;menuOpen=false;
         if(!MenuVisible){RestoreMenuPageInput();return;}
-        if(!animate){menuMotion.Stop();menuPopup!.Hide();browserMenu!.Visible=false;RestoreMenuPageInput();return;}
-        menuMotion.Start(menuPopup!.Left,menuPopup.Left+Ui(18),x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},180,()=>{if(!menuOpen&&!menuPopup.IsDisposed){menuPopup.Hide();browserMenu!.Visible=false;RestoreMenuPageInput();}});
+        if(!animate){menuMotion.Stop();menuPopup!.Hide();menuPopup.Opacity=1;browserMenu!.Visible=false;RestoreMenuPageInput();return;}
+        var start=menuPopup!.Location;double opacity=menuPopup.Opacity;
+        menuMotion.Start(0,1,t=>{if(!menuPopup.IsDisposed){menuPopup.Opacity=opacity*(1-t);menuPopup.Top=start.Y-(int)Math.Round(Ui(5)*t);}},130,()=>{if(!menuOpen&&!menuPopup.IsDisposed){menuPopup.Hide();menuPopup.Opacity=1;browserMenu!.Visible=false;RestoreMenuPageInput();}});
     }
     void QueueBrowserMenuDismissal()
     {

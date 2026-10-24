@@ -24,13 +24,14 @@ public sealed partial class BrowserWindow
         Check(!probe.menuOpen&&!probe.MenuVisible,"Menu fica oculto após clique externo na barra da janela");
         // A second, intentional click must still work after the dismissal gesture is consumed.
         var maximize=probe.windowButtons.Controls.OfType<Button>().Single(b=>b.AccessibleName=="Maximizar / restaurar");
+        int maximizeClicks=0;maximize.Click+=(_,_)=>maximizeClicks++;
         probe.ShowMenu();await Task.Delay(70);Click(maximize);await Task.Delay(100);
         Check(probe.WindowState==FormWindowState.Normal&&!probe.menuOpen,"Clique de dispensa não aciona Maximizar por baixo");
         // Separate intentional clicks from the OS double-click window.
         await Task.Delay(SystemInformation.DoubleClickTime+80);
-        Click(maximize);await Task.Delay(100);Check(probe.WindowState==FormWindowState.Maximized,"Próximo clique intencional continua funcionando");
+        Click(maximize);for(int wait=0;wait<40&&probe.WindowState!=FormWindowState.Maximized;wait++)await Task.Delay(50);Check(probe.WindowState==FormWindowState.Maximized,$"Próximo clique intencional continua funcionando; state={probe.WindowState}; clicks={maximizeClicks}; active={Form.ActiveForm?.Text}; menu={probe.MenuVisible}");
         await Task.Delay(SystemInformation.DoubleClickTime+80);
-        Click(maximize);await Task.Delay(100);
+        Click(maximize);for(int wait=0;wait<40&&probe.WindowState!=FormWindowState.Normal;wait++)await Task.Delay(50);
         foreach(bool animated in new[]{false,true})
         {
             Motion.DiagnosticAnimations=animated;Motion.Enabled=animated;
