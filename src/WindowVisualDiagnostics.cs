@@ -103,8 +103,12 @@ public sealed partial class BrowserWindow
             Check(!probe.tabStrip.Header.TabMotionRunning,"real tab opening settles");
             await Record("tab-close",()=>probe.Shortcut(probe,new KeyEventArgs(Keys.Control|Keys.W)),()=>probe.tabStrip.Header.TabMotionProgress,true);
             Check(probe.tabs.Count==originalTabs,"Ctrl+W closes the real tab immediately");
+            string inactiveHeaderBefore=Capture("menu-header-before",true);
             await Record("menu-open",probe.ShowMenu,()=>probe.menuPopup is {Visible:true} popup?(float)popup.Opacity:0,false);
             Check(probe.menuOpen&&probe.menuPopup!.Opacity==1,"menu reaches full opacity");
+            Check(inactiveHeaderBefore==Capture("menu-header-inactive",true),"opening a menu never paints a system caption on the inactive owner");
+            probe.Text="Synthetic title changed while menu stays open";
+            Check(inactiveHeaderBefore==Capture("menu-header-title-change",true),"inactive title changes never repaint a system caption");
             probe.CloseBrowserMenu(false);await Task.Delay(100);probe.Activate();
             var normal=probe.Bounds;
             var maximize=probe.windowButtons!.Controls.OfType<Button>().Single(b=>b.AccessibleName=="Maximizar / restaurar");

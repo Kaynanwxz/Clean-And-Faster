@@ -174,7 +174,7 @@ public sealed partial class BrowserWindow
         // Let Windows update activation without painting its own caption over our chrome.
         if (m.Msg == 0x86) // WM_NCACTIVATE
         {
-            m.LParam = new IntPtr(-1); DefWndProc(ref m); Invalidate(); return;
+            m.Result = new IntPtr(1); Invalidate(); return;
         }
         if (m.Msg is 0xAE or 0xAF) { m.Result = IntPtr.Zero; return; }
         base.WndProc(ref m);
