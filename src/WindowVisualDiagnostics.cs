@@ -23,6 +23,12 @@ public sealed partial class BrowserWindow
         probe.environment=environment;
         try
         {
+            using(var startup=new BrowserWindow(diagnostics:true))
+            {
+                startup.Show();await Task.Delay(80);
+                Check(Screen.FromHandle(startup.Handle).WorkingArea.Contains(startup.Bounds),"default startup window fits the current work area");
+                startup.Close();
+            }
             Motion.Enabled=true;Motion.DiagnosticAnimations=true;
             probe.Show();probe.Activate();await probe.AddTab("kay://new");await Task.Delay(420);
             string directory=Path.Combine(AppContext.BaseDirectory,"visual-evidence");Directory.CreateDirectory(directory);

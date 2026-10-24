@@ -1,6 +1,7 @@
 # Clean Browser 0.12.1 — Janela e transições revisadas
 
 - Moldura da janela compatível com o gerenciamento de tamanho do Windows, sem simular um estilo de borda diferente do configurado no aplicativo.
+- A janela inicial e o tamanho mínimo respeitam a área útil disponível, evitando abrir fora da tela em monitores menores.
 - Área maximizada calculada no monitor atual; redimensionamento e restauração preservam o enquadramento e os botões.
 - F11 retorna ao tamanho e ao estado anteriores, inclusive quando a janela já estava maximizada.
 - Redução de flashes das barras durante o redimensionamento.

@@ -74,7 +74,16 @@ public sealed partial class BrowserWindow
         chromeLayout.Controls.Add(title,0,0);chromeLayout.Controls.Add(bar,0,1);InitializeAssistantHost();
         chromeLayout.Controls.Add(pageHost,0,2);chromeLayout.Controls.Add(status,0,3);
         Controls.Add(chromeLayout);
-        Shown += (_, _) => ApplyChromeMetrics();
+        Shown += (_, _) =>
+        {
+            ApplyChromeMetrics();
+            if(WindowState==FormWindowState.Normal)
+            {
+                var area=Screen.FromControl(this).WorkingArea;
+                int width=Math.Min(Width,area.Width),height=Math.Min(Height,area.Height);
+                Bounds=new Rectangle(Math.Clamp(Left,area.Left,area.Right-width),Math.Clamp(Top,area.Top,area.Bottom-height),width,height);
+            }
+        };
         ResizeEnd += (_, _) => ApplyChromeMetrics();
     }
     int Ui(int value) => (int)Math.Round(value * DeviceDpi / 96f);
@@ -107,7 +116,8 @@ public sealed partial class BrowserWindow
             positionAddress = PositionAddress;
             locationBox.Resize -= OnLocationResize; locationBox.Resize += OnLocationResize;
             PositionAddress();
-            MinimumSize = new Size(Ui(900), Ui(600));
+            var available=Screen.FromControl(this).WorkingArea;
+            MinimumSize = new Size(Math.Min(Ui(900),available.Width),Math.Min(Ui(600),available.Height));
             ApplyWorkspaceMetrics();
             tabStrip.Header.EnsureSelectedVisible(); tabStrip.Header.Invalidate();
         }
