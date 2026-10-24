@@ -2,8 +2,8 @@ namespace KayBrowser;
 
 public sealed partial class BrowserWindow
 {
-    readonly TableLayoutPanel browserSurface=new(){Dock=DockStyle.Fill,ColumnCount=2,RowCount=1,Margin=Padding.Empty};
-    readonly TableLayoutPanel sidebar=new(){Dock=DockStyle.Fill,ColumnCount=1,RowCount=4,Margin=Padding.Empty};
+    readonly TableLayoutPanel browserSurface=new BufferedTableLayoutPanel(){Dock=DockStyle.Fill,ColumnCount=2,RowCount=1,Margin=Padding.Empty};
+    readonly TableLayoutPanel sidebar=new BufferedTableLayoutPanel(){Dock=DockStyle.Fill,ColumnCount=1,RowCount=4,Margin=Padding.Empty};
     readonly ComboBox workspacePicker=new(){Dock=DockStyle.Fill,DropDownStyle=ComboBoxStyle.DropDownList,AccessibleName="Espaço de trabalho"};
     readonly FlowLayoutPanel sideActions=new(){Dock=DockStyle.Fill,WrapContents=false,Margin=Padding.Empty};
     readonly Label brandCaption=new(){Text="Clean Browser",TextAlign=ContentAlignment.MiddleLeft,Dock=DockStyle.Fill,Padding=new Padding(46,0,0,0),Font=new Font("Georgia",14)};
@@ -16,7 +16,7 @@ public sealed partial class BrowserWindow
     {
         browserSurface.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,0));browserSurface.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));browserSurface.RowStyles.Add(new RowStyle(SizeType.Percent,100));
         sidebar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));sidebar.RowStyles.Add(new RowStyle(SizeType.Absolute,42));sidebar.RowStyles.Add(new RowStyle(SizeType.Absolute,0));sidebar.RowStyles.Add(new RowStyle(SizeType.Percent,100));sidebar.RowStyles.Add(new RowStyle(SizeType.Absolute,44));
-        var wsHeader=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2,RowCount=1,Padding=new Padding(6),Margin=Padding.Empty};wsHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));wsHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,32));wsHeader.RowStyles.Add(new RowStyle(SizeType.Percent,100));
+        var wsHeader=new BufferedTableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2,RowCount=1,Padding=new Padding(6),Margin=Padding.Empty};wsHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));wsHeader.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,32));wsHeader.RowStyles.Add(new RowStyle(SizeType.Percent,100));
         wsHeader.Controls.Add(workspacePicker,0,0);var manage=new SoftButton{Glyph="settings",Dock=DockStyle.Fill,AccessibleName="Gerenciar espaços",Margin=Padding.Empty};manage.SetPalette(Colors);manage.Click+=(_,_)=>ManageWorkspaces();wsHeader.Controls.Add(manage,1,0);sidebar.Controls.Add(wsHeader,0,0);
         foreach(var (glyph,tip,action) in new (string,string,Action)[]{("history","Histórico",ShowHistory),("star","Biblioteca",()=>ShowLibrary("reading")),("globe","Espaços",ManageWorkspaces),("settings","Aparência",ShowAppearance)})
         {var b=new SoftButton{Glyph=glyph,AccessibleName=tip,Size=new Size(34,32),Margin=new Padding(2)};b.SetPalette(Colors);b.Click+=(_,_)=>action();chromeTips.SetToolTip(b,tip);sideActions.Controls.Add(b);}
@@ -88,7 +88,7 @@ public sealed partial class BrowserWindow
     }
     string? AskText(string title,string label,string initial,bool multiline=false)
     {
-        using var f=Dialog(title,580,multiline?450:245);var body=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=1,RowCount=3,Padding=new Padding(18)};body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));body.RowStyles.Add(new RowStyle(SizeType.Absolute,32));body.RowStyles.Add(new RowStyle(SizeType.Percent,100));body.RowStyles.Add(new RowStyle(SizeType.Absolute,44));
+        using var f=Dialog(title,580,multiline?450:245);var body=new BufferedTableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=1,RowCount=3,Padding=new Padding(18)};body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));body.RowStyles.Add(new RowStyle(SizeType.Absolute,32));body.RowStyles.Add(new RowStyle(SizeType.Percent,100));body.RowStyles.Add(new RowStyle(SizeType.Absolute,44));
         var text=new TextBox{Text=initial,Dock=DockStyle.Fill,Multiline=multiline,MaxLength=multiline?50000:4096,ScrollBars=multiline?ScrollBars.Vertical:ScrollBars.None};var save=new SoftButton{Text="Salvar",Dock=DockStyle.Right,Width=130,DialogResult=DialogResult.OK};save.SetPalette(Colors);body.Controls.Add(new Label{Text=label,Dock=DockStyle.Fill},0,0);body.Controls.Add(text,0,1);body.Controls.Add(save,0,2);f.Controls.Add(body);ApplyTheme(f);if(!multiline)f.AcceptButton=save;return f.ShowDialog(this)==DialogResult.OK?text.Text.Trim():null;
     }
 }

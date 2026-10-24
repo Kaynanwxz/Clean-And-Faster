@@ -82,6 +82,7 @@ public static class ChromeDiagnostics
                 if(physicalInput){var interactions=await window.VerifyInteractions().WaitAsync(TimeSpan.FromSeconds(180));result.Add(new{mode="native-buttons-menu-outside-escape-appearance-motion",status="PASS",checks=interactions.Length});}
                 else result.Add(new{mode="physical-input",status="SKIPPED",reason="Render-only diagnostic; requires an interactive foreground desktop."});
                 int motionChecks=await window.VerifyCleanMotion();result.Add(new{mode="clean-tab-menu-and-native-window-motion",status="PASS",checks=motionChecks});
+                int visualChecks=await window.VerifyWindowVisuals();result.Add(new{mode="real-window-client-geometry-fullscreen-and-recorded-command-frames",status="PASS",checks=visualChecks});
                 window.VerifyPersonalization();result.Add(new{mode="presets-10-vertical-focus-shortcuts-library-workspaces",status="PASS"});
                 File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"layout-check.json"),JsonSerializer.Serialize(result,new JsonSerializerOptions{WriteIndented=true}));exit=0;
             }

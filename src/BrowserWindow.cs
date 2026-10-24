@@ -99,7 +99,7 @@ public sealed partial class BrowserWindow : Form
         if (environment == null || closing) return;
         var t = new BrowserTab { Url = Navigation.Resolve(url, store.Settings.Search) };
         t.Page.WorkspaceId=WorkspaceId;tabs.Add(t); tabStrip.TabPages.Add(t.Page);
-        if (activate) { tabStrip.SelectedTab = t.Page; await Activate(t); }
+        if (activate) { tabStrip.SelectedTab = t.Page; if(t.Loading is {} loading)await loading; }
         else { t.Page.Caption = "○ " + new Uri(url).Host; }
         SaveSession();
     }
@@ -273,12 +273,23 @@ public sealed partial class BrowserWindow : Form
         var find = Button("Buscar", () => { if (Current?.View?.CoreWebView2 is { } c && text.Text.Length > 0) _ = c.ExecuteScriptAsync("window.find(" + System.Text.Json.JsonSerializer.Serialize(text.Text) + ")"); }); find.Dock = DockStyle.Bottom;
         f.Controls.Add(text); f.Controls.Add(find); f.AcceptButton = find; f.ShowDialog(this);
     }
+    Rectangle beforeFullscreenBounds;
+    FormWindowState beforeFullscreenState;
     void Fullscreen()
     {
-        fullscreen = !fullscreen;
+        if(!fullscreen)
+        {
+            beforeFullscreenState=WindowState;
+            beforeFullscreenBounds=WindowState==FormWindowState.Normal?Bounds:RestoreBounds;
+            var monitor=Screen.FromControl(this).Bounds;
+            fullscreen=true;WindowState=FormWindowState.Normal;Bounds=monitor;
+        }
+        else
+        {
+            fullscreen=false;WindowState=FormWindowState.Normal;
+            Bounds=beforeFullscreenBounds;WindowState=beforeFullscreenState;
+        }
         ApplyChromeMetrics();
-        MaximizedBounds = fullscreen ? Screen.FromControl(this).Bounds : Screen.FromControl(this).WorkingArea;
-        WindowState = FormWindowState.Normal; WindowState = FormWindowState.Maximized;
     }
     void Shortcut(object? sender, KeyEventArgs e)
     {

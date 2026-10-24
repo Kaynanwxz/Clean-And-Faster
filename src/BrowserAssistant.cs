@@ -5,7 +5,7 @@ namespace KayBrowser;
 
 public sealed partial class BrowserWindow
 {
-    readonly TableLayoutPanel pageHost=new(){Dock=DockStyle.Fill,ColumnCount=2,RowCount=1,Margin=Padding.Empty,Padding=Padding.Empty};
+    readonly TableLayoutPanel pageHost=new BufferedTableLayoutPanel(){Dock=DockStyle.Fill,ColumnCount=2,RowCount=1,Margin=Padding.Empty,Padding=Padding.Empty};
     AssistantPanel? assistant;
     readonly Tween assistantTween=new();
     CancellationTokenSource? aiCancellation;

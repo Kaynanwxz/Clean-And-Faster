@@ -4,7 +4,7 @@ namespace KayBrowser;
 
 public sealed partial class BrowserWindow
 {
-    readonly TableLayoutPanel chromeLayout = new() { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Margin = Padding.Empty, Padding = Padding.Empty };
+    readonly TableLayoutPanel chromeLayout = new BufferedTableLayoutPanel() { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Margin = Padding.Empty, Padding = Padding.Empty };
     readonly ToolTip chromeTips = new() { ShowAlways = true };
     bool fullscreen;
     TableLayoutPanel? titleRow, windowButtons, navigationRow;
@@ -12,21 +12,20 @@ public sealed partial class BrowserWindow
     SoftButton? connectionIcon;
     void InitializeChrome()
     {
-        FormBorderStyle = FormBorderStyle.None;
+        FormBorderStyle = FormBorderStyle.Sizable;
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScaleDimensions = new SizeF(96, 96);
         Padding = new Padding(1);
-        MaximizedBounds = Screen.FromControl(this).WorkingArea;
         chromeLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         chromeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,48));
         chromeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,64));
         chromeLayout.RowStyles.Add(new RowStyle(SizeType.Percent,100));
         chromeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,0));
-        var title = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty, Padding = Padding.Empty };
+        var title = new BufferedTableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty, Padding = Padding.Empty };
         titleRow = title; title.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         title.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));title.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,138));
         title.Controls.Add(tabStrip.Header,0,0);tabStrip.Header.Margin=Padding.Empty;
-        var windows = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = Padding.Empty, Padding = new Padding(0,4,4,4) };
+        var windows = new BufferedTableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = Padding.Empty, Padding = new Padding(0,4,4,4) };
         windowButtons = windows; windows.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         for(int i=0;i<3;i++)windows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100f/3));
         SoftButton IconButton(string glyph,string tip,Action action)
@@ -40,7 +39,7 @@ public sealed partial class BrowserWindow
         var close=IconButton("close","Fechar navegador",Close);close.Danger=true;windows.Controls.Add(close,2,0);
         title.Controls.Add(windows,1,0);
         Resize+=(_,_)=>{maximize.Glyph=WindowState==FormWindowState.Maximized?"restore":"max";maximize.Invalidate();};
-        var bar=new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=12, RowCount=1, Margin=Padding.Empty, Padding=new Padding(12,8,12,10), Tag="surface" };
+        var bar=new BufferedTableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=12, RowCount=1, Margin=Padding.Empty, Padding=new Padding(12,8,12,10), Tag="surface" };
         navigationRow = bar; bar.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         for(int i=0;i<12;i++)bar.ColumnStyles.Add(new ColumnStyle(i==4?SizeType.Percent:SizeType.Absolute,i==4?100:42));
         void Add(string glyph,int col,string tip,Action action)=>bar.Controls.Add(IconButton(glyph,tip,action),col,0);
@@ -124,19 +123,12 @@ public sealed partial class BrowserWindow
     void SetNativeTheme()
     {
         if(!IsHandleCreated)return;
-        int dark=store.Settings.DarkChrome?1:0,round=2,disabled=Motion.Allowed?0:1;
-        try { NativeFrame.DwmSetWindowAttribute(Handle,20,ref dark,sizeof(int));NativeFrame.DwmSetWindowAttribute(Handle,33,ref round,sizeof(int));NativeFrame.DwmSetWindowAttribute(Handle,3,ref disabled,sizeof(int)); } catch(DllNotFoundException) { }
+        int dark=store.Settings.DarkChrome?1:0,round=2,disabled=Motion.Allowed?0:1,nativeFrame=1;
+        try { NativeFrame.DwmSetWindowAttribute(Handle,20,ref dark,sizeof(int));NativeFrame.DwmSetWindowAttribute(Handle,33,ref round,sizeof(int));NativeFrame.DwmSetWindowAttribute(Handle,3,ref disabled,sizeof(int));NativeFrame.DwmSetWindowAttribute(Handle,2,ref nativeFrame,sizeof(int)); } catch(DllNotFoundException) { }
     }
     protected override void OnHandleCreated(EventArgs e){base.OnHandleCreated(e);SetNativeTheme();}
-    protected override CreateParams CreateParams
-    {
-        get { var cp=base.CreateParams;cp.Style|=0x00CF0000;return cp; }
-    }
     protected override void WndProc(ref Message m)
     {
-        // Keep WS_CAPTION for compositor transitions without drawing a second title bar.
-        if(m.Msg==0x85){m.Result=IntPtr.Zero;return;} // WM_NCPAINT
-        if(m.Msg==0x317)m.LParam=new IntPtr(m.LParam.ToInt64()&~2L); // WM_PRINT: omit PRF_NONCLIENT
         if(m.Msg==0x21&&MenuVisible) // WM_MOUSEACTIVATE is sent, not queued: IMessageFilter cannot catch it.
         {
             menuFilter?.SuppressGesture((int)((m.LParam.ToInt64()>>16)&0xffff));
@@ -145,7 +137,17 @@ public sealed partial class BrowserWindow
             m.Result=new IntPtr(2);return; // MA_ACTIVATEANDEAT: focus the browser, discard the dismissal click.
         }
         const int WM_NCCALCSIZE=0x83,WM_NCHITTEST=0x84;
-        if(m.Msg==WM_NCCALCSIZE&&m.WParam!=IntPtr.Zero){m.Result=IntPtr.Zero;return;}
+        if(m.Msg==WM_NCCALCSIZE){m.Result=IntPtr.Zero;return;}
+        if(m.Msg==0x24) // WM_GETMINMAXINFO: use the monitor under this window, never a cached primary monitor.
+        {
+            base.WndProc(ref m);
+            var monitor=Screen.FromHandle(Handle);var area=fullscreen?monitor.Bounds:monitor.WorkingArea;
+            var limits=Marshal.PtrToStructure<FrameLimits>(m.LParam);
+            limits.MaxPosition=new Point(area.Left-monitor.Bounds.Left,area.Top-monitor.Bounds.Top);
+            limits.MaxSize=area.Size;limits.MinTrack=MinimumSize;
+            Marshal.StructureToPtr(limits,m.LParam,false);m.Result=IntPtr.Zero;return;
+        }
+        if(m.Msg==0x85){m.Result=IntPtr.Zero;return;} // Our entire frame is client-rendered.
         if(m.Msg==WM_NCHITTEST&&WindowState!=FormWindowState.Maximized&&!fullscreen)
         {
             long xy=m.LParam.ToInt64();var point=PointToClient(new Point(unchecked((short)(xy&0xffff)),unchecked((short)((xy>>16)&0xffff))));
@@ -153,8 +155,7 @@ public sealed partial class BrowserWindow
             int hit=top&&left?13:top&&right?14:bottom&&left?16:bottom&&right?17:left?10:right?11:top?12:bottom?15:0;
             if(hit!=0){m.Result=new IntPtr(hit);return;}
         }
-        // The caption style is present only for DWM. Interior hits belong to our controls,
-        // including custom caption buttons; default non-client hit testing would steal them.
+        // Custom controls own all interior hit targets, not the hidden system caption.
         if(m.Msg==WM_NCHITTEST){m.Result=new IntPtr(1);return;}
         // Let Windows update activation without painting its own caption over our chrome.
         if (m.Msg == 0x86) // WM_NCACTIVATE
@@ -164,6 +165,8 @@ public sealed partial class BrowserWindow
         if (m.Msg is 0xAE or 0xAF) { m.Result = IntPtr.Zero; return; }
         base.WndProc(ref m);
     }
+    [StructLayout(LayoutKind.Sequential)]
+    struct FrameLimits { public Point Reserved;public Size MaxSize;public Point MaxPosition;public Size MinTrack,MaxTrack; }
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e);

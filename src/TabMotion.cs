@@ -10,6 +10,7 @@ public sealed partial class TabRibbon
     List<TabVisual>? beforeTabs;
     Rectangle beforePlus,plusFrom,plusTo;
     float tabProgress=1;
+    internal float TabMotionProgress=>tabProgress;
     internal bool TabMotionRunning=>tabMotion.Running;
     internal int ExitingTabCount=>tabTracks.Count(t=>t.Exiting);
     Rectangle AnimatedPlus=>tabMotion.Running?Mix(plusFrom,plusTo,tabProgress):TargetPlus;
@@ -67,7 +68,7 @@ public sealed partial class TabRibbon
         foreach(var old in snapshot.Where(t=>!visible.Contains(t.Page)&&!owner.TabPages.Contains(t.Page)).TakeLast(24))
             tabTracks.Add(new(old,ExitBounds(old.Bounds),0,true));
         hover=-1;overPlus=false;plusFrom=beforePlus;plusTo=TargetPlus;tabProgress=0;
-        tabMotion.Start(0,1,t=>{tabProgress=t;Invalidate();},200,()=>{tabTracks.Clear();Invalidate();});
+        tabMotion.Start(0,1,t=>{tabProgress=t;Invalidate();},280,()=>{tabTracks.Clear();Invalidate();});
     }
     internal void FinishTabMotion()
     {

@@ -100,7 +100,7 @@ public sealed partial class BrowserWindow
         menuPopup!.Opacity=Motion.Allowed?.04:1;
         menuPopup.Location=new Point(target.X,target.Y-(Motion.Allowed?Ui(8):0));
         if(!menuPopup.Visible)menuPopup.Show(this);else menuPopup.Activate();browserMenu.FocusMenu();
-        menuMotion.Start(0,1,t=>{if(!menuPopup.IsDisposed){menuPopup.Opacity=.04+.96*t;menuPopup.Location=new Point(target.X,target.Y-(int)Math.Round(Ui(8)*(1-t)));}},180);
+        menuMotion.Start(0,1,t=>{if(!menuPopup.IsDisposed){menuPopup.Opacity=.04+.96*t;menuPopup.Location=new Point(target.X,target.Y-(int)Math.Round(Ui(8)*(1-t)));}},240);
     }
     Point MenuLocation()=>PointToScreen(new Point(ClientSize.Width-Ui(366)-Ui(12),fullscreen?Ui(10):navigationRow!.Bottom+Ui(8)));
     void PositionBrowserMenu()
@@ -115,7 +115,7 @@ public sealed partial class BrowserWindow
         if(!MenuVisible){RestoreMenuPageInput();return;}
         if(!animate){menuMotion.Stop();menuPopup!.Hide();menuPopup.Opacity=1;browserMenu!.Visible=false;RestoreMenuPageInput();return;}
         var start=menuPopup!.Location;double opacity=menuPopup.Opacity;
-        menuMotion.Start(0,1,t=>{if(!menuPopup.IsDisposed){menuPopup.Opacity=opacity*(1-t);menuPopup.Top=start.Y-(int)Math.Round(Ui(5)*t);}},130,()=>{if(!menuOpen&&!menuPopup.IsDisposed){menuPopup.Hide();menuPopup.Opacity=1;browserMenu!.Visible=false;RestoreMenuPageInput();}});
+        menuMotion.Start(0,1,t=>{if(!menuPopup.IsDisposed){menuPopup.Opacity=opacity*(1-t);menuPopup.Top=start.Y-(int)Math.Round(Ui(5)*t);}},180,()=>{if(!menuOpen&&!menuPopup.IsDisposed){menuPopup.Hide();menuPopup.Opacity=1;browserMenu!.Visible=false;RestoreMenuPageInput();}});
     }
     void QueueBrowserMenuDismissal()
     {

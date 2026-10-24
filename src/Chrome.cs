@@ -232,8 +232,7 @@ public sealed partial class TabRibbon : Control,IThemed
 public static class NativeFrame
 {
     [DllImport("user32.dll")]static extern bool ReleaseCapture();
-    [DllImport("user32.dll")]static extern bool ShowWindow(IntPtr hwnd,int command);
-    [DllImport("user32.dll")]internal static extern IntPtr SendMessage(IntPtr hwnd,int message,IntPtr wParam,IntPtr lParam);
+        [DllImport("user32.dll")]internal static extern IntPtr SendMessage(IntPtr hwnd,int message,IntPtr wParam,IntPtr lParam);
     [DllImport("dwmapi.dll")]public static extern int DwmSetWindowAttribute(IntPtr hwnd,int attribute,ref int value,int size);
     public static void WindowCommand(Form form,int command)
     {
@@ -241,8 +240,14 @@ public static class NativeFrame
         int disabled=Motion.Allowed?0:1;
         DwmSetWindowAttribute(form.Handle,3,ref disabled,sizeof(int));
         ReleaseCapture();
-        ShowWindow(form.Handle,command switch{0xF030=>3,0xF020=>6,0xF120=>9,_=>throw new ArgumentOutOfRangeException(nameof(command))});
+        form.WindowState=command switch{0xF030=>FormWindowState.Maximized,0xF020=>FormWindowState.Minimized,0xF120=>FormWindowState.Normal,_=>throw new ArgumentOutOfRangeException(nameof(command))};
     }
     public static void ToggleMaximize(Form form)=>WindowCommand(form,form.WindowState==FormWindowState.Maximized?0xF120:0xF030);
     public static void Drag(Form form){ReleaseCapture();SendMessage(form.Handle,0xA1,new IntPtr(2),IntPtr.Zero);}
+}
+
+// Avoid background erase flashes while managed chrome lays out during native window resizing.
+public sealed class BufferedTableLayoutPanel : TableLayoutPanel
+{
+    public BufferedTableLayoutPanel(){DoubleBuffered=true;ResizeRedraw=true;}
 }
