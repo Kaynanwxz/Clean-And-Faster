@@ -143,9 +143,9 @@ public sealed class BrowserTabs : Panel, IThemed
     public sealed class PageCollection(BrowserTabs owner) : Collection<BrowserPage>
     {
         protected override void InsertItem(int index,BrowserPage item)
-        {base.InsertItem(index,item);item.Dock=DockStyle.Fill;item.Visible=false;owner.Controls.Add(item);item.CaptionChanged+=(_,_)=>owner.Header.Invalidate();if(owner.SelectedTab==null)owner.SelectedTab=item;owner.Header.Invalidate();}
+        {owner.Header.BeginTabChange();base.InsertItem(index,item);item.Dock=DockStyle.Fill;item.Visible=false;owner.Controls.Add(item);item.CaptionChanged+=(_,_)=>owner.Header.Invalidate();if(owner.SelectedTab==null)owner.SelectedTab=item;owner.Header.EndTabChange();}
         protected override void RemoveItem(int index)
-        {var page=this[index];bool selected=page==owner.SelectedTab;owner.Controls.Remove(page);base.RemoveItem(index);if(selected)owner.SelectedTab=owner.VisiblePages.FirstOrDefault();owner.Header.Invalidate();}
+        {owner.Header.BeginTabChange();var page=this[index];bool selected=page==owner.SelectedTab;owner.Controls.Remove(page);base.RemoveItem(index);if(selected)owner.SelectedTab=owner.VisiblePages.FirstOrDefault();owner.Header.EndTabChange();}
     }
     public PageCollection TabPages {get;}
     public TabRibbon Header {get;}
@@ -176,7 +176,7 @@ public sealed class BrowserTabs : Panel, IThemed
     internal void New()=>NewRequested?.Invoke();
     public void SetPalette(Palette p){BackColor=p.Background;Header.SetPalette(p);}
 }
-public sealed class TabRibbon : Control,IThemed
+public sealed partial class TabRibbon : Control,IThemed
 {
     readonly BrowserTabs owner;
     Palette colors=Palette.Create(false,Color.SteelBlue);
@@ -188,24 +188,22 @@ public sealed class TabRibbon : Control,IThemed
     int TabWidth=>Math.Clamp((Width-D(102))/Math.Max(1,Pages.Length),D(106),D(218));
     int Capacity=>Vertical?Math.Max(1,(Height-D(54))/D(44)):Math.Max(1,(Width-D(102))/Math.Max(1,TabWidth));
     bool Compact=>Vertical&&Width<D(100);
-    public TabRibbon(BrowserTabs tabs){owner=tabs;Dock=DockStyle.Fill;AccessibleName="Abas · role para navegar";SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);}
+    public TabRibbon(BrowserTabs tabs){owner=tabs;Dock=DockStyle.Fill;AccessibleName="Abas � role para navegar";SetStyle(ControlStyles.UserPaint|ControlStyles.AllPaintingInWmPaint|ControlStyles.OptimizedDoubleBuffer|ControlStyles.ResizeRedraw,true);}
     public void SetPalette(Palette p){colors=p;BackColor=p.Background;Invalidate();}
-    public Rectangle GetTabRect(int i)=>i<first||i>=first+Capacity?Rectangle.Empty:Vertical?new(D(6),D(5)+(i-first)*D(44),Math.Max(1,Width-D(12)),D(40)):new(D(48)+(i-first)*TabWidth,D(5),TabWidth-D(4),Math.Max(D(24),Height-D(10)));
-    Rectangle Plus=>Vertical?new(D(7),Math.Min(Height-D(42),D(8)+Math.Min(Pages.Length-first,Capacity)*D(44)),Math.Max(1,Width-D(14)),D(34)):new(Math.Min(D(48)+Math.Min(Pages.Length-first,Capacity)*TabWidth,Width-D(38)),(Height-D(30))/2,D(30),D(30));
+    Rectangle TargetTabRect(int i)=>i<first||i>=first+Capacity?Rectangle.Empty:Vertical?new(D(6),D(5)+(i-first)*D(44),Math.Max(1,Width-D(12)),D(40)):new(D(48)+(i-first)*TabWidth,D(5),TabWidth-D(4),Math.Max(D(24),Height-D(10)));
+    public Rectangle GetTabRect(int i)=>i<0||i>=Pages.Length?Rectangle.Empty:AnimatedTabRect(Pages[i],TargetTabRect(i));
+    Rectangle Plus=>AnimatedPlus;
+    Rectangle TargetPlus=>Vertical?new(D(7),Math.Min(Height-D(42),D(8)+Math.Min(Pages.Length-first,Capacity)*D(44)),Math.Max(1,Width-D(14)),D(34)):new(Math.Min(D(48)+Math.Min(Pages.Length-first,Capacity)*TabWidth,Width-D(38)),(Height-D(30))/2,D(30),D(30));
     public void EnsureSelectedVisible(){int selected=Array.IndexOf(Pages,owner.SelectedTab);first=Math.Clamp(first,0,Math.Max(0,Pages.Length-1));if(selected>=0){if(selected<first)first=selected;if(selected>=first+Capacity)first=selected-Capacity+1;}}
-    protected override void OnResize(EventArgs e){EnsureSelectedVisible();base.OnResize(e);}
+    protected override void OnResize(EventArgs e){FinishTabMotion();EnsureSelectedVisible();base.OnResize(e);}
     protected override void OnPaint(PaintEventArgs e)
     {
         var g=e.Graphics;g.Clear(colors.Background);g.SmoothingMode=System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
         if(!Vertical)g.DrawImage(BrandAssets.Logo,new Rectangle(D(10),(Height-D(28))/2,D(28),D(28)));
         var pages=Pages;int selected=Array.IndexOf(pages,owner.SelectedTab);
+        PaintTabMotion(g);
         for(int i=first;i<Math.Min(pages.Length,first+Capacity);i++)
-        {
-            var r=GetTabRect(i);bool active=i==selected;
-            if(active||i==hover){using var path=Shapes.Round(r,D(10));using var fill=new SolidBrush(active?colors.Elevated:colors.Surface);g.FillPath(fill,path);}
-            Glyphs.Draw(g,"globe",new(r.X+D(10),r.Y+(r.Height-D(16))/2,D(16),D(16)),active?colors.Accent:colors.Muted,1.5f);
-            if(!Compact){using var f=new Font("Segoe UI",9.2f,active?FontStyle.Bold:FontStyle.Regular);TextRenderer.DrawText(g,pages[i].Caption,f,new Rectangle(r.X+D(34),r.Y,Math.Max(1,r.Width-D(60)),r.Height),active?colors.Text:colors.Muted,TextFormatFlags.VerticalCenter|TextFormatFlags.EndEllipsis|TextFormatFlags.NoPrefix);if(active||i==hover)Glyphs.Draw(g,"close",new(r.Right-D(23),r.Y+(r.Height-D(14))/2,D(14),D(14)),colors.Muted);}
-        }
+            PaintTab(g,pages[i].Caption,GetTabRect(i),i==selected,i==hover,TabOpacity(pages[i]));
         var rect=GetTabRect(selected);
         if(!rect.IsEmpty)
         {
@@ -218,7 +216,7 @@ public sealed class TabRibbon : Control,IThemed
         Glyphs.Draw(g,"plus",new(Plus.X+D(7),Plus.Y+(Plus.Height-D(18))/2,D(18),D(18)),colors.Text);
         if(Vertical&&!Compact){using var f=new Font("Segoe UI",9);TextRenderer.DrawText(g,"Nova aba",f,new Rectangle(Plus.X+D(32),Plus.Y,Math.Max(1,Plus.Width-D(34)),Plus.Height),colors.Text,TextFormatFlags.VerticalCenter);}
     }
-    protected override void OnMouseMove(MouseEventArgs e){int old=hover;bool oldPlus=overPlus;hover=-1;for(int i=first;i<Math.Min(Pages.Length,first+Capacity);i++)if(GetTabRect(i).Contains(e.Location))hover=i;overPlus=Plus.Contains(e.Location);if(old!=hover||oldPlus!=overPlus){tips.SetToolTip(this,hover>=0?Pages[hover].Caption+" · botão do meio fecha":"Nova aba");Invalidate();}base.OnMouseMove(e);}
+    protected override void OnMouseMove(MouseEventArgs e){int old=hover;bool oldPlus=overPlus;hover=-1;for(int i=first;i<Math.Min(Pages.Length,first+Capacity);i++)if(GetTabRect(i).Contains(e.Location))hover=i;overPlus=Plus.Contains(e.Location);if(old!=hover||oldPlus!=overPlus){tips.SetToolTip(this,hover>=0?Pages[hover].Caption+" � bot�o do meio fecha":"Nova aba");Invalidate();}base.OnMouseMove(e);}
     protected override void OnMouseLeave(EventArgs e){hover=-1;overPlus=false;Invalidate();base.OnMouseLeave(e);}
     protected override void OnMouseDown(MouseEventArgs e)
     {
@@ -226,15 +224,23 @@ public sealed class TabRibbon : Control,IThemed
         if(Plus.Contains(e.Location)&&e.Button==MouseButtons.Left){owner.New();return;}
         for(int i=first;i<Math.Min(pages.Length,first+Capacity);i++)if(GetTabRect(i).Contains(e.Location))
         {if(e.Button==MouseButtons.Middle||(e.Button==MouseButtons.Left&&!Compact&&e.X>=GetTabRect(i).Right-D(26)))owner.Close(pages[i]);else if(e.Button==MouseButtons.Left)owner.SelectedTab=pages[i];return;}
-        if(!Vertical&&e.Button==MouseButtons.Left&&FindForm() is {} f){if(e.Clicks==2)f.WindowState=f.WindowState==FormWindowState.Maximized?FormWindowState.Normal:FormWindowState.Maximized;else NativeFrame.Drag(f);}
+        if(!Vertical&&e.Button==MouseButtons.Left&&FindForm() is {} f){if(e.Clicks==2)NativeFrame.ToggleMaximize(f);else NativeFrame.Drag(f);}
     }
-    protected override void OnMouseWheel(MouseEventArgs e){first=Math.Clamp(first+(e.Delta<0?1:-1),0,Math.Max(0,Pages.Length-Capacity));Invalidate();base.OnMouseWheel(e);}
-    protected override void Dispose(bool disposing){if(disposing){selectionTween.Dispose();tips.Dispose();}base.Dispose(disposing);}
+    protected override void OnMouseWheel(MouseEventArgs e){FinishTabMotion();first=Math.Clamp(first+(e.Delta<0?1:-1),0,Math.Max(0,Pages.Length-Capacity));Invalidate();base.OnMouseWheel(e);}
+    protected override void Dispose(bool disposing){if(disposing){tabMotion.Dispose();selectionTween.Dispose();tips.Dispose();}base.Dispose(disposing);}
 }
 public static class NativeFrame
 {
     [DllImport("user32.dll")]static extern bool ReleaseCapture();
     [DllImport("user32.dll")]static extern IntPtr SendMessage(IntPtr hwnd,int message,IntPtr wParam,IntPtr lParam);
     [DllImport("dwmapi.dll")]public static extern int DwmSetWindowAttribute(IntPtr hwnd,int attribute,ref int value,int size);
+    public static void WindowCommand(Form form,int command)
+    {
+        if(form.IsDisposed||!form.IsHandleCreated)return;
+        int disabled=Motion.Allowed?0:1;
+        DwmSetWindowAttribute(form.Handle,3,ref disabled,sizeof(int));
+        SendMessage(form.Handle,0x112,new IntPtr(command),IntPtr.Zero);
+    }
+    public static void ToggleMaximize(Form form)=>WindowCommand(form,form.WindowState==FormWindowState.Maximized?0xF120:0xF030);
     public static void Drag(Form form){ReleaseCapture();SendMessage(form.Handle,0xA1,new IntPtr(2),IntPtr.Zero);}
 }

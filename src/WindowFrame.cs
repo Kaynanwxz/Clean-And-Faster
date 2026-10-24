@@ -34,8 +34,8 @@ public sealed partial class BrowserWindow
             var b = new SoftButton { Glyph = glyph, AccessibleName = tip, Dock = DockStyle.Fill, Margin = new Padding(2), TabStop = false };
             b.SetPalette(Colors); b.Click += (_,_) => action(); chromeTips.SetToolTip(b,tip); return b;
         }
-        windows.Controls.Add(IconButton("min","Minimizar",()=>WindowState=FormWindowState.Minimized),0,0);
-        var maximize=IconButton("max","Maximizar / restaurar",()=>WindowState=WindowState==FormWindowState.Maximized?FormWindowState.Normal:FormWindowState.Maximized);
+        windows.Controls.Add(IconButton("min","Minimizar",()=>NativeFrame.WindowCommand(this,0xF020)),0,0);
+        var maximize=IconButton("max","Maximizar / restaurar",()=>NativeFrame.ToggleMaximize(this));
         windows.Controls.Add(maximize,1,0);
         var close=IconButton("close","Fechar navegador",Close);close.Danger=true;windows.Controls.Add(close,2,0);
         title.Controls.Add(windows,1,0);
@@ -124,13 +124,13 @@ public sealed partial class BrowserWindow
     void SetNativeTheme()
     {
         if(!IsHandleCreated)return;
-        int dark=store.Settings.DarkChrome?1:0,round=2;
-        try { NativeFrame.DwmSetWindowAttribute(Handle,20,ref dark,sizeof(int));NativeFrame.DwmSetWindowAttribute(Handle,33,ref round,sizeof(int)); } catch(DllNotFoundException) { }
+        int dark=store.Settings.DarkChrome?1:0,round=2,disabled=Motion.Allowed?0:1;
+        try { NativeFrame.DwmSetWindowAttribute(Handle,20,ref dark,sizeof(int));NativeFrame.DwmSetWindowAttribute(Handle,33,ref round,sizeof(int));NativeFrame.DwmSetWindowAttribute(Handle,3,ref disabled,sizeof(int)); } catch(DllNotFoundException) { }
     }
     protected override void OnHandleCreated(EventArgs e){base.OnHandleCreated(e);SetNativeTheme();}
     protected override CreateParams CreateParams
     {
-        get { var cp=base.CreateParams;cp.Style|=0x000F0000;return cp; }
+        get { var cp=base.CreateParams;cp.Style|=0x00CF0000;return cp; }
     }
     protected override void WndProc(ref Message m)
     {

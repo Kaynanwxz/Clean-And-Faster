@@ -8,7 +8,7 @@ public sealed class BrowserMenuPanel : Panel,IThemed
     readonly BrowserCommand[] commands;readonly Action<string> invoke;
     readonly List<ChoiceButton> categories=[];readonly Panel viewport=new(){Dock=DockStyle.Fill,AutoScroll=true};
     readonly TableLayoutPanel rows=new(){Dock=DockStyle.Top,AutoSize=true,ColumnCount=1,Margin=Padding.Empty};
-    readonly SoftButton zoomOut=new(){Text="−",AccessibleName="Reduzir zoom",Dock=DockStyle.Fill},zoomIn=new(){Text="+",AccessibleName="Aumentar zoom",Dock=DockStyle.Fill},full=new(){Glyph="max",AccessibleName="Tela cheia",Dock=DockStyle.Fill};
+    readonly SoftButton zoomOut=new(){Text="-",AccessibleName="Reduzir zoom",Dock=DockStyle.Fill},zoomIn=new(){Text="+",AccessibleName="Aumentar zoom",Dock=DockStyle.Fill},full=new(){Glyph="max",AccessibleName="Tela cheia",Dock=DockStyle.Fill};
     readonly Label zoom=new(){Dock=DockStyle.Fill,TextAlign=ContentAlignment.MiddleCenter};
     Palette palette=Palette.Create(true,Color.SteelBlue);int group;
     public event Action? CloseRequested;
@@ -19,15 +19,15 @@ public sealed class BrowserMenuPanel : Panel,IThemed
         var header=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2,RowCount=1};header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,32));header.RowStyles.Add(new RowStyle(SizeType.Percent,100));header.Controls.Add(new Label{Text="Clean Browser",Font=new Font("Georgia",17),Dock=DockStyle.Fill,TextAlign=ContentAlignment.MiddleLeft},0,0);var close=new SoftButton{Glyph="close",Dock=DockStyle.Fill,AccessibleName="Fechar menu"};close.Click+=(_,_)=>CloseRequested?.Invoke();header.Controls.Add(close,1,0);
         var nav=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=3,RowCount=1,Margin=Padding.Empty};nav.RowStyles.Add(new RowStyle(SizeType.Percent,100));foreach(var (name,index) in new[]{("Navegar",0),("Organizar",1),("Mais",2)}){nav.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100f/3));var b=new ChoiceButton{Text=name,Dock=DockStyle.Fill,AccessibleName="Menu: "+name};b.Click+=(_,_)=>SelectGroup(index);categories.Add(b);nav.Controls.Add(b,index,0);}
         rows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));viewport.Controls.Add(rows);
-        var zoomBar=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=5,RowCount=1};foreach(int w in new[]{0,38,58,38,38})zoomBar.ColumnStyles.Add(new ColumnStyle(w==0?SizeType.Percent:SizeType.Absolute,w==0?100:w));zoomBar.RowStyles.Add(new RowStyle(SizeType.Percent,100));zoomBar.Controls.Add(new Label{Text="Zoom da página",Dock=DockStyle.Fill,TextAlign=ContentAlignment.MiddleLeft},0,0);zoomBar.Controls.Add(zoomOut,1,0);zoomBar.Controls.Add(zoom,2,0);zoomBar.Controls.Add(zoomIn,3,0);zoomBar.Controls.Add(full,4,0);zoomOut.Click+=(_,_)=>invoke("zoom-out");zoomIn.Click+=(_,_)=>invoke("zoom-in");full.Click+=(_,_)=>invoke("fullscreen");
-        var footer=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2,RowCount=1};footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,50));footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,50));footer.RowStyles.Add(new RowStyle(SizeType.Percent,100));foreach(var (text,id,col,glyph) in new[]{("Aparência","appearance",0,"settings"),("Atualizar","update",1,"update")}){var b=new SoftButton{Text=text,Glyph=glyph,Dock=DockStyle.Fill,AccessibleName=text};b.Click+=(_,_)=>invoke(id);footer.Controls.Add(b,col,0);}
+        var zoomBar=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=5,RowCount=1};foreach(int w in new[]{0,38,58,38,38})zoomBar.ColumnStyles.Add(new ColumnStyle(w==0?SizeType.Percent:SizeType.Absolute,w==0?100:w));zoomBar.RowStyles.Add(new RowStyle(SizeType.Percent,100));zoomBar.Controls.Add(new Label{Text="Zoom da p�gina",Dock=DockStyle.Fill,TextAlign=ContentAlignment.MiddleLeft},0,0);zoomBar.Controls.Add(zoomOut,1,0);zoomBar.Controls.Add(zoom,2,0);zoomBar.Controls.Add(zoomIn,3,0);zoomBar.Controls.Add(full,4,0);zoomOut.Click+=(_,_)=>invoke("zoom-out");zoomIn.Click+=(_,_)=>invoke("zoom-in");full.Click+=(_,_)=>invoke("fullscreen");
+        var footer=new TableLayoutPanel{Dock=DockStyle.Fill,ColumnCount=2,RowCount=1};footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,50));footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,50));footer.RowStyles.Add(new RowStyle(SizeType.Percent,100));foreach(var (text,id,col,glyph) in new[]{("Apar�ncia","appearance",0,"settings"),("Atualizar","update",1,"update")}){var b=new SoftButton{Text=text,Glyph=glyph,Dock=DockStyle.Fill,AccessibleName=text};b.Click+=(_,_)=>invoke(id);footer.Controls.Add(b,col,0);}
         body.Controls.Add(header,0,0);body.Controls.Add(nav,0,1);body.Controls.Add(viewport,0,2);body.Controls.Add(zoomBar,0,3);body.Controls.Add(footer,0,4);Controls.Add(body);SelectGroup(0);
     }
     internal void SelectGroup(int index)
     {
         group=index;rows.SuspendLayout();foreach(Control c in rows.Controls.Cast<Control>().ToArray())c.Dispose();rows.Controls.Clear();rows.RowStyles.Clear();rows.RowCount=0;
         foreach(var c in commands.Where(c=>c.Group==group))
-        {int row=rows.RowCount++;rows.RowStyles.Add(new RowStyle(SizeType.Absolute,42));var b=new SoftButton{Text=c.Title+(c.Hint.Length>0?"  · "+c.Hint:""),Glyph=c.Glyph,Dock=DockStyle.Fill,AccessibleName=c.Id,Margin=new Padding(0,2,0,2)};b.Click+=(_,_)=>invoke(c.Id);rows.Controls.Add(b,0,row);}
+        {int row=rows.RowCount++;rows.RowStyles.Add(new RowStyle(SizeType.Absolute,42));var b=new SoftButton{Text=c.Title+(c.Hint.Length>0?"  � "+c.Hint:""),Glyph=c.Glyph,Dock=DockStyle.Fill,AccessibleName=c.Id,Margin=new Padding(0,2,0,2)};b.Click+=(_,_)=>invoke(c.Id);rows.Controls.Add(b,0,row);}
         for(int i=0;i<categories.Count;i++){categories[i].Selected=i==group;categories[i].Invalidate();}rows.ResumeLayout(true);SetPalette(palette);
     }
     internal void FocusMenu()=>categories[group].Focus();
@@ -68,10 +68,10 @@ public sealed partial class BrowserWindow
     }
     void RememberMenuDismissalTarget()=>menuRestorePageFocus=tabStrip.RectangleToScreen(tabStrip.ClientRectangle).Contains(Cursor.Position);
     BrowserCommand[] MenuCommands()=>[
-        new("new-tab","Nova aba","Ctrl+T","plus",0,()=>_ = AddTab("kay://new")),new("ai","Clean AI","Ctrl+Shift+I","spark",0,ToggleAssistant),new("history","Histórico","Ctrl+H","history",0,ShowHistory),new("bookmarks","Favoritos","","star",0,ShowBookmarks),new("downloads","Downloads","Ctrl+J","download",0,ShowDownloads),new("reading","Lista de leitura","","code",0,()=>ShowLibrary("reading")),
-        new("apps","Seus apps","","apps",1,ShowApps),new("workspaces","Espaços de trabalho","","globe",1,ManageWorkspaces),new("sources","Fontes salvas","","globe",1,()=>ShowLibrary("source")),new("notes","Documentos e notas","","code",1,()=>ShowLibrary("note")),new("memory","Memória e abas","","memory",1,ShowMemory),new("extensions","Extensões","","extension",1,()=>_ = ShowExtensions()),
-        new("appearance","Personalizar aparência","","settings",2,ShowAppearance),new("focus","Modo foco","F8","leaf",2,ToggleFocus),new("settings","Configurações avançadas","","settings",2,ShowSettings),new("google","Conta Google","","user",2,()=>_ = LoginGoogle()),new("find","Buscar nesta página","Ctrl+F","search",2,Find),new("update","Verificar atualizações","","update",2,()=>_ = CheckUpdate()),new("about","Sobre o Clean Browser","","globe",2,()=>ShowNotice($"Clean Browser {Updater.CurrentVersion.ToString(3)}\nC# · .NET 10 · Microsoft Edge WebView2\n\nExtensões por pasta. A meta de RAM é flexível. Sem Chrome Sync.","Clean Browser")),
-        new("zoom-out","Zoom −","","search",-1,()=>{if(Current?.View is {} v)v.ZoomFactor=Math.Max(.3,v.ZoomFactor-.1);}),new("zoom-in","Zoom +","","search",-1,()=>{if(Current?.View is {} v)v.ZoomFactor=Math.Min(3,v.ZoomFactor+.1);}),new("fullscreen","Tela cheia","F11","max",-1,Fullscreen)
+        new("new-tab","Nova aba","Ctrl+T","plus",0,()=>_ = AddTab("kay://new")),new("ai","Clean AI","Ctrl+Shift+I","spark",0,ToggleAssistant),new("history","Hist�rico","Ctrl+H","history",0,ShowHistory),new("bookmarks","Favoritos","","star",0,ShowBookmarks),new("downloads","Downloads","Ctrl+J","download",0,ShowDownloads),new("reading","Lista de leitura","","code",0,()=>ShowLibrary("reading")),
+        new("apps","Seus apps","","apps",1,ShowApps),new("workspaces","Espa�os de trabalho","","globe",1,ManageWorkspaces),new("sources","Fontes salvas","","globe",1,()=>ShowLibrary("source")),new("notes","Documentos e notas","","code",1,()=>ShowLibrary("note")),new("memory","Mem�ria e abas","","memory",1,ShowMemory),new("extensions","Extens�es","","extension",1,()=>_ = ShowExtensions()),
+        new("appearance","Personalizar apar�ncia","","settings",2,ShowAppearance),new("focus","Modo foco","F8","leaf",2,ToggleFocus),new("settings","Configura��es avan�adas","","settings",2,ShowSettings),new("google","Conta Google","","user",2,()=>_ = LoginGoogle()),new("find","Buscar nesta p�gina","Ctrl+F","search",2,Find),new("update","Verificar atualiza��es","","update",2,()=>_ = CheckUpdate()),new("about","Sobre o Clean Browser","","globe",2,()=>ShowNotice($"Clean Browser {Updater.CurrentVersion.ToString(3)}\nC# � .NET 10 � Microsoft Edge WebView2\n\nExtens�es por pasta. A meta de RAM � flex�vel. Sem Chrome Sync.","Clean Browser")),
+        new("zoom-out","Zoom -","","search",-1,()=>{if(Current?.View is {} v)v.ZoomFactor=Math.Max(.3,v.ZoomFactor-.1);}),new("zoom-in","Zoom +","","search",-1,()=>{if(Current?.View is {} v)v.ZoomFactor=Math.Min(3,v.ZoomFactor+.1);}),new("fullscreen","Tela cheia","F11","max",-1,Fullscreen)
     ];
     void ShowMenu()
     {
@@ -85,7 +85,7 @@ public sealed partial class BrowserWindow
             // Keep the popup alive until activation finishes, then hide it on our UI queue.
             menuPopup.Deactivate+=(_,_)=>QueueBrowserMenuDismissal();
             menuPopup.FormClosing+=(_,e)=>{if(!closing&&e.CloseReason==CloseReason.UserClosing){e.Cancel=true;CloseBrowserMenu(false);}};
-            Resize+=(_,_)=>{if(menuOpen){menuMotion.Stop();PositionBrowserMenu();}};
+            Resize+=(_,_)=>{if(menuOpen){menuMotion.Stop();PositionBrowserMenu();if(menuPopup!=null)menuPopup.Opacity=1;}};
             menuFilter=new MenuDismissFilter(this);Application.AddMessageFilter(menuFilter);
             menuInputRelease.Tick+=(_,_)=>RestoreMenuPageInput();
             FormClosed+=(_,_)=>{CloseBrowserMenu(false);Application.RemoveMessageFilter(menuFilter);menuMotion.Dispose();menuInputRelease.Dispose();menuPopup.Dispose();};
@@ -96,8 +96,11 @@ public sealed partial class BrowserWindow
         // dismissal gesture to this UI thread instead of the page underneath.
         menuInputRelease.Stop();menuRestorePageFocus=false;menuPageBlocked=true;tabStrip.Enabled=false;
         browserMenu.SetPalette(Palette.Create(store.Settings.Theme=="Claro",Accent));browserMenu.RefreshZoom(Current?.View?.ZoomFactor??1);PositionBrowserMenu();browserMenu.Visible=true;
-        var target=MenuLocation();if(!menuPopup!.Visible)menuPopup.Show(this);else menuPopup.Activate();browserMenu.FocusMenu();
-        menuMotion.Start(target.X+Ui(18),target.X,x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},230);
+        var target=MenuLocation();menuMotion.Stop();
+        menuPopup!.Opacity=Motion.Allowed?.04:1;
+        menuPopup.Location=new Point(target.X,target.Y-(Motion.Allowed?Ui(8):0));
+        if(!menuPopup.Visible)menuPopup.Show(this);else menuPopup.Activate();browserMenu.FocusMenu();
+        menuMotion.Start(0,1,t=>{if(!menuPopup.IsDisposed){menuPopup.Opacity=.04+.96*t;menuPopup.Location=new Point(target.X,target.Y-(int)Math.Round(Ui(8)*(1-t)));}},180);
     }
     Point MenuLocation()=>PointToScreen(new Point(ClientSize.Width-Ui(366)-Ui(12),fullscreen?Ui(10):navigationRow!.Bottom+Ui(8)));
     void PositionBrowserMenu()
@@ -110,8 +113,9 @@ public sealed partial class BrowserWindow
     {
         menuSession++;menuOpen=false;
         if(!MenuVisible){RestoreMenuPageInput();return;}
-        if(!animate){menuMotion.Stop();menuPopup!.Hide();browserMenu!.Visible=false;RestoreMenuPageInput();return;}
-        menuMotion.Start(menuPopup!.Left,menuPopup.Left+Ui(18),x=>{if(!menuPopup.IsDisposed)menuPopup.Left=(int)x;},180,()=>{if(!menuOpen&&!menuPopup.IsDisposed){menuPopup.Hide();browserMenu!.Visible=false;RestoreMenuPageInput();}});
+        if(!animate){menuMotion.Stop();menuPopup!.Hide();menuPopup.Opacity=1;browserMenu!.Visible=false;RestoreMenuPageInput();return;}
+        var start=menuPopup!.Location;double opacity=menuPopup.Opacity;
+        menuMotion.Start(0,1,t=>{if(!menuPopup.IsDisposed){menuPopup.Opacity=opacity*(1-t);menuPopup.Top=start.Y-(int)Math.Round(Ui(5)*t);}},130,()=>{if(!menuOpen&&!menuPopup.IsDisposed){menuPopup.Hide();menuPopup.Opacity=1;browserMenu!.Visible=false;RestoreMenuPageInput();}});
     }
     void QueueBrowserMenuDismissal()
     {

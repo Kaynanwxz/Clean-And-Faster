@@ -1,9 +1,11 @@
-# Clean Browser 0.11.1 — Gravura clássica aprovada
+# Clean Browser 0.12.0 — Animações suaves
 
-- A página de nova aba usa a versão 1 escolhida: Apolo, mar e veleiro em gravura clássica azul com textura de papel.
-- Imagem original aprovada incorporada ao executável; sem recriar a arte nem aplicar o filtro de pontos por cima. No modo Arte, cores e traços aparecem com opacidade integral.
-- Fundo centralizado, proporcional e cobrindo toda a página; texto e controles continuam legíveis sobre o papel, inclusive com a barra escura.
-- A atualização desativa uma única vez o pontilhismo anterior. O efeito permanece opcional em Personalizar → Fundo; a escolha feita depois é salva.
-- Imagens pessoais, temas da barra, atalhos, histórico, contas dos sites e chaves de IA preservados.
+- Abas abrem com expansão e entrada discreta; ao fechar, recolhem e desaparecem suavemente enquanto as demais se reposicionam.
+- O botão de nova aba acompanha o movimento; geometria de clique acompanha o desenho, inclusive em abas laterais.
+- Conteúdo de abas fechadas é liberado imediatamente. Cliques rápidos, rolagem e redimensionamento encerram ou retomam as transições sem deixar animações em repouso.
+- Menu com fade e deslocamento vertical curto. Fechamento externo continua imediato para preservar foco e o próximo clique.
+- Maximizar, restaurar e minimizar usam transições nativas do Windows, mantendo o visual próprio do navegador e a posição de restauração.
+- Os efeitos respeitam Animações e transições e a preferência do Windows por reduzir movimento. A duração das transições da janela é controlada pelo sistema.
+- Arte aprovada, cores, abas, histórico e dados dos sites preservados.
 
-Atualize em **Atualizar → Atualizar e reiniciar**. O PNG original tem 1672 × 941 pixels; telas maiores usam escala proporcional, sem alegar detalhes nativos de 4K.
+Atualize em **Atualizar → Atualizar e reiniciar**.

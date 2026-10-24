@@ -32,6 +32,12 @@ Se configurou um servidor alternativo, use **Atualizar → Canal de atualizaçã
 
 Os dados permanecem em `%LOCALAPPDATA%\KayBrowser`. A atualização não apaga histórico, favoritos, configurações ou perfil de sites. A meta é atualizar todo o código do aplicativo por troca do executável; a atualização do motor WebView2 continua sendo gerenciada pela Microsoft.
 
+## Animações suaves (0.12.0)
+
+Abas entram com expansão curta e saem com recolhimento; as abas vizinhas e o botão de nova aba acompanham o movimento. Fechar uma aba libera seu conteúdo imediatamente, sem esperar a animação. O menu abre com fade e deslocamento vertical discreto; fechar pelo botão usa uma saída breve. O clique externo continua dispensando o menu imediatamente, preservando foco e o próximo clique.
+
+Maximizar, restaurar e minimizar usam os comandos e transições nativos do Windows, preservando posição, área útil e comportamento da barra de tarefas. A duração desse efeito é controlada pelo Windows. **Personalizar → Layout → Animações e transições** desativa os efeitos do aplicativo; a preferência do sistema por reduzir movimento também é respeitada. Não há animação contínua em repouso.
+
 ## Gravura clássica aprovada (0.11.1)
 
 A arte padrão da nova aba é a **versão 1 aprovada**: Apolo, veleiro e mar em gravura clássica azul sobre papel claro. O PNG original aprovado está incorporado ao executável, sem recriação, conversão em pontos ou redução da opacidade no modo Arte. O enquadramento continua centralizado, proporcional e cobrindo a página.
