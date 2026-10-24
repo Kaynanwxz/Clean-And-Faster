@@ -210,7 +210,7 @@ public sealed partial class TabRibbon : Control,IThemed
             float target=Vertical?rect.Y:rect.X;
             if(previous!=owner.SelectedTab){if(previous==null)marker=target;previous=owner.SelectedTab;selectionTween.Start(marker,target,v=>{marker=v;Invalidate();});}
             else if(!selectionTween.Running)marker=target;
-            using var pen=new Pen(colors.Accent,D(2));if(Vertical)g.DrawLine(pen,D(5),marker+D(10),D(5),marker+rect.Height-D(10));else g.DrawLine(pen,marker+D(12),rect.Bottom-1,marker+rect.Width-D(12),rect.Bottom-1);
+            if(Vertical?rect.Height>=D(20):rect.Width>=D(24)){using var pen=new Pen(colors.Accent,D(2));if(Vertical)g.DrawLine(pen,D(5),marker+D(10),D(5),marker+rect.Height-D(10));else g.DrawLine(pen,marker+D(12),rect.Bottom-1,marker+rect.Width-D(12),rect.Bottom-1);}
         }
         if(overPlus){using var path=Shapes.Round(Plus,D(8));using var fill=new SolidBrush(colors.Elevated);g.FillPath(fill,path);}
         Glyphs.Draw(g,"plus",new(Plus.X+D(7),Plus.Y+(Plus.Height-D(18))/2,D(18),D(18)),colors.Text);
