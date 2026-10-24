@@ -42,7 +42,7 @@ public sealed partial class BrowserWindow
                 {
                     using var full=new Bitmap(probe.Width,probe.Height);using var g=Graphics.FromImage(full);var dc=g.GetHdc();
                     try{Check(PrintWindow(probe.Handle,dc,2),"native window can render its frame");}finally{g.ReleaseHdc(dc);}
-                    using var target=Graphics.FromImage(bitmap);target.DrawImageUnscaled(full,Point.Empty);
+                    using var target=Graphics.FromImage(bitmap);target.DrawImage(full,new Rectangle(Point.Empty,area.Size),new Rectangle(area.Left-probe.Left,area.Top-probe.Top,area.Width,area.Height),GraphicsUnit.Pixel);
                 }
                 return bitmap;
             }
@@ -105,7 +105,7 @@ public sealed partial class BrowserWindow
             {
                 maximize.PerformClick();await Task.Delay(400);
                 Check(probe.WindowState==FormWindowState.Maximized,"caption button maximizes");
-                Check(probe.RectangleToScreen(probe.ClientRectangle)==Screen.FromHandle(probe.Handle).WorkingArea,"maximized frame exactly fills current work area");
+                Check(probe.RectangleToScreen(probe.ClientRectangle)==Screen.FromHandle(probe.Handle).WorkingArea,$"maximized visible client exactly fills work area; outer={probe.Bounds}; client={probe.RectangleToScreen(probe.ClientRectangle)}; work={Screen.FromHandle(probe.Handle).WorkingArea}");
                 ClientMatchesWindow("maximized");if(cycle==0)Capture("window-maximized");
                 maximize.PerformClick();await Task.Delay(400);
                 Check(probe.WindowState==FormWindowState.Normal&&probe.Bounds==normal,"caption restore retains the original bounds");

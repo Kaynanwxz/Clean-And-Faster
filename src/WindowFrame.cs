@@ -144,7 +144,7 @@ public sealed partial class BrowserWindow
             if(IsZoomed(Handle)&&!fullscreen)
             {
                 var proposed=Marshal.PtrToStructure<FrameRect>(m.LParam);
-                var area=Screen.FromHandle(Handle).WorkingArea;
+                var area=Screen.FromRectangle(Rectangle.FromLTRB(proposed.Left,proposed.Top,proposed.Right,proposed.Bottom)).WorkingArea;
                 proposed.Left=Math.Max(proposed.Left,area.Left);proposed.Top=Math.Max(proposed.Top,area.Top);
                 proposed.Right=Math.Min(proposed.Right,area.Right);proposed.Bottom=Math.Min(proposed.Bottom,area.Bottom);
                 Marshal.StructureToPtr(proposed,m.LParam,false);
