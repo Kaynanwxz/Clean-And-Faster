@@ -71,23 +71,26 @@ public sealed partial class BrowserWindow
             Motion.Enabled=false;ShowMenu();
             Check(!menuMotion.Running&&menuPopup!.Opacity==1,"menu respects disabled animations");
             CloseBrowserMenu(false);Motion.Enabled=true;
-            foreach(Control button in windowButtons!.Controls)
+            using var native=new BrowserWindow(diagnostics:true){Size=new Size(900,600),StartPosition=FormStartPosition.Manual,Location=new Point(20,20)};
+            native.PrepareDiagnosticPage();native.Show(this);Motion.Enabled=true;await Task.Delay(80);
+            var nativeBounds=native.Bounds;
+            foreach(Control button in native.windowButtons!.Controls)
             {
                 var point=button.PointToScreen(new Point(button.Width/2,button.Height/2));
                 long coordinates=(point.X&0xffffL)|((point.Y&0xffffL)<<16);
-                Check(NativeFrame.SendMessage(Handle,0x84,IntPtr.Zero,new IntPtr(coordinates)).ToInt32()==1,"custom caption buttons retain client hit testing");
+                Check(NativeFrame.SendMessage(native.Handle,0x84,IntPtr.Zero,new IntPtr(coordinates)).ToInt32()==1,"custom caption buttons retain client hit testing");
             }
             // Exercise the actual native system-command path used by caption buttons and double click.
-            NativeFrame.WindowCommand(this,0xF030);await Task.Delay(350);
-            Check(WindowState==FormWindowState.Maximized,"native maximize");
-            NativeFrame.WindowCommand(this,0xF120);await Task.Delay(350);
-            Check(WindowState==FormWindowState.Normal,"native restore");
-            Check(Math.Abs(Left-bounds.Left)<=2&&Math.Abs(Top-bounds.Top)<=2&&Math.Abs(Width-bounds.Width)<=2&&Math.Abs(Height-bounds.Height)<=2,"restore preserves bounds");
-            NativeFrame.WindowCommand(this,0xF020);await Task.Delay(350);
-            Check(WindowState==FormWindowState.Minimized,"native minimize");
-            NativeFrame.WindowCommand(this,0xF120);await Task.Delay(350);
-            Check(WindowState==FormWindowState.Normal,"restore after minimize");
-            VerifyChromeLayout();Check(true,"native transitions preserve chrome layout");
+            NativeFrame.WindowCommand(native,0xF030);await Task.Delay(350);
+            Check(native.WindowState==FormWindowState.Maximized,"native maximize");
+            NativeFrame.WindowCommand(native,0xF120);await Task.Delay(350);
+            Check(native.WindowState==FormWindowState.Normal,"native restore");
+            Check(Math.Abs(native.Left-nativeBounds.Left)<=2&&Math.Abs(native.Top-nativeBounds.Top)<=2&&Math.Abs(native.Width-nativeBounds.Width)<=2&&Math.Abs(native.Height-nativeBounds.Height)<=2,"restore preserves bounds");
+            NativeFrame.WindowCommand(native,0xF020);await Task.Delay(350);
+            Check(native.WindowState==FormWindowState.Minimized,"native minimize");
+            NativeFrame.WindowCommand(native,0xF120);await Task.Delay(350);
+            Check(native.WindowState==FormWindowState.Normal,"restore after minimize");
+            native.VerifyChromeLayout();Check(true,"native transitions preserve chrome layout");native.Close();
             return checks;
         }
         finally
