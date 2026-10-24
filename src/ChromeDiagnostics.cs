@@ -35,21 +35,21 @@ public sealed partial class BrowserWindow
             foreach (Control child in table.Controls)
                 Check(child.Left >= 0 && child.Top >= 0 && child.Right <= table.ClientSize.Width && child.Bottom <= table.ClientSize.Height, $"Controle cortado: {child.AccessibleName ?? child.GetType().Name}; controle={child.Bounds}, pai={table.ClientRectangle}");
         }
-        Check(locationBox!.ClientRectangle.Contains(address.Bounds), "Campo de endere�o fora da barra.");
-        Check(locationBox.ClientRectangle.Contains(connectionIcon!.Bounds), "�cone de conex�o fora da barra.");
-        Check(!address.Bounds.IntersectsWith(connectionIcon.Bounds), "Texto do endere�o sobreposto ao �cone.");
+        Check(locationBox!.ClientRectangle.Contains(address.Bounds), "Campo de endereço fora da barra.");
+        Check(locationBox.ClientRectangle.Contains(connectionIcon!.Bounds), "Ícone de conexão fora da barra.");
+        Check(!address.Bounds.IntersectsWith(connectionIcon.Bounds), "Texto do endereço sobreposto ao ícone.");
         Check(chromeLayout.GetRowHeights()[0] >= Ui(store.Settings.Compact||store.Settings.FocusMode?40:46), "Linha de abas insuficiente.");
-        Check(navigationRow!.Height >= Ui(store.Settings.Compact||store.Settings.FocusMode?50:58), "Linha de navega��o insuficiente.");
-        Check(pageHost.Top >= navigationRow.Bottom, "Conte�do web sobreposto ao topo.");
+        Check(navigationRow!.Height >= Ui(store.Settings.Compact||store.Settings.FocusMode?50:58), "Linha de navegação insuficiente.");
+        Check(pageHost.Top >= navigationRow.Bottom, "Conteúdo web sobreposto ao topo.");
         if(assistantOpen)
         {
             Check(assistant!=null&&assistant.Width>=Ui(340),"Painel IA estreito demais.");
-            Check(tabStrip.Width>=Ui(store.Settings.VerticalTabs?380:420),"Painel IA cortou conte�do web.");
+            Check(tabStrip.Width>=Ui(store.Settings.VerticalTabs?380:420),"Painel IA cortou conteúdo web.");
             Check(assistant!.Right<=pageHost.Width,"Painel IA fora da janela.");
         }
         foreach(var home in tabs.SelectMany(t=>t.Page.Controls.OfType<HomeBoard>()))home.VerifyLayout();
-        var page = new BrowserPage { Caption = "YouTube � teste de t�tulo" };
-        tabStrip.TabPages.Add(page); Check(page.Caption == "YouTube � teste de t�tulo", "T�tulo da aba foi perdido.");
+        var page = new BrowserPage { Caption = "YouTube · teste de título" };
+        tabStrip.TabPages.Add(page); Check(page.Caption == "YouTube · teste de título", "Título da aba foi perdido.");
         tabStrip.TabPages.Remove(page); page.Dispose();
     }
 }
@@ -93,4 +93,3 @@ public static class ChromeDiagnostics
         Application.Run(window);return exit;
     }
 }
-
