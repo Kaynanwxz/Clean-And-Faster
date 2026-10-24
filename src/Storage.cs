@@ -64,7 +64,7 @@ public sealed class Storage
         Settings.Workspaces ??= [];
         Settings.Workspaces=Settings.Workspaces.Where(w=>w!=null&&!string.IsNullOrWhiteSpace(w.Id)).DistinctBy(w=>w.Id).Take(12).ToList();
         if(Settings.Workspaces.Count==0){Settings.Workspaces=[new(){Name="Pessoal",Urls=Settings.Session??[]},new(){Name="Trabalho"},new(){Name="Estudo"}];}
-        foreach(var w in Settings.Workspaces){w.Name=string.IsNullOrWhiteSpace(w.Name)?"Espa�o":w.Name[..Math.Min(w.Name.Length,40)];w.Urls=(w.Urls??[]).Where(Navigation.IsWebUrl).Take(30).ToList();}
+        foreach(var w in Settings.Workspaces){w.Name=string.IsNullOrWhiteSpace(w.Name)?"Espaço":w.Name[..Math.Min(w.Name.Length,40)];w.Urls=(w.Urls??[]).Where(Navigation.IsWebUrl).Take(30).ToList();}
         if(!Settings.Workspaces.Any(w=>w.Id==Settings.ActiveWorkspace))Settings.ActiveWorkspace=Settings.Workspaces[0].Id;
         Settings.IdleMinutes = Math.Clamp(Settings.IdleMinutes, 1, 60);
         Settings.MemoryBudgetMb = Math.Clamp(Settings.MemoryBudgetMb, 256, 32768);
@@ -105,7 +105,7 @@ public sealed class Storage
             }
             catch(Exception ex) when(ex is IOException or UnauthorizedAccessException)
             {
-                LastWriteError="N�o foi poss�vel salvar "+item.Key+". Os dados continuam na mem�ria; uma nova tentativa ser� feita.";
+                LastWriteError="Não foi possível salvar "+item.Key+". Os dados continuam na memória; uma nova tentativa será feita.";
                 WriteFailed?.Invoke(LastWriteError);
             }
         }
@@ -146,4 +146,3 @@ public static class Navigation
         return prefix + Uri.EscapeDataString(input);
     }
 }
-
