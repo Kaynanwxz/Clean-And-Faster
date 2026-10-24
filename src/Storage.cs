@@ -64,7 +64,7 @@ public sealed class Storage
         Settings.Workspaces ??= [];
         Settings.Workspaces=Settings.Workspaces.Where(w=>w!=null&&!string.IsNullOrWhiteSpace(w.Id)).DistinctBy(w=>w.Id).Take(12).ToList();
         if(Settings.Workspaces.Count==0){Settings.Workspaces=[new(){Name="Pessoal",Urls=Settings.Session??[]},new(){Name="Trabalho"},new(){Name="Estudo"}];}
-        foreach(var w in Settings.Workspaces){w.Name=string.IsNullOrWhiteSpace(w.Name)?"Espaço":w.Name[..Math.Min(w.Name.Length,40)];w.Urls=(w.Urls??[]).Where(Navigation.IsWebUrl).Take(30).ToList();}
+        foreach(var w in Settings.Workspaces){w.Name=string.IsNullOrWhiteSpace(w.Name)?"Espa�o":w.Name[..Math.Min(w.Name.Length,40)];w.Urls=(w.Urls??[]).Where(Navigation.IsWebUrl).Take(30).ToList();}
         if(!Settings.Workspaces.Any(w=>w.Id==Settings.ActiveWorkspace))Settings.ActiveWorkspace=Settings.Workspaces[0].Id;
         Settings.IdleMinutes = Math.Clamp(Settings.IdleMinutes, 1, 60);
         Settings.MemoryBudgetMb = Math.Clamp(Settings.MemoryBudgetMb, 256, 32768);
@@ -79,15 +79,38 @@ public sealed class Storage
         try { return JsonSerializer.Deserialize<T>(File.ReadAllText(file)) ?? fallback; }
         catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
         {
-            if (File.Exists(file)) try { File.Copy(file, file + ".damaged", true); } catch (IOException) { }
+            if (File.Exists(file)) try { File.Copy(file, file + ".damaged", true); } catch (Exception backupError) when (backupError is IOException or UnauthorizedAccessException) { }
             return fallback;
         }
     }
-    static void Write<T>(string name, T value)
+    readonly Dictionary<string,string> pendingWrites=[];
+    public bool HasPendingWrites=>pendingWrites.Count>0;
+    public string LastWriteError {get;private set;}="";
+    public event Action<string>? WriteFailed;
+    void Write<T>(string name,T value)
     {
-        var target = Path.Combine(Root, name);
-        File.WriteAllText(target + ".tmp", JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true }));
-        File.Move(target + ".tmp", target, true);
+        pendingWrites[name]=JsonSerializer.Serialize(value,new JsonSerializerOptions{WriteIndented=true});
+        RetryPendingWrites();
+    }
+    public bool RetryPendingWrites()
+    {
+        foreach(var item in pendingWrites.ToArray())
+        {
+            var target=Path.Combine(Root,item.Key);
+            try
+            {
+                File.WriteAllText(target+".tmp",item.Value);
+                File.Move(target+".tmp",target,true);
+                pendingWrites.Remove(item.Key);
+            }
+            catch(Exception ex) when(ex is IOException or UnauthorizedAccessException)
+            {
+                LastWriteError="N�o foi poss�vel salvar "+item.Key+". Os dados continuam na mem�ria; uma nova tentativa ser� feita.";
+                WriteFailed?.Invoke(LastWriteError);
+            }
+        }
+        if(!HasPendingWrites)LastWriteError="";
+        return !HasPendingWrites;
     }
     public void SaveLibrary() => Write("library.json", Library);
     public void SaveSettings() => Write("settings.json", Settings);
@@ -104,6 +127,10 @@ public sealed class Storage
 
 public static class Navigation
 {
+    public static bool IsAllowedExternal(string url) =>
+        !string.IsNullOrWhiteSpace(url)&&url.Length<=4096&&!url.Any(char.IsControl)&&
+        Uri.TryCreate(url,UriKind.Absolute,out var uri)&&(uri.Scheme=="mailto"||string.IsNullOrEmpty(uri.UserInfo))&&
+        uri.Scheme is "mailto" or "tel" or "sms" or "spotify" or "discord";
     public static bool IsWebUrl(string url) => Uri.TryCreate(url, UriKind.Absolute, out var u) && u.Scheme is "https" or "http";
     public static string Resolve(string input, string engine)
     {
@@ -119,3 +146,4 @@ public static class Navigation
         return prefix + Uri.EscapeDataString(input);
     }
 }
+
