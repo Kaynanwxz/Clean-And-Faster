@@ -79,9 +79,9 @@ public sealed partial class BrowserWindow
             if(assistantOpen)ToggleAssistant();closer.Stop();checks.AddRange(await VerifyDialogFlows());checks.AddRange(await VerifyNavigationButtons());
             // Run actual timer frames even on the remote CI desktop, then verify they stop.
             Motion.DiagnosticAnimations=true;Motion.Enabled=true;store.Settings.Animations=true;
-            ShowMenu();await Settle(340);Check(!menuMotion.Running&&menuOpen,"Animação do menu termina");CloseBrowserMenu();await Settle(250);Check(!menuMotion.Running&&!browserMenu!.Visible,"Animação de saída termina");
-            ShowAppearance();await Settle(340);Check(!assistantTween.Running&&appearance!.Left==0,"Deslize do painel termina alinhado");appearance!.SelectPage(1);await Settle(260);ShowAppearance();await Settle(280);Check(!assistantTween.Running&&pageHost.ColumnStyles[1].Width==0,"Painel fecha sem coluna residual");
-            for(int i=0;i<12;i++){ShowMenu();CloseBrowserMenu();ShowAppearance();ShowAppearance();}await Settle(340);Check(!menuMotion.Running&&!assistantTween.Running,"Cliques rápidos não deixam timers pendentes");
+            ShowMenu();await WaitForTransition(()=>!menuMotion.Running);Check(!menuMotion.Running&&menuOpen,"Animação do menu termina");CloseBrowserMenu();await WaitForTransition(()=>!menuMotion.Running);Check(!menuMotion.Running&&!browserMenu!.Visible,"Animação de saída termina");
+            ShowAppearance();await WaitForTransition(()=>!assistantTween.Running);Check(!assistantTween.Running&&appearance!.Left==0,"Deslize do painel termina alinhado");appearance!.SelectPage(1);await Settle(260);ShowAppearance();await WaitForTransition(()=>!assistantTween.Running);Check(!assistantTween.Running&&pageHost.ColumnStyles[1].Width==0,"Painel fecha sem coluna residual");
+            for(int i=0;i<12;i++){ShowMenu();CloseBrowserMenu();ShowAppearance();ShowAppearance();}await WaitForTransition(()=>!menuMotion.Running&&!assistantTween.Running);Check(!menuMotion.Running&&!assistantTween.Running,"Cliques rápidos não deixam timers pendentes");
             Motion.Enabled=false;ShowMenu();Check(!menuMotion.Running,"Redução de animações respeitada");CloseBrowserMenu(false);
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"interaction-check.json"),JsonSerializer.Serialize(checks,new JsonSerializerOptions{WriteIndented=true}));return checks.ToArray();
         }
