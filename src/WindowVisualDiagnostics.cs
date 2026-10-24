@@ -73,6 +73,7 @@ public sealed partial class BrowserWindow
                 do
                 {
                     float value=read();distinct.Add((int)(value*1000));
+                    if(ribbon)Check(probe.tabStrip.Header.AddButtonSeparated,name+" new-tab button never overlaps an animated tab");
                     samples.Add(new{ms=timer.Elapsed.TotalMilliseconds,value,tabMotion=probe.tabStrip.Header.TabMotionEndReason,header=probe.tabStrip.Header.Size});
                     frames.Add((name+"-"+(frame++).ToString("D2"),ReadPixels(ribbon)));
                     await Task.Delay(25);
