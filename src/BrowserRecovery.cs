@@ -25,6 +25,7 @@ public sealed partial class BrowserWindow
         void Check(bool ok,string name){if(!ok)throw new InvalidOperationException(name);count++;}
         bool enabled=Motion.Enabled;bool? animations=Motion.DiagnosticAnimations;
         var original=WindowState;var originalBounds=Bounds;
+        async Task SettleMotion(){var until=DateTime.UtcNow.AddSeconds(2);while(assistantTween.Running&&DateTime.UtcNow<until)await Task.Delay(16);if(assistantTween.Running)throw new InvalidOperationException("Sidebar animation exceeded its bounded deadline");}
         try
         {
             if(assistantOpen)ToggleAssistant();if(appearanceOpen)ShowAppearance();if(appsOpen)ShowApps();
@@ -40,9 +41,9 @@ public sealed partial class BrowserWindow
             Motion.Enabled=true;Motion.DiagnosticAnimations=true;
             ToggleAssistant();
             Check(pageHost.ColumnStyles[1].Width<AssistantWidth,"Sidebar does not jump to full width");
-            await Task.Delay(80);
+            var firstFrameDeadline=DateTime.UtcNow.AddSeconds(2);while(pageHost.ColumnStyles[1].Width==0&&assistantTween.Running&&DateTime.UtcNow<firstFrameDeadline)await Task.Delay(16);
             Check(pageHost.ColumnStyles[1].Width>0&&pageHost.ColumnStyles[1].Width<AssistantWidth,"Sidebar width interpolates");
-            ToggleAssistant();ToggleAssistant();ShowAppearance();ToggleAssistant();await Task.Delay(350);
+            ToggleAssistant();ToggleAssistant();ShowAppearance();ToggleAssistant();await SettleMotion();
             Check(assistantOpen&&!appearanceOpen&&!appsOpen&&!assistantTween.Running,"Rapid panel switches settle");
             Check(Math.Abs(pageHost.ColumnStyles[1].Width-AssistantWidth)<2,"Panel final width");
             ToggleAssistant();await Task.Delay(50);
@@ -51,7 +52,7 @@ public sealed partial class BrowserWindow
             Check(!assistantTween.Running&&pageHost.ColumnStyles[1].Width==0,"Resize during closing settles");
             ToggleAssistant();await Task.Delay(40);SettleRightPanel();
             Check(!assistantTween.Running&&assistant!.Left==0,"DPI/resize settlement keeps panel aligned");
-            ToggleAssistant();await Task.Delay(250);
+            ToggleAssistant();await SettleMotion();
             Check(pageHost.ColumnStyles[1].Width==0,"Closing releases sidebar width");
             var tab=Current!;
             await CreateView(tab,false);
