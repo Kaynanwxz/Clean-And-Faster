@@ -36,7 +36,7 @@ public sealed partial class BrowserWindow
             Check(!strip.Header.TabMotionRunning&&!strip.GetTabRect(2).IsEmpty,"vertical entry settles");
             strip.TabPages.Remove(vertical);vertical.Dispose();await Task.Delay(260);
             Check(!strip.GetTabRect(0).IntersectsWith(strip.GetTabRect(1)),"vertical close reflows");
-            var resized=new BrowserPage{Caption="Resize"};strip.TabPages.Add(resized);host.Width+=30;await Task.Delay(50);
+            var resized=new BrowserPage{Caption="Resize"};strip.TabPages.Add(resized);host.Height+=30;await Task.Delay(50);
             Check(!strip.Header.TabMotionRunning,"resize settles geometry immediately");
             strip.TabPages.Remove(resized);resized.Dispose();await Task.Delay(260);
             Motion.DiagnosticAnimations=false;
