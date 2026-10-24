@@ -45,7 +45,9 @@ public sealed partial class BrowserWindow
             ToggleAssistant();ToggleAssistant();ShowAppearance();ToggleAssistant();await Task.Delay(350);
             Check(assistantOpen&&!appearanceOpen&&!appsOpen&&!assistantTween.Running,"Rapid panel switches settle");
             Check(Math.Abs(pageHost.ColumnStyles[1].Width-AssistantWidth)<2,"Panel final width");
-            ToggleAssistant();await Task.Delay(50);Size=new Size(Width+12,Height+8);await Task.Delay(40);
+            ToggleAssistant();await Task.Delay(50);
+            var beforeResize=Size;Size=new Size(Width+(Width>MinimumSize.Width+20?-12:12),Height);await Task.Delay(40);
+            Check(Size!=beforeResize,"Resize fixture changes the actual window size");
             Check(!assistantTween.Running&&pageHost.ColumnStyles[1].Width==0,"Resize during closing settles");
             ToggleAssistant();await Task.Delay(40);SettleRightPanel();
             Check(!assistantTween.Running&&assistant!.Left==0,"DPI/resize settlement keeps panel aligned");
