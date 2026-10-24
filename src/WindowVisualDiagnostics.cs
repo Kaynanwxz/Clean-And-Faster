@@ -57,19 +57,21 @@ public sealed partial class BrowserWindow
             }
             async Task Record(string name,Action action,Func<float> read,bool ribbon)
             {
-                var samples=new List<object>();var distinct=new HashSet<int>();var timer=Stopwatch.StartNew();
-                action();int frame=0;
+                var samples=new List<object>();var distinct=new HashSet<int>();var command=Stopwatch.StartNew();
+                action();double commandMilliseconds=command.Elapsed.TotalMilliseconds;var timer=Stopwatch.StartNew();int frame=0;
                 do
                 {
                     float value=read();distinct.Add((int)(value*1000));
-                    samples.Add(new{ms=timer.Elapsed.TotalMilliseconds,value});
+                    samples.Add(new{ms=timer.Elapsed.TotalMilliseconds,value,tabMotion=probe.tabStrip.Header.TabMotionEndReason,header=probe.tabStrip.Header.Size});
                     Capture(name+"-"+(frame++).ToString("D2"),ribbon);
                     await Task.Delay(25);
                 }while(timer.ElapsedMilliseconds<380);
-                Check(distinct.Count>=4,name+" renders several intermediate states through the real command path");
-                evidence.Add(new{name,frames=frame,distinct=distinct.Count,samples});
+                evidence.Add(new{name,commandMilliseconds,frames=frame,distinct=distinct.Count,samples});
+                File.WriteAllText(Path.Combine(directory,"visual-check.json"),JsonSerializer.Serialize(evidence,new JsonSerializerOptions{WriteIndented=true}));
+                Check(distinct.Count>=4,name+" renders several intermediate states through the real command path; "+probe.tabStrip.Header.TabMotionEndReason);
                 await Task.Delay(120);
             }
+            if(ci){Cursor.Position=probe.PointToScreen(new Point(probe.Ui(500),probe.Ui(130)));await Task.Delay(320);}
             ClientMatchesWindow("normal");Capture("window-normal");
             string titleBefore=Capture("title-before",true);
             probe.Text="Synthetic native title repaint regression";

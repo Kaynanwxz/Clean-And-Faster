@@ -28,9 +28,10 @@ public sealed class Tween : IDisposable
         Stop();
         if(!Motion.Allowed || duration<=0 || Math.Abs(from-to)<0.001f) { update(to); completed?.Invoke(); return; }
         update(from);
-        long start=Stopwatch.GetTimestamp();
+        long start=0; // Begin elapsed time on the first UI frame, after synchronous control creation.
         timer=new() { Interval=16 };
         timer.Tick+=(_,_)=> {
+            if(start==0)start=Stopwatch.GetTimestamp();
             float t=Math.Min(1,(float)Stopwatch.GetElapsedTime(start).TotalMilliseconds/duration);
             update(from+(to-from)*Motion.Ease(t));
             if(t>=1) { Stop(); completed?.Invoke(); }

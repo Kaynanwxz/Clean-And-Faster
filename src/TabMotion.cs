@@ -10,6 +10,7 @@ public sealed partial class TabRibbon
     List<TabVisual>? beforeTabs;
     Rectangle beforePlus,plusFrom,plusTo;
     float tabProgress=1;
+    internal string TabMotionEndReason {get;private set;}="idle";
     internal float TabMotionProgress=>tabProgress;
     internal bool TabMotionRunning=>tabMotion.Running;
     internal int ExitingTabCount=>tabTracks.Count(t=>t.Exiting);
@@ -55,7 +56,7 @@ public sealed partial class TabRibbon
     {
         EnsureSelectedVisible();
         var snapshot=beforeTabs;beforeTabs=null;tabTracks.Clear();
-        if(snapshot==null||!Motion.Allowed||!IsHandleCreated||!Visible){FinishTabMotion();return;}
+        if(snapshot==null||!Motion.Allowed||!IsHandleCreated||!Visible){FinishTabMotion($"layout snapshot={snapshot!=null}, allowed={Motion.Allowed}, handle={IsHandleCreated}, visible={Visible}");return;}
         var pages=Pages;
         var visible=new HashSet<BrowserPage>();
         for(int i=first;i<Math.Min(pages.Length,first+Capacity);i++)
@@ -67,12 +68,12 @@ public sealed partial class TabRibbon
         // Workspace changes and scrolling must never resurrect hidden tabs.
         foreach(var old in snapshot.Where(t=>!visible.Contains(t.Page)&&!owner.TabPages.Contains(t.Page)).TakeLast(24))
             tabTracks.Add(new(old,ExitBounds(old.Bounds),0,true));
-        hover=-1;overPlus=false;plusFrom=beforePlus;plusTo=TargetPlus;tabProgress=0;
-        tabMotion.Start(0,1,t=>{tabProgress=t;Invalidate();},280,()=>{tabTracks.Clear();Invalidate();});
+        TabMotionEndReason="running";hover=-1;overPlus=false;plusFrom=beforePlus;plusTo=TargetPlus;tabProgress=0;
+        tabMotion.Start(0,1,t=>{tabProgress=t;Invalidate();},280,()=>{TabMotionEndReason="completed";tabTracks.Clear();Invalidate();});
     }
-    internal void FinishTabMotion()
+    internal void FinishTabMotion(string reason="explicit")
     {
-        tabMotion.Stop();tabTracks.Clear();beforeTabs=null;tabProgress=1;
+        TabMotionEndReason=reason;tabMotion.Stop();tabTracks.Clear();beforeTabs=null;tabProgress=1;
         Invalidate();
     }
     void PaintTabMotion(Graphics g)
