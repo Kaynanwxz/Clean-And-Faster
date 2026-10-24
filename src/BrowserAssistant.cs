@@ -41,7 +41,7 @@ public sealed partial class BrowserWindow
     void DisposeAssistant(){aiCancellation?.Cancel();assistantTween.Dispose();aiHttp?.Dispose();}
     void RefreshAiConnectionLabel()
     {
-        try{var c=AiConnection.From(store.Settings);assistant?.ConnectionLabel(AiSecrets.Read(c.Url).Length>0||new Uri(c.Url).IsLoopback?c.Provider+" � conex�o":"Conectar IA");}catch(Exception ex)when(ex is ArgumentException or IOException or UnauthorizedAccessException){assistant?.ConnectionLabel("Conectar IA");}
+        try{var c=AiConnection.From(store.Settings);assistant?.ConnectionLabel(AiSecrets.Read(c.Url).Length>0||new Uri(c.Url).IsLoopback?c.Provider+" · conexão":"Conectar IA");}catch(Exception ex)when(ex is ArgumentException or IOException or UnauthorizedAccessException){assistant?.ConnectionLabel("Conectar IA");}
     }
     void ConfigureAssistant()
     {
@@ -64,33 +64,33 @@ public sealed partial class BrowserWindow
             string url=core.Source;using var bytes=new MemoryStream();await core.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png,bytes);cancellation.ThrowIfCancellationRequested();
             if(Current!=tab||core.Source!=url)throw new IOException("A aba mudou durante a captura. Capture novamente.");bytes.Position=0;using var image=Image.FromStream(bytes);if((long)image.Width*image.Height>24_000_000)throw new IOException("A aba excede o limite de captura.");return new Bitmap(image);
         }
-        var home=tab.Page.Controls.OfType<HomeBoard>().FirstOrDefault()??throw new IOException("Esta aba ainda n�o est� pronta.");
-        if(home.Width<1||home.Height<1||(long)home.Width*home.Height>24_000_000)throw new IOException("�rea de captura indispon�vel.");var bitmap=new Bitmap(home.Width,home.Height);try{home.DrawToBitmap(bitmap,new Rectangle(Point.Empty,bitmap.Size));return bitmap;}catch{bitmap.Dispose();throw;}
+        var home=tab.Page.Controls.OfType<HomeBoard>().FirstOrDefault()??throw new IOException("Esta aba ainda não está pronta.");
+        if(home.Width<1||home.Height<1||(long)home.Width*home.Height>24_000_000)throw new IOException("Área de captura indisponível.");var bitmap=new Bitmap(home.Width,home.Height);try{home.DrawToBitmap(bitmap,new Rectangle(Point.Empty,bitmap.Size));return bitmap;}catch{bitmap.Dispose();throw;}
     }
     async Task AskAssistant()
     {
         if(assistant==null||aiCancellation!=null||string.IsNullOrWhiteSpace(assistant.Prompt)&&assistant.Attachment==null)return;
         AiConnection connection;string key;
         try{connection=AiConnection.From(store.Settings);key=AiSecrets.Read(connection.Url);}
-        catch(Exception ex)when(ex is ArgumentException or IOException or UnauthorizedAccessException){ShowNotice("Confira sua conex�o de IA.");ConfigureAssistant();return;}
+        catch(Exception ex)when(ex is ArgumentException or IOException or UnauthorizedAccessException){ShowNotice("Confira sua conexão de IA.");ConfigureAssistant();return;}
         if(key.Length==0&&!new Uri(connection.Url).IsLoopback){ConfigureAssistant();return;}
-        string question=assistant.Prompt.Trim();if(question.Length==0)question="Analise a imagem compartilhada e me ajude a entend�-la.";
-        bool share=assistant.Share,tools=assistant.BrowserActions;var image=assistant.Attachment;assistant.Prompt="";assistant.Add("Voc�",question+(image==null?"":"\n[Imagem: "+image.Label+"]"));assistant.Busy(true);
+        string question=assistant.Prompt.Trim();if(question.Length==0)question="Analise a imagem compartilhada e me ajude a entendê-la.";
+        bool share=assistant.Share,tools=assistant.BrowserActions;var image=assistant.Attachment;assistant.Prompt="";assistant.Add("Você",question+(image==null?"":"\n[Imagem: "+image.Label+"]"));assistant.Busy(true);
         using var cancel=new CancellationTokenSource(TimeSpan.FromMinutes(4));aiCancellation=cancel;
         aiHttp??=AiSetupDialog.CreateHttp();var answer=new System.Text.StringBuilder();
         try
         {
-            string context=share?TabsContext()+"\nP�gina atual:\n"+await ReadAiPage(cancel.Token):"Compartilhamento de p�ginas e abas desativado.";
+            string context=share?TabsContext()+"\nPágina atual:\n"+await ReadAiPage(cancel.Token):"Compartilhamento de páginas e abas desativado.";
             await new AiClient(aiHttp).Run(key,connection.Model,question,context,
                 (name,args,token)=>ExecuteAiTool(name,args,share,token),text=>{answer.AppendLine(text);if(!closing)assistant.Add("Clean AI",text);},cancel.Token,connection,aiConversation.Snapshot(),image,tools);
-            if(answer.Length==0)throw new IOException("A IA n�o devolveu texto. Confira o modelo na conex�o.");
+            if(answer.Length==0)throw new IOException("A IA não devolveu texto. Confira o modelo na conexão.");
             aiConversation.Complete(question,answer.ToString());
             if(!closing)assistant.AttachmentSent();
         }
         catch(OperationCanceledException){if(!closing)assistant.Add("Clean AI","Conversa interrompida ou tempo esgotado. A imagem permanece anexada se precisar tentar novamente.");}
         catch(Exception)when(closing){}
         catch(Exception ex)when(ex is HttpRequestException or IOException or JsonException or InvalidOperationException or ArgumentException)
-        {if(!closing){assistant.Add("Clean AI",ex is HttpRequestException?"N�o foi poss�vel conectar � sua IA. Confira sua conex�o e tente novamente.":ex is JsonException?"A API retornou um formato incompat�vel. Confira o endere�o em Conectar IA.":ex.Message);assistant.Prompt=question;}}
+        {if(!closing){assistant.Add("Clean AI",ex is HttpRequestException?"Não foi possível conectar à sua IA. Confira sua conexão e tente novamente.":ex is JsonException?"A API retornou um formato incompatível. Confira o endereço em Conectar IA.":ex.Message);assistant.Prompt=question;}}
         finally{aiCancellation=null;key="";if(!closing)assistant.Busy(false);}
     }
     string TabsContext()=>JsonSerializer.Serialize(tabs.Select((t,i)=>new{index=i+1,title=t.Title,url=t.Url,active=t==Current,workspace=t.Page.WorkspaceId}).Where(t=>t.workspace==WorkspaceId).Take(30));
@@ -99,8 +99,8 @@ public sealed partial class BrowserWindow
     {
         ResetSnapshot();
         var tab=Current;var core=tab?.View?.CoreWebView2;
-        if(core==null)return "Aba inicial ou p�gina indispon�vel. Abra um site primeiro.";
-        string source=core.Source;if(!AiPolicy.ValidUrl(source))return "P�gina n�o compartilh�vel.";
+        if(core==null)return "Aba inicial ou página indisponível. Abra um site primeiro.";
+        string source=core.Source;if(!AiPolicy.ValidUrl(source))return "Página não compartilhável.";
         string token=Guid.NewGuid().ToString("N");
         // Static extraction: never evaluate code supplied by the model; exclude form values.
         string script="""
@@ -123,9 +123,9 @@ public sealed partial class BrowserWindow
         """;
         script=script.Replace("TOKEN",JsonSerializer.Serialize(token));
         var raw=await core.ExecuteScriptAsync(script).WaitAsync(cancel);
-        if(Current!=tab||core.Source!=source)throw new InvalidOperationException("P�gina mudou durante a leitura. Leia novamente.");
+        if(Current!=tab||core.Source!=source)throw new InvalidOperationException("Página mudou durante a leitura. Leia novamente.");
         using var page=JsonDocument.Parse(raw);
-        if(page.RootElement.ValueKind!=JsonValueKind.Object)throw new InvalidOperationException("P�gina n�o dispon�vel para leitura.");
+        if(page.RootElement.ValueKind!=JsonValueKind.Object)throw new InvalidOperationException("Página não disponível para leitura.");
         foreach(var e in page.RootElement.GetProperty("elements").EnumerateArray())snapshotElements[e.GetProperty("id").GetString()!]=(e.GetProperty("label").GetString()!,e.GetProperty("kind").GetString()!);
         snapshotTab=tab;snapshotToken=token;snapshotSource=source;
         return raw;
@@ -135,7 +135,7 @@ public sealed partial class BrowserWindow
         cancel.ThrowIfCancellationRequested();
         if(name is "list_tabs" or "read_page")
         {
-            if(!share)return "Compartilhamento desativado. Pe�a ao usu�rio para ativar antes de um novo pedido.";
+            if(!share)return "Compartilhamento desativado. Peça ao usuário para ativar antes de um novo pedido.";
             return name=="list_tabs"?TabsContext():await ReadAiPage(cancel);
         }
         AiPolicy.ValidateAction(name,args);
@@ -146,28 +146,28 @@ public sealed partial class BrowserWindow
         {
             if(!share)throw new InvalidOperationException("Compartilhamento desativado.");
             if(tab!=snapshotTab||core==null||snapshotSource!=core.Source||!snapshotElements.TryGetValue(Str("element"),out var element))throw new InvalidOperationException("Elemento expirado. Use read_page novamente.");
-            if(name=="fill" && element.kind is not ("input" or "textarea"))throw new InvalidOperationException("Elemento n�o � campo de texto.");
+            if(name=="fill" && element.kind is not ("input" or "textarea"))throw new InvalidOperationException("Elemento não é campo de texto.");
             selector="[data-clean-ai=\""+snapshotToken+":"+Str("element")+"\"]";
             description=name=="click"?"Clicar em: "+element.label:"Preencher: "+element.label+"\nTexto: "+Str("text");
-            description+="\n\nP�gina: "+core.Source;
+            description+="\n\nPágina: "+core.Source;
         }
-        else description=name switch{"open_tab"=>"Abrir nova aba:\n"+Str("url"),"select_tab"=>"Selecionar aba "+args.GetProperty("index").GetInt32(),_=>"Rolar p�gina "+(Str("direction")=="down"?"para baixo":"para cima")};
-        assistant?.Add("A��o proposta",description);
-        if(ShowNotice(description+"\n\nAutorizar esta a��o?","A��o da IA",MessageBoxButtons.YesNo)!=DialogResult.Yes){cancel.ThrowIfCancellationRequested();throw new InvalidOperationException("Usu�rio recusou. N�o tente esta a��o novamente.");}
+        else description=name switch{"open_tab"=>"Abrir nova aba:\n"+Str("url"),"select_tab"=>"Selecionar aba "+args.GetProperty("index").GetInt32(),_=>"Rolar página "+(Str("direction")=="down"?"para baixo":"para cima")};
+        assistant?.Add("Ação proposta",description);
+        if(ShowNotice(description+"\n\nAutorizar esta ação?","Ação da IA",MessageBoxButtons.YesNo)!=DialogResult.Yes){cancel.ThrowIfCancellationRequested();throw new InvalidOperationException("Usuário recusou. Não tente esta ação novamente.");}
         cancel.ThrowIfCancellationRequested();
         if(name=="open_tab"){ResetSnapshot();await AddTab(Str("url"));return "Nova aba aberta. Aguarde carregar e use read_page para conferir.";}
         if(name=="select_tab")
         {
             int index=args.GetProperty("index").GetInt32()-1;
-            if(index<0||index>=tabs.Count)throw new InvalidOperationException("Aba n�o existe.");
-            ResetSnapshot();if(tabs[index].Page.WorkspaceId!=WorkspaceId)throw new InvalidOperationException("Aba fora do espa�o compartilhado.");tabStrip.SelectedTab=tabs[index].Page;return "Aba selecionada.";
+            if(index<0||index>=tabs.Count)throw new InvalidOperationException("Aba não existe.");
+            ResetSnapshot();if(tabs[index].Page.WorkspaceId!=WorkspaceId)throw new InvalidOperationException("Aba fora do espaço compartilhado.");tabStrip.SelectedTab=tabs[index].Page;return "Aba selecionada.";
         }
-        if(core==null||tab!=Current)throw new InvalidOperationException("Aba mudou ou est� indispon�vel.");
-        if(name=="scroll"){await core.ExecuteScriptAsync("window.scrollBy({top:"+(Str("direction")=="down"?"1":"-1")+"*window.innerHeight*0.75,behavior:'auto'})").WaitAsync(cancel);return "P�gina rolada.";}
-        if(core.Source!=snapshotSource)throw new InvalidOperationException("P�gina mudou. Leia novamente.");
+        if(core==null||tab!=Current)throw new InvalidOperationException("Aba mudou ou está indisponível.");
+        if(name=="scroll"){await core.ExecuteScriptAsync("window.scrollBy({top:"+(Str("direction")=="down"?"1":"-1")+"*window.innerHeight*0.75,behavior:'auto'})").WaitAsync(cancel);return "Página rolada.";}
+        if(core.Source!=snapshotSource)throw new InvalidOperationException("Página mudou. Leia novamente.");
         string action=name=="fill"?"fill":"click";
         string js="""
-        (()=>{const e=document.querySelector(SELECTOR);if(!e||!e.isConnected||e.disabled)return 'Elemento indispon�vel';
+        (()=>{const e=document.querySelector(SELECTOR);if(!e||!e.isConnected||e.disabled)return 'Elemento indisponível';
         const r=e.getBoundingClientRect();if(r.width<=0||r.height<=0)return 'Elemento oculto';
         if(ACTION==='fill'){
           if(!e.matches('input,textarea')||e.readOnly||/password|hidden|file/i.test(e.type)||/pass|pwd|token|secret|otp|card|credit|cvv|senha|cpf|payment|auth/i.test([e.name,e.id,e.autocomplete,e.getAttribute('aria-label')].join(' ')))return 'Campo protegido';
@@ -180,4 +180,3 @@ public sealed partial class BrowserWindow
         ResetSnapshot();return await core.ExecuteScriptAsync(js).WaitAsync(cancel);
     }
 }
-
