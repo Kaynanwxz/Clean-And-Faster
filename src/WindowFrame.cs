@@ -16,6 +16,8 @@ public sealed partial class BrowserWindow
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScaleDimensions = new SizeF(96, 96);
         Padding = new Padding(1);
+        RefreshMonitorBounds();
+        LocationChanged+=(_,_)=>RefreshMonitorBounds();
         chromeLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         chromeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,48));
         chromeLayout.RowStyles.Add(new RowStyle(SizeType.Absolute,64));
@@ -43,34 +45,34 @@ public sealed partial class BrowserWindow
         navigationRow = bar; bar.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         for(int i=0;i<12;i++)bar.ColumnStyles.Add(new ColumnStyle(i==4?SizeType.Percent:SizeType.Absolute,i==4?100:42));
         void Add(string glyph,int col,string tip,Action action)=>bar.Controls.Add(IconButton(glyph,tip,action),col,0);
-        Add("back",0,"Voltar · Alt+←",()=>{if(Current?.View?.CanGoBack==true)Current.View.GoBack();});
-        Add("forward",1,"Avançar · Alt+→",()=>{if(Current?.View?.CanGoForward==true)Current.View.GoForward();});
-        Add("reload",2,"Recarregar · Ctrl+R",()=>Current?.View?.Reload());
-        Add("home",3,"Página inicial",()=>NavigateCurrent("kay://new"));
+        Add("back",0,"Voltar � Alt+",()=>{if(Current?.View?.CanGoBack==true)Current.View.GoBack();});
+        Add("forward",1,"Avan�ar � Alt+",()=>{if(Current?.View?.CanGoForward==true)Current.View.GoForward();});
+        Add("reload",2,"Recarregar � Ctrl+R",()=>Current?.View?.Reload());
+        Add("home",3,"P�gina inicial",()=>NavigateCurrent("kay://new"));
         var addressBox=new RoundedPanel { Dock=DockStyle.Fill, Radius=13, Margin=new Padding(10,0,12,0), Padding=new Padding(43,13,14,8) };
         locationBox = addressBox;
         addressBox.SetPalette(Colors);
-        address.PlaceholderText="Pesquisar ou inserir endereço";address.Font=new Font("Segoe UI",11);address.Margin=Padding.Empty;address.Tag="surface";
-        var shield=new SoftButton { Glyph="globe",Size=new Size(28,28),Location=new Point(8,9),TabStop=false,AccessibleName="Informações da conexão" };
+        address.PlaceholderText="Pesquisar ou inserir endere�o";address.Font=new Font("Segoe UI",11);address.Margin=Padding.Empty;address.Tag="surface";
+        var shield=new SoftButton { Glyph="globe",Size=new Size(28,28),Location=new Point(8,9),TabStop=false,AccessibleName="Informa��es da conex�o" };
         connectionIcon = shield;
         shield.SetPalette(Colors);shield.Click+=(_,_)=>
         {
             string url=Current?.Url??"kay://new";
-            ShowNotice(url.StartsWith("https://",StringComparison.OrdinalIgnoreCase)?"Conexão HTTPS. Confira o domínio na barra antes de informar seus dados.\n\n"+url:url.StartsWith("http://",StringComparison.OrdinalIgnoreCase)?"Conexão HTTP sem criptografia.\n\n"+url:"Página local do Clean Browser.","Conexão");
+            ShowNotice(url.StartsWith("https://",StringComparison.OrdinalIgnoreCase)?"Conex�o HTTPS. Confira o dom�nio na barra antes de informar seus dados.\n\n"+url:url.StartsWith("http://",StringComparison.OrdinalIgnoreCase)?"Conex�o HTTP sem criptografia.\n\n"+url:"P�gina local do Clean Browser.","Conex�o");
         };
         addressBox.Controls.Add(address);addressBox.Controls.Add(shield);shield.BringToFront();bar.Controls.Add(addressBox,4,0);
-        Add("star",5,"Salvar ou remover favorito · Ctrl+D",BookmarkCurrent);
-        Add("memory",6,"Controle de memória",ShowMemory);
-        Add("download",7,"Downloads · Ctrl+J",ShowDownloads);
+        Add("star",5,"Salvar ou remover favorito � Ctrl+D",BookmarkCurrent);
+        Add("memory",6,"Controle de mem�ria",ShowMemory);
+        Add("download",7,"Downloads � Ctrl+J",ShowDownloads);
         Add("menu",8,"Menu do Clean Browser",ShowMenu);
         Add("apps",11,"Seus apps",ShowApps);
-        Add("spark",10,"Assistente IA · Ctrl+Shift+I",ToggleAssistant);
+        Add("spark",10,"Assistente IA � Ctrl+Shift+I",ToggleAssistant);
         bar.ColumnStyles[9].Width = 112;
         var updateButton = IconButton("update", "Atualizar o navegador", () => _ = CheckUpdate());
         updateButton.Text = "Atualizar"; updateButton.TabStop = true;
         bar.Controls.Add(updateButton, 9, 0);
         tabStrip.Margin=Padding.Empty;
-        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text=$"Clean Browser {Updater.CurrentVersion.ToString(3)}   ·   Pronto para explorar";
+        status.Dock=DockStyle.Fill;status.Margin=Padding.Empty;status.Font=new Font("Segoe UI",8.5f);status.Text=$"Clean Browser {Updater.CurrentVersion.ToString(3)}   �   Pronto para explorar";
         chromeLayout.Controls.Add(title,0,0);chromeLayout.Controls.Add(bar,0,1);InitializeAssistantHost();
         chromeLayout.Controls.Add(pageHost,0,2);chromeLayout.Controls.Add(status,0,3);
         Controls.Add(chromeLayout);
@@ -125,10 +127,17 @@ public sealed partial class BrowserWindow
     }
     Action? positionAddress;
     void OnLocationResize(object? sender, EventArgs e) => positionAddress?.Invoke();
+    void RefreshMonitorBounds()
+    {
+        var screen=Screen.FromControl(this);
+        var area=fullscreen?screen.Bounds:screen.WorkingArea;
+        if(MaximizedBounds!=area)MaximizedBounds=area;
+    }
     protected override void OnDpiChanged(DpiChangedEventArgs e)
     {
         base.OnDpiChanged(e);
-        if (IsHandleCreated) BeginInvoke(ApplyChromeMetrics);
+        RefreshMonitorBounds();
+        if (IsHandleCreated) BeginInvoke(()=>{ApplyChromeMetrics();SettleRightPanel();});
     }
     void SetNativeTheme()
     {
@@ -202,3 +211,4 @@ public sealed class KayMenuRenderer(Palette colors):ToolStripProfessionalRendere
     protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e){e.TextColor=colors.Text;base.OnRenderItemText(e);}
     protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e){using var pen=new Pen(colors.Line);e.Graphics.DrawRectangle(pen,0,0,e.ToolStrip.Width-1,e.ToolStrip.Height-1);}
 }
+
