@@ -194,7 +194,7 @@ public sealed partial class TabRibbon : Control,IThemed
     public Rectangle GetTabRect(int i)=>i<0||i>=Pages.Length?Rectangle.Empty:AnimatedTabRect(Pages[i],TargetTabRect(i));
     Rectangle Plus=>AnimatedPlus;
     Rectangle TargetPlus=>Vertical?new(D(7),Math.Min(Height-D(42),D(8)+Math.Min(Pages.Length-first,Capacity)*D(44)),Math.Max(1,Width-D(14)),D(34)):new(Math.Min(D(48)+Math.Min(Pages.Length-first,Capacity)*TabWidth,Width-D(38)),(Height-D(30))/2,D(30),D(30));
-    public void EnsureSelectedVisible(){int selected=Array.IndexOf(Pages,owner.SelectedTab);first=Math.Clamp(first,0,Math.Max(0,Pages.Length-1));if(selected>=0){if(selected<first)first=selected;if(selected>=first+Capacity)first=selected-Capacity+1;}}
+    public void EnsureSelectedVisible(){int oldFirst=first;int selected=Array.IndexOf(Pages,owner.SelectedTab);first=Math.Clamp(first,0,Math.Max(0,Pages.Length-1));if(selected>=0){if(selected<first)first=selected;if(selected>=first+Capacity)first=selected-Capacity+1;}if(first!=oldFirst)FinishTabMotion();}
     protected override void OnResize(EventArgs e){FinishTabMotion();EnsureSelectedVisible();base.OnResize(e);}
     protected override void OnPaint(PaintEventArgs e)
     {

@@ -49,6 +49,13 @@ public sealed partial class BrowserWindow
             Check(!strip.Header.TabMotionRunning,"app preference skips entry");
             strip.TabPages.Remove(disabled);disabled.Dispose();
             Motion.Enabled=true;
+            strip.Header.Vertical=false;strip.Header.Dock=DockStyle.Top;strip.Header.Height=48;
+            var crowded=Enumerable.Range(0,18).Select(i=>new BrowserPage{Caption="Overflow "+i}).ToArray();
+            foreach(var page in crowded){strip.TabPages.Add(page);strip.SelectedTab=page;}
+            await Task.Delay(260);
+            var selectedRect=strip.GetTabRect(strip.TabPages.IndexOf(strip.SelectedTab!));
+            Check(!selectedRect.IsEmpty&&strip.Header.ClientRectangle.Contains(selectedRect),"overflow keeps selected tab visible");
+            Check(!strip.Header.TabMotionRunning,"automatic ribbon scroll clears stale animation geometry");
             host.Close();
             ShowMenu();
             Check(menuMotion.Running&&menuPopup!.Opacity<1,"menu begins with fade");
