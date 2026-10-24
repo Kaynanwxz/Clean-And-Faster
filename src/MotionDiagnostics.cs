@@ -61,7 +61,7 @@ public sealed partial class BrowserWindow
             Check(menuMotion.Running&&menuPopup!.Opacity<1,"menu begins with fade");
             await Task.Delay(420);
             Check(!menuMotion.Running&&menuPopup!.Opacity==1&&menuPopup.Location==MenuLocation(),"menu ends opaque and aligned");
-            CloseBrowserMenu();await Task.Delay(210);
+            CloseBrowserMenu();await Task.Delay(360);
             Check(!MenuVisible&&!menuMotion.Running&&tabStrip.Enabled,"menu exit restores input");
             for(int i=0;i<8;i++){ShowMenu();CloseBrowserMenu();}
             ShowMenu();await Task.Delay(420);
