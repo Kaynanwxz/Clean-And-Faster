@@ -15,7 +15,7 @@ Check(!Navigation.IsWebUrl("file:///C:/Windows/system.ini"));
 Check(!Navigation.IsWebUrl("https://"));
 Check(Navigation.Resolve("javascript:alert(1)", "Google").StartsWith("https://www.google.com/search?q="));
 Check(Navigation.Resolve("file:///C:/secret", "Google").StartsWith("https://www.google.com/search?q="));
-Check(Navigation.Resolve("https://example.com/�", "Google").StartsWith("https://example.com/"));
+Check(Navigation.Resolve("https://example.com/ç", "Google").StartsWith("https://example.com/"));
 Check(Updater.ValidRepository("Kaynanwxz/KayBrowser"));
 Check(Updater.ValidRepository("user-name/my.browser_v2"));
 foreach (var bad in new[] { "../foo", "foo/..", "foo/.", "foo/bar/baz", "https://github.com/a/b", "x/y?token=1", "x/y#tag", "a/b\n", "a/a;calc.exe", "-a/b", "a-/b" }) Check(!Updater.ValidRepository(bad));
@@ -37,7 +37,7 @@ var release=UpdateManifest.Parse(Manifest(),feed,new Version(0,3,0));
 Check(release!=null);Equal(release!.ExeUrl,"https://updates.example.com/KayBrowser.exe");Equal(release.Version,"0.4.0");
 Check(UpdateManifest.Parse(Manifest("0.3.0"),feed,new Version(0,3,0))==null);
 Check(UpdateManifest.Parse(Manifest("0.2.0"),feed,new Version(0,3,0))==null);
-void RejectManifest(string json){try{UpdateManifest.Parse(json,feed,new Version(0,3,0));throw new Exception("Manifesto inv�lido foi aceito.");}catch(Exception e)when(e is IOException or System.Text.Json.JsonException){passed++;}}
+void RejectManifest(string json){try{UpdateManifest.Parse(json,feed,new Version(0,3,0));throw new Exception("Manifesto inválido foi aceito.");}catch(Exception e)when(e is IOException or System.Text.Json.JsonException){passed++;}}
 RejectManifest(Manifest("broken"));RejectManifest(Manifest(url:"https://evil.example/KayBrowser.exe"));RejectManifest(Manifest(url:"http://updates.example.com/KayBrowser.exe"));RejectManifest(Manifest(url:"https://updates.example.com:444/KayBrowser.exe"));RejectManifest(Manifest(hash:"bad"));RejectManifest(Manifest(size:0));RejectManifest(Manifest(size:400L*1024*1024));RejectManifest("broken{");
 Equal(Distribution.Repository(null), "Kaynanwxz/Clean-And-Faster");
 Equal(Distribution.Repository(""), "Kaynanwxz/Clean-And-Faster");
@@ -72,5 +72,4 @@ Directory.SetLastWriteTimeUtc(stale,DateTime.UtcNow.AddDays(-8));
 Directory.SetLastWriteTimeUtc(unrelated,DateTime.UtcNow.AddDays(-8));
 Updater.CleanupOldDownloads();
 Check(!Directory.Exists(stale));Check(File.Exists(Path.Combine(fresh,"KayBrowser.exe")));Check(File.Exists(Path.Combine(unrelated,"KayBrowser.exe")));
-Console.WriteLine($"PASS: {passed} verifica��es de navega��o, persist�ncia, atualiza��o e IA.");
-
+Console.WriteLine($"PASS: {passed} verificações de navegação, persistência, atualização e IA.");
